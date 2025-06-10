@@ -1317,6 +1317,57 @@ class Webhook:
 
         return cls({"id": webhook_id, "token": token, "url": url})
 
+    async def send(
+        self,
+        content: Optional[str] = None,
+        *,
+        username: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+        tts: bool = False,
+        embed: Optional["Embed"] = None,
+        embeds: Optional[List["Embed"]] = None,
+        components: Optional[List["ActionRow"]] = None,
+        allowed_mentions: Optional[Dict[str, Any]] = None,
+        attachments: Optional[List[Any]] = None,
+        files: Optional[List[Any]] = None,
+        flags: Optional[int] = None,
+    ) -> "Message":
+        """Send a message using this webhook."""
+
+        if not self._client:
+            raise DisagreementException("Webhook is not bound to a Client")
+        assert self.token is not None, "Webhook token missing"
+
+        if embed and embeds:
+            raise ValueError("Cannot provide both embed and embeds.")
+
+        final_embeds_payload: Optional[List[Dict[str, Any]]] = None
+        if embed:
+            final_embeds_payload = [embed.to_dict()]
+        elif embeds:
+            final_embeds_payload = [e.to_dict() for e in embeds]
+
+        components_payload: Optional[List[Dict[str, Any]]] = None
+        if components:
+            components_payload = [c.to_dict() for c in components]
+
+        message_data = await self._client._http.execute_webhook(
+            self.id,
+            self.token,
+            content=content,
+            tts=tts,
+            embeds=final_embeds_payload,
+            components=components_payload,
+            allowed_mentions=allowed_mentions,
+            attachments=attachments,
+            files=files,
+            flags=flags,
+            username=username,
+            avatar_url=avatar_url,
+        )
+
+        return self._client.parse_message(message_data)
+
 
 # --- Message Components ---
 

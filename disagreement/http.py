@@ -411,6 +411,92 @@ class HTTPClient:
 
         await self.request("DELETE", f"/webhooks/{webhook_id}")
 
+    async def execute_webhook(
+        self,
+        webhook_id: "Snowflake",
+        token: str,
+        *,
+        content: Optional[str] = None,
+        tts: bool = False,
+        embeds: Optional[List[Dict[str, Any]]] = None,
+        components: Optional[List[Dict[str, Any]]] = None,
+        allowed_mentions: Optional[dict] = None,
+        attachments: Optional[List[Any]] = None,
+        files: Optional[List[Any]] = None,
+        flags: Optional[int] = None,
+        username: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Executes a webhook and returns the created message."""
+
+        payload: Dict[str, Any] = {}
+        if content is not None:
+            payload["content"] = content
+        if tts:
+            payload["tts"] = True
+        if embeds:
+            payload["embeds"] = embeds
+        if components:
+            payload["components"] = components
+        if allowed_mentions:
+            payload["allowed_mentions"] = allowed_mentions
+        if username:
+            payload["username"] = username
+        if avatar_url:
+            payload["avatar_url"] = avatar_url
+
+        all_files: List["File"] = []
+        if attachments is not None:
+            payload["attachments"] = []
+            for a in attachments:
+                if hasattr(a, "data") and hasattr(a, "filename"):
+                    idx = len(all_files)
+                    all_files.append(a)
+                    payload["attachments"].append({"id": idx, "filename": a.filename})
+                else:
+                    payload["attachments"].append(
+                        a.to_dict() if hasattr(a, "to_dict") else a
+                    )
+        if files is not None:
+            for f in files:
+                if hasattr(f, "data") and hasattr(f, "filename"):
+                    idx = len(all_files)
+                    all_files.append(f)
+                    if "attachments" not in payload:
+                        payload["attachments"] = []
+                    payload["attachments"].append({"id": idx, "filename": f.filename})
+                else:
+                    raise TypeError("files must be File objects")
+        if flags:
+            payload["flags"] = flags
+
+        if all_files:
+            form = aiohttp.FormData()
+            form.add_field(
+                "payload_json", json.dumps(payload), content_type="application/json"
+            )
+            for idx, f in enumerate(all_files):
+                form.add_field(
+                    f"files[{idx}]",
+                    f.data,
+                    filename=f.filename,
+                    content_type="application/octet-stream",
+                )
+            return await self.request(
+                "POST",
+                f"/webhooks/{webhook_id}/{token}",
+                payload=form,
+                is_json=False,
+                use_auth_header=False,
+            )
+
+        return await self.request(
+            "POST",
+            f"/webhooks/{webhook_id}/{token}",
+            payload=payload,
+            use_auth_header=False,
+        )
+
     async def get_user(self, user_id: "Snowflake") -> Dict[str, Any]:
         """Fetches a user object for a given user ID."""
         return await self.request("GET", f"/users/{user_id}")

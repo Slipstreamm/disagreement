@@ -42,3 +42,12 @@ from disagreement.models import Webhook
 webhook = Webhook.from_url("https://discord.com/api/webhooks/123/token")
 print(webhook.id, webhook.token)
 ```
+
+## Send a message through a Webhook
+
+Once you have a `Webhook` instance bound to a :class:`Client`, you can send messages using it:
+
+```python
+webhook = await client.create_webhook("123", {"name": "Bot Webhook"})
+await webhook.send(content="Hello from my webhook!", username="Bot")
+```
