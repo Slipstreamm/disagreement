@@ -365,6 +365,13 @@ class Client:
         """Indicates if the client has successfully connected to the Gateway and is ready."""
         return self._ready_event.is_set()
 
+    @property
+    def latency(self) -> Optional[float]:
+        """Returns the gateway latency in seconds, or ``None`` if unavailable."""
+        if self._gateway:
+            return self._gateway.latency
+        return None
+
     async def wait_until_ready(self) -> None:
         """|coro|
         Waits until the client is fully connected to Discord and the initial state is processed.
