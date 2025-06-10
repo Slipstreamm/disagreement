@@ -132,7 +132,7 @@ class ExampleCog(commands.Cog):  # Ensuring this uses commands.Cog
         member = ctx.guild.get_member_named(name)
         if member:
             await ctx.reply(
-                f"Found: {member.username}#{member.discriminator} (nick: {member.nick})"
+                f"Found: {member.username}#{member.discriminator} (display: {member.display_name})"
             )
         else:
             await ctx.reply("Member not found in cache.")

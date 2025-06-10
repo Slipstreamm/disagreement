@@ -1035,6 +1035,26 @@ class Client:
         self._voice_clients[guild_id] = voice
         return voice
 
+    async def add_reaction(self, channel_id: str, message_id: str, emoji: str) -> None:
+        """|coro| Add a reaction to a message."""
+
+        await self.create_reaction(channel_id, message_id, emoji)
+
+    async def remove_reaction(
+        self, channel_id: str, message_id: str, emoji: str
+    ) -> None:
+        """|coro| Remove the bot's reaction from a message."""
+
+        await self.delete_reaction(channel_id, message_id, emoji)
+
+    async def clear_reactions(self, channel_id: str, message_id: str) -> None:
+        """|coro| Remove all reactions from a message."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        await self._http.clear_reactions(channel_id, message_id)
+
     async def create_reaction(
         self, channel_id: str, message_id: str, emoji: str
     ) -> None:

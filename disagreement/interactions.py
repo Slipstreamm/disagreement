@@ -572,3 +572,6 @@ class InteractionResponsePayload:
 
     def __repr__(self) -> str:
         return f"<InteractionResponsePayload type={self.type!r}>"
+
+    def __getitem__(self, item: str) -> Any:
+        return self.to_dict()[item]
