@@ -903,7 +903,10 @@ class Channel:
     ) -> Optional["PermissionOverwrite"]:
         """Return the :class:`PermissionOverwrite` for ``target`` if present."""
 
-        target_id = target.id if hasattr(target, "id") else str(target)
+        if isinstance(target, str):
+            target_id = int(target)
+        else:
+            target_id = target.id
         for overwrite in self.permission_overwrites:
             if overwrite.id == target_id:
                 return overwrite
