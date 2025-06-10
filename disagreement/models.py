@@ -1094,6 +1094,28 @@ class PartialChannel:
         return f"<PartialChannel id='{self.id}' name='{self.name}' type='{type_name}'>"
 
 
+class Webhook:
+    """Represents a Discord Webhook."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client: Optional["Client"] = client_instance
+        self.id: str = data["id"]
+        self.type: int = int(data.get("type", 1))
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.channel_id: Optional[str] = data.get("channel_id")
+        self.name: Optional[str] = data.get("name")
+        self.avatar: Optional[str] = data.get("avatar")
+        self.token: Optional[str] = data.get("token")
+        self.application_id: Optional[str] = data.get("application_id")
+        self.url: Optional[str] = data.get("url")
+        self.user: Optional[User] = User(data["user"]) if data.get("user") else None
+
+    def __repr__(self) -> str:
+        return f"<Webhook id='{self.id}' name='{self.name}'>"
+
+
 # --- Message Components ---
 
 
