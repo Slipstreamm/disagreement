@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from typing import Any, Awaitable, Callable, Optional
 
 __all__ = ["loop", "Task"]
@@ -7,16 +8,61 @@ __all__ = ["loop", "Task"]
 class Task:
     """Simple repeating task."""
 
-    def __init__(self, coro: Callable[..., Awaitable[Any]], *, seconds: float) -> None:
+    def __init__(
+        self,
+        coro: Callable[..., Awaitable[Any]],
+        *,
+        seconds: float = 0.0,
+        minutes: float = 0.0,
+        hours: float = 0.0,
+        delta: Optional[datetime.timedelta] = None,
+        time_of_day: Optional[datetime.time] = None,
+        on_error: Optional[Callable[[Exception], Awaitable[None]]] = None,
+    ) -> None:
         self._coro = coro
-        self._seconds = float(seconds)
         self._task: Optional[asyncio.Task[None]] = None
+        if time_of_day is not None and (
+            seconds or minutes or hours or delta is not None
+        ):
+            raise ValueError("time_of_day cannot be used with an interval")
+
+        if delta is not None:
+            if not isinstance(delta, datetime.timedelta):
+                raise TypeError("delta must be a datetime.timedelta")
+            interval_seconds = delta.total_seconds()
+        else:
+            interval_seconds = seconds + minutes * 60.0 + hours * 3600.0
+
+        self._seconds = float(interval_seconds)
+        self._time_of_day = time_of_day
+        self._on_error = on_error
+
+    def _seconds_until_time(self) -> float:
+        assert self._time_of_day is not None
+        now = datetime.datetime.now()
+        target = datetime.datetime.combine(now.date(), self._time_of_day)
+        if target <= now:
+            target += datetime.timedelta(days=1)
+        return (target - now).total_seconds()
 
     async def _run(self, *args: Any, **kwargs: Any) -> None:
         try:
+            first = True
             while True:
-                await self._coro(*args, **kwargs)
-                await asyncio.sleep(self._seconds)
+                if self._time_of_day is not None:
+                    await asyncio.sleep(self._seconds_until_time())
+                elif not first:
+                    await asyncio.sleep(self._seconds)
+
+                try:
+                    await self._coro(*args, **kwargs)
+                except Exception as exc:  # noqa: BLE001
+                    if self._on_error is not None:
+                        await _maybe_call(self._on_error, exc)
+                    else:
+                        raise
+
+                first = False
         except asyncio.CancelledError:
             pass
 
@@ -35,10 +81,33 @@ class Task:
         return self._task is not None and not self._task.done()
 
 
+async def _maybe_call(
+    func: Callable[[Exception], Awaitable[None] | None], exc: Exception
+) -> None:
+    result = func(exc)
+    if asyncio.iscoroutine(result):
+        await result
+
+
 class _Loop:
-    def __init__(self, func: Callable[..., Awaitable[Any]], seconds: float) -> None:
+    def __init__(
+        self,
+        func: Callable[..., Awaitable[Any]],
+        *,
+        seconds: float = 0.0,
+        minutes: float = 0.0,
+        hours: float = 0.0,
+        delta: Optional[datetime.timedelta] = None,
+        time_of_day: Optional[datetime.time] = None,
+        on_error: Optional[Callable[[Exception], Awaitable[None]]] = None,
+    ) -> None:
         self.func = func
         self.seconds = seconds
+        self.minutes = minutes
+        self.hours = hours
+        self.delta = delta
+        self.time_of_day = time_of_day
+        self.on_error = on_error
         self._task: Optional[Task] = None
         self._owner: Any = None
 
@@ -51,7 +120,15 @@ class _Loop:
         return self.func(self._owner, *args, **kwargs)
 
     def start(self, *args: Any, **kwargs: Any) -> asyncio.Task[None]:
-        self._task = Task(self._coro, seconds=self.seconds)
+        self._task = Task(
+            self._coro,
+            seconds=self.seconds,
+            minutes=self.minutes,
+            hours=self.hours,
+            delta=self.delta,
+            time_of_day=self.time_of_day,
+            on_error=self.on_error,
+        )
         return self._task.start(*args, **kwargs)
 
     def stop(self) -> None:
@@ -80,10 +157,26 @@ class _BoundLoop:
         return self._parent.running
 
 
-def loop(*, seconds: float) -> Callable[[Callable[..., Awaitable[Any]]], _Loop]:
+def loop(
+    *,
+    seconds: float = 0.0,
+    minutes: float = 0.0,
+    hours: float = 0.0,
+    delta: Optional[datetime.timedelta] = None,
+    time_of_day: Optional[datetime.time] = None,
+    on_error: Optional[Callable[[Exception], Awaitable[None]]] = None,
+) -> Callable[[Callable[..., Awaitable[Any]]], _Loop]:
     """Decorator to create a looping task."""
 
     def decorator(func: Callable[..., Awaitable[Any]]) -> _Loop:
-        return _Loop(func, seconds)
+        return _Loop(
+            func,
+            seconds=seconds,
+            minutes=minutes,
+            hours=hours,
+            delta=delta,
+            time_of_day=time_of_day,
+            on_error=on_error,
+        )
 
     return decorator
