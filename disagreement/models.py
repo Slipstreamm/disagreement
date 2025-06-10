@@ -25,6 +25,7 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     # SelectMenuType will be part of ComponentType or a new enum if needed
 )
 from .permissions import Permissions
+from .color import Color
 
 
 if TYPE_CHECKING:
@@ -312,7 +313,7 @@ class Embed:
         self.description: Optional[str] = data.get("description")
         self.url: Optional[str] = data.get("url")
         self.timestamp: Optional[str] = data.get("timestamp")  # ISO8601 timestamp
-        self.color: Optional[int] = data.get("color")
+        self.color = Color.parse(data.get("color"))
 
         self.footer: Optional[EmbedFooter] = (
             EmbedFooter(data["footer"]) if data.get("footer") else None
@@ -342,7 +343,7 @@ class Embed:
         if self.timestamp:
             payload["timestamp"] = self.timestamp
         if self.color is not None:
-            payload["color"] = self.color
+            payload["color"] = self.color.value
         if self.footer:
             payload["footer"] = self.footer.to_dict()
         if self.image:
@@ -1708,13 +1709,13 @@ class Container(Component):
     def __init__(
         self,
         components: List[Component],
-        accent_color: Optional[int] = None,
+        accent_color: Color | int | str | None = None,
         spoiler: bool = False,
         id: Optional[int] = None,
     ):
         super().__init__(ComponentType.CONTAINER)
         self.components = components
-        self.accent_color = accent_color
+        self.accent_color = Color.parse(accent_color)
         self.spoiler = spoiler
         self.id = id
 
@@ -1722,7 +1723,7 @@ class Container(Component):
         payload = super().to_dict()
         payload["components"] = [c.to_dict() for c in self.components]
         if self.accent_color:
-            payload["accent_color"] = self.accent_color
+            payload["accent_color"] = self.accent_color.value
         if self.spoiler:
             payload["spoiler"] = self.spoiler
         if self.id is not None:
