@@ -18,6 +18,8 @@ class DummyClient:
         self.token = "t"
         self.intents = 0
         self.verbose = False
+        self.gateway_max_retries = 5
+        self.gateway_max_backoff = 60.0
 
 
 def test_shard_manager_creates_shards(monkeypatch):

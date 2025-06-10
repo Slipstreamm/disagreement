@@ -10,6 +10,7 @@ import aiohttp
 import json
 import zlib
 import time
+import random
 from typing import Optional, TYPE_CHECKING, Any, Dict
 
 from .enums import GatewayOpcode, GatewayIntent
@@ -43,6 +44,8 @@ class GatewayClient:
         *,
         shard_id: Optional[int] = None,
         shard_count: Optional[int] = None,
+        max_retries: int = 5,
+        max_backoff: float = 60.0,
     ):
         self._http: "HTTPClient" = http_client
         self._dispatcher: "EventDispatcher" = event_dispatcher
@@ -52,6 +55,8 @@ class GatewayClient:
         self.verbose: bool = verbose
         self._shard_id: Optional[int] = shard_id
         self._shard_count: Optional[int] = shard_count
+        self._max_retries: int = max_retries
+        self._max_backoff: float = max_backoff
 
         self._ws: Optional[aiohttp.ClientWebSocketResponse] = None
         self._loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
@@ -66,6 +71,26 @@ class GatewayClient:
         # For zlib decompression
         self._buffer = bytearray()
         self._inflator = zlib.decompressobj()
+
+    async def _reconnect(self) -> None:
+        """Attempts to reconnect using exponential backoff with jitter."""
+        delay = 1.0
+        for attempt in range(self._max_retries):
+            try:
+                await self.connect()
+                return
+            except Exception as e:  # noqa: BLE001
+                if attempt >= self._max_retries - 1:
+                    print(f"Reconnect failed after {attempt + 1} attempts: {e}")
+                    raise
+                jitter = random.uniform(0, delay)
+                wait_time = min(delay + jitter, self._max_backoff)
+                print(
+                    f"Reconnect attempt {attempt + 1} failed: {e}. "
+                    f"Retrying in {wait_time:.2f} seconds..."
+                )
+                await asyncio.sleep(wait_time)
+                delay = min(delay * 2, self._max_backoff)
 
     async def _decompress_message(
         self, message_bytes: bytes
@@ -350,7 +375,7 @@ class GatewayClient:
             await self._heartbeat()
         elif op == GatewayOpcode.RECONNECT:  # Server requests a reconnect
             print("Gateway requested RECONNECT. Closing and will attempt to reconnect.")
-            await self.close(code=4000)  # Use a non-1000 code to indicate reconnect
+            await self.close(code=4000, reconnect=True)
         elif op == GatewayOpcode.INVALID_SESSION:
             # The 'd' payload for INVALID_SESSION is a boolean indicating resumability
             can_resume = data.get("d") is True
@@ -359,9 +384,7 @@ class GatewayClient:
                 self._session_id = None  # Clear session_id to force re-identify
                 self._last_sequence = None
             # Close and reconnect. The connect logic will decide to resume or identify.
-            await self.close(
-                code=4000 if can_resume else 4009
-            )  # 4009 for non-resumable
+            await self.close(code=4000 if can_resume else 4009, reconnect=True)
         elif op == GatewayOpcode.HELLO:
             hello_d_payload = data.get("d")
             if (
@@ -406,13 +429,11 @@ class GatewayClient:
             print("Receive_loop task cancelled.")
         except aiohttp.ClientConnectionError as e:
             print(f"ClientConnectionError in receive_loop: {e}. Attempting reconnect.")
-            # This might be handled by an outer reconnect loop in the Client class
-            await self.close(code=1006)  # Abnormal closure
+            await self.close(code=1006, reconnect=True)  # Abnormal closure
         except Exception as e:
             print(f"Unexpected error in receive_loop: {e}")
             traceback.print_exc()
-            # Consider specific error types for more granular handling
-            await self.close(code=1011)  # Internal error
+            await self.close(code=1011, reconnect=True)
         finally:
             print("Receive_loop ended.")
             # If the loop ends unexpectedly (not due to explicit close),
@@ -460,7 +481,7 @@ class GatewayClient:
                 f"An unexpected error occurred during Gateway connection: {e}"
             ) from e
 
-    async def close(self, code: int = 1000):
+    async def close(self, code: int = 1000, *, reconnect: bool = False):
         """Closes the Gateway connection."""
         print(f"Closing Gateway connection with code {code}...")
         if self._keep_alive_task and not self._keep_alive_task.done():
@@ -471,11 +492,13 @@ class GatewayClient:
                 pass  # Expected
 
         if self._receive_task and not self._receive_task.done():
+            current = asyncio.current_task(loop=self._loop)
             self._receive_task.cancel()
-            try:
-                await self._receive_task
-            except asyncio.CancelledError:
-                pass  # Expected
+            if self._receive_task is not current:
+                try:
+                    await self._receive_task
+                except asyncio.CancelledError:
+                    pass  # Expected
 
         if self._ws and not self._ws.closed:
             await self._ws.close(code=code)
@@ -491,3 +514,6 @@ class GatewayClient:
             self._session_id = None
             self._last_sequence = None
             self._resume_gateway_url = None  # This might be re-fetched anyway
+
+        if reconnect:
+            await self._reconnect()

@@ -84,6 +84,8 @@ class Client:
         verbose: bool = False,
         mention_replies: bool = False,
         shard_count: Optional[int] = None,
+        gateway_max_retries: int = 5,
+        gateway_max_backoff: float = 60.0,
     ):
         if not token:
             raise ValueError("A bot token must be provided.")
@@ -103,6 +105,8 @@ class Client:
             None  # Initialized in run() or connect()
         )
         self.shard_count: Optional[int] = shard_count
+        self.gateway_max_retries: int = gateway_max_retries
+        self.gateway_max_backoff: float = gateway_max_backoff
         self._shard_manager: Optional[ShardManager] = None
 
         # Initialize CommandHandler
@@ -169,6 +173,8 @@ class Client:
                 intents=self.intents,
                 client_instance=self,
                 verbose=self.verbose,
+                max_retries=self.gateway_max_retries,
+                max_backoff=self.gateway_max_backoff,
             )
 
     async def _initialize_shard_manager(self) -> None:

@@ -4,7 +4,8 @@
 
 The default behaviour tries up to five reconnect attempts, doubling the delay each time up to a configurable maximum. A small random jitter is added to spread out reconnect attempts when multiple clients restart at once.
 
-You can control the maximum number of retries and the backoff cap when constructing `Client`:
+You can control the maximum number of retries and the backoff cap when constructing `Client`.
+These options are forwarded to `GatewayClient` as `max_retries` and `max_backoff`:
 
 ```python
 bot = Client(
