@@ -1614,6 +1614,27 @@ class TypingStart:
         return f"<TypingStart channel_id='{self.channel_id}' user_id='{self.user_id}'>"
 
 
+class Reaction:
+    """Represents a message reaction event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.user_id: str = data["user_id"]
+        self.channel_id: str = data["channel_id"]
+        self.message_id: str = data["message_id"]
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.member: Optional[Member] = (
+            Member(data["member"], client_instance) if data.get("member") else None
+        )
+        self.emoji: Dict[str, Any] = data.get("emoji", {})
+
+    def __repr__(self) -> str:
+        emoji_value = self.emoji.get("name") or self.emoji.get("id")
+        return f"<Reaction message_id='{self.message_id}' user_id='{self.user_id}' emoji='{emoji_value}'>"
+
+
 def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:
     """Create a channel object from raw API data."""
     channel_type = data.get("type")

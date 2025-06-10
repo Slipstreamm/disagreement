@@ -922,6 +922,16 @@ class Client:
 
         await self._http.create_reaction(channel_id, message_id, emoji)
 
+        user_id = getattr(getattr(self, "user", None), "id", None)
+        payload = {
+            "user_id": user_id,
+            "channel_id": channel_id,
+            "message_id": message_id,
+            "emoji": {"name": emoji, "id": None},
+        }
+        if hasattr(self, "_event_dispatcher"):
+            await self._event_dispatcher.dispatch("MESSAGE_REACTION_ADD", payload)
+
     async def delete_reaction(
         self, channel_id: str, message_id: str, emoji: str
     ) -> None:
@@ -931,6 +941,16 @@ class Client:
             raise DisagreementException("Client is closed.")
 
         await self._http.delete_reaction(channel_id, message_id, emoji)
+
+        user_id = getattr(getattr(self, "user", None), "id", None)
+        payload = {
+            "user_id": user_id,
+            "channel_id": channel_id,
+            "message_id": message_id,
+            "emoji": {"name": emoji, "id": None},
+        }
+        if hasattr(self, "_event_dispatcher"):
+            await self._event_dispatcher.dispatch("MESSAGE_REACTION_REMOVE", payload)
 
     async def get_reactions(
         self, channel_id: str, message_id: str, emoji: str

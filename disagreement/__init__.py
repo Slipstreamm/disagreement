@@ -17,7 +17,7 @@ __copyright__ = "Copyright 2025 Slipstream"
 __version__ = "0.0.2"
 
 from .client import Client
-from .models import Message, User
+from .models import Message, User, Reaction
 from .voice_client import VoiceClient
 from .typing import Typing
 from .errors import (
