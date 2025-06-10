@@ -269,6 +269,13 @@ class HTTPClient:
             "GET", f"/channels/{channel_id}/messages/{message_id}"
         )
 
+    async def delete_message(
+        self, channel_id: "Snowflake", message_id: "Snowflake"
+    ) -> None:
+        """Deletes a message in a channel."""
+
+        await self.request("DELETE", f"/channels/{channel_id}/messages/{message_id}")
+
     async def create_reaction(
         self, channel_id: "Snowflake", message_id: "Snowflake", emoji: str
     ) -> None:
