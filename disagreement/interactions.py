@@ -395,6 +395,8 @@ class Interaction:
 
     async def respond_modal(self, modal: "Modal") -> None:
         """|coro| Send a modal in response to this interaction."""
+        from typing import Any, cast
+
         payload = InteractionResponsePayload(
             type=InteractionCallbackType.MODAL,
             data=modal.to_dict(),
@@ -402,7 +404,7 @@ class Interaction:
         await self._client._http.create_interaction_response(
             interaction_id=self.id,
             interaction_token=self.token,
-            payload=payload.to_dict(),  # type: ignore[arg-type]
+            payload=cast(Any, payload.to_dict()),
         )
 
     async def edit(
