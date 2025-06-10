@@ -31,3 +31,14 @@ from disagreement.models import Webhook
 
 print(webhook.id, webhook.name)
 ```
+
+## Create a Webhook from a URL
+
+You can construct a `Webhook` object from an existing webhook URL without any API calls:
+
+```python
+from disagreement.models import Webhook
+
+webhook = Webhook.from_url("https://discord.com/api/webhooks/123/token")
+print(webhook.id, webhook.token)
+```

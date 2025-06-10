@@ -6,6 +6,8 @@ Data models for Discord objects.
 
 import json
 import asyncio
+import aiohttp  # pylint: disable=import-error
+import asyncio
 from typing import Optional, TYPE_CHECKING, List, Dict, Any, Union
 
 from .errors import DisagreementException, HTTPException
@@ -22,6 +24,7 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     ButtonStyle,  # Added for Button
     # SelectMenuType will be part of ComponentType or a new enum if needed
 )
+from .permissions import Permissions
 
 
 if TYPE_CHECKING:
@@ -394,6 +397,14 @@ class Attachment:
         return payload
 
 
+class File:
+    """Represents a file to be uploaded."""
+
+    def __init__(self, filename: str, data: bytes):
+        self.filename = filename
+        self.data = data
+
+
 class AllowedMentions:
     """Represents allowed mentions for a message or interaction response."""
 
@@ -547,6 +558,34 @@ class Member(User):  # Member inherits from User
             until=until,
             reason=reason,
         )
+
+    @property
+    def top_role(self) -> Optional["Role"]:
+        """Return the member's highest role from the guild cache."""
+
+        if not self.guild_id or not self._client:
+            return None
+
+        guild = self._client.get_guild(self.guild_id)
+        if not guild:
+            return None
+
+        if not guild.roles and hasattr(self._client, "fetch_roles"):
+            try:
+                self._client.loop.run_until_complete(
+                    self._client.fetch_roles(self.guild_id)
+                )
+            except RuntimeError:
+                future = asyncio.run_coroutine_threadsafe(
+                    self._client.fetch_roles(self.guild_id), self._client.loop
+                )
+                future.result()
+
+        role_objects = [r for r in guild.roles if r.id in self.roles]
+        if not role_objects:
+            return None
+
+        return max(role_objects, key=lambda r: r.position)
 
 
 class PartialEmoji:
@@ -914,6 +953,78 @@ class Channel:
     def __repr__(self) -> str:
         return f"<Channel id='{self.id}' name='{self.name}' type='{self.type.name if hasattr(self.type, 'name') else self._type_val}'>"
 
+    def permission_overwrite_for(
+        self, target: Union["Role", "Member", str]
+    ) -> Optional["PermissionOverwrite"]:
+        """Return the :class:`PermissionOverwrite` for ``target`` if present."""
+
+        if isinstance(target, str):
+            target_id = int(target)
+        else:
+            target_id = target.id
+        for overwrite in self.permission_overwrites:
+            if overwrite.id == target_id:
+                return overwrite
+        return None
+
+    @staticmethod
+    def _apply_overwrite(
+        perms: Permissions, overwrite: Optional["PermissionOverwrite"]
+    ) -> Permissions:
+        if overwrite is None:
+            return perms
+
+        perms &= ~Permissions(int(overwrite.deny))
+        perms |= Permissions(int(overwrite.allow))
+        return perms
+
+    def permissions_for(self, member: "Member") -> Permissions:
+        """Resolve channel permissions for ``member``."""
+
+        if self.guild_id is None:
+            return Permissions(~0)
+
+        if not hasattr(self._client, "get_guild"):
+            return Permissions(0)
+
+        guild = self._client.get_guild(self.guild_id)
+        if guild is None:
+            return Permissions(0)
+
+        base = Permissions(0)
+
+        everyone = guild.get_role(guild.id)
+        if everyone is not None:
+            base |= Permissions(int(everyone.permissions))
+
+        for rid in member.roles:
+            role = guild.get_role(rid)
+            if role is not None:
+                base |= Permissions(int(role.permissions))
+
+        if base & Permissions.ADMINISTRATOR:
+            return Permissions(~0)
+
+        # Apply @everyone overwrite
+        base = self._apply_overwrite(base, self.permission_overwrite_for(guild.id))
+
+        # Role overwrites
+        role_allow = Permissions(0)
+        role_deny = Permissions(0)
+        for rid in member.roles:
+            ow = self.permission_overwrite_for(rid)
+            if ow is not None:
+                role_allow |= Permissions(int(ow.allow))
+                role_deny |= Permissions(int(ow.deny))
+
+        base &= ~role_deny
+        base |= role_allow
+
+        # Member overwrite
+        base = self._apply_overwrite(base, self.permission_overwrite_for(member.id))
+
+        return base
+
 
 class TextChannel(Channel):
     """Represents a guild text channel or announcement channel."""
@@ -1131,6 +1242,33 @@ class Webhook:
 
     def __repr__(self) -> str:
         return f"<Webhook id='{self.id}' name='{self.name}'>"
+
+    @classmethod
+    def from_url(
+        cls, url: str, session: Optional[aiohttp.ClientSession] = None
+    ) -> "Webhook":
+        """Create a minimal :class:`Webhook` from a webhook URL.
+
+        Parameters
+        ----------
+        url:
+            The full Discord webhook URL.
+        session:
+            Unused for now. Present for API compatibility.
+
+        Returns
+        -------
+        Webhook
+            A webhook instance containing only the ``id``, ``token`` and ``url``.
+        """
+
+        parts = url.rstrip("/").split("/")
+        if len(parts) < 2:
+            raise ValueError("Invalid webhook URL")
+        token = parts[-1]
+        webhook_id = parts[-2]
+
+        return cls({"id": webhook_id, "token": token, "url": url})
 
 
 # --- Message Components ---
@@ -1476,7 +1614,7 @@ class MediaGallery(Component):
         return payload
 
 
-class File(Component):
+class FileComponent(Component):
     """Represents a file component."""
 
     def __init__(
@@ -1676,6 +1814,64 @@ class Reaction:
     def __repr__(self) -> str:
         emoji_value = self.emoji.get("name") or self.emoji.get("id")
         return f"<Reaction message_id='{self.message_id}' user_id='{self.user_id}' emoji='{emoji_value}'>"
+
+
+class GuildMemberRemove:
+    """Represents a GUILD_MEMBER_REMOVE event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.user: User = User(data["user"])
+
+    def __repr__(self) -> str:
+        return (
+            f"<GuildMemberRemove guild_id='{self.guild_id}' user_id='{self.user.id}'>"
+        )
+
+
+class GuildBanAdd:
+    """Represents a GUILD_BAN_ADD event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.user: User = User(data["user"])
+
+    def __repr__(self) -> str:
+        return f"<GuildBanAdd guild_id='{self.guild_id}' user_id='{self.user.id}'>"
+
+
+class GuildBanRemove:
+    """Represents a GUILD_BAN_REMOVE event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.user: User = User(data["user"])
+
+    def __repr__(self) -> str:
+        return f"<GuildBanRemove guild_id='{self.guild_id}' user_id='{self.user.id}'>"
+
+
+class GuildRoleUpdate:
+    """Represents a GUILD_ROLE_UPDATE event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.role: Role = Role(data["role"])
+
+    def __repr__(self) -> str:
+        return f"<GuildRoleUpdate guild_id='{self.guild_id}' role_id='{self.role.id}'>"
 
 
 def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:

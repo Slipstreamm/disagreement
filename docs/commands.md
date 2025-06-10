@@ -49,3 +49,20 @@ async def ping(ctx):
 ```
 
 Invoking a command while it is on cooldown raises :class:`CommandOnCooldown`.
+
+## Permission Checks
+
+Use `commands.requires_permissions` to ensure the invoking member has the
+required permissions in the channel.
+
+```python
+from disagreement.ext.commands import command, requires_permissions
+from disagreement.permissions import Permissions
+
+@command()
+@requires_permissions(Permissions.MANAGE_MESSAGES)
+async def purge(ctx):
+    await ctx.send("Purged!")
+```
+
+Missing permissions raise :class:`CheckFailure`.

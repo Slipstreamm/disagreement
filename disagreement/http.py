@@ -20,7 +20,7 @@ from . import __version__  # For User-Agent
 
 if TYPE_CHECKING:
     from .client import Client
-    from .models import Message, Webhook
+    from .models import Message, Webhook, File
     from .interactions import ApplicationCommand, InteractionResponsePayload, Snowflake
 
 # Discord API constants
@@ -60,7 +60,9 @@ class HTTPClient:
         self,
         method: str,
         endpoint: str,
-        payload: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
+        payload: Optional[
+            Union[Dict[str, Any], List[Dict[str, Any]], aiohttp.FormData]
+        ] = None,
         params: Optional[Dict[str, Any]] = None,
         is_json: bool = True,
         use_auth_header: bool = True,
@@ -205,6 +207,7 @@ class HTTPClient:
         allowed_mentions: Optional[dict] = None,
         message_reference: Optional[Dict[str, Any]] = None,
         attachments: Optional[List[Any]] = None,
+        files: Optional[List[Any]] = None,
         flags: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Sends a message to a channel.
@@ -213,6 +216,8 @@ class HTTPClient:
         ----------
         attachments:
             A list of attachment payloads to include with the message.
+        files:
+            A list of :class:`File` objects containing binary data to upload.
 
         Returns
         -------
@@ -230,10 +235,28 @@ class HTTPClient:
             payload["components"] = components
         if allowed_mentions:
             payload["allowed_mentions"] = allowed_mentions
+        all_files: List["File"] = []
         if attachments is not None:
-            payload["attachments"] = [
-                a.to_dict() if hasattr(a, "to_dict") else a for a in attachments
-            ]
+            payload["attachments"] = []
+            for a in attachments:
+                if hasattr(a, "data") and hasattr(a, "filename"):
+                    idx = len(all_files)
+                    all_files.append(a)
+                    payload["attachments"].append({"id": idx, "filename": a.filename})
+                else:
+                    payload["attachments"].append(
+                        a.to_dict() if hasattr(a, "to_dict") else a
+                    )
+        if files is not None:
+            for f in files:
+                if hasattr(f, "data") and hasattr(f, "filename"):
+                    idx = len(all_files)
+                    all_files.append(f)
+                    if "attachments" not in payload:
+                        payload["attachments"] = []
+                    payload["attachments"].append({"id": idx, "filename": f.filename})
+                else:
+                    raise TypeError("files must be File objects")
         if flags:
             payload["flags"] = flags
         if message_reference:
@@ -241,6 +264,25 @@ class HTTPClient:
 
         if not payload:
             raise ValueError("Message must have content, embeds, or components.")
+
+        if all_files:
+            form = aiohttp.FormData()
+            form.add_field(
+                "payload_json", json.dumps(payload), content_type="application/json"
+            )
+            for idx, f in enumerate(all_files):
+                form.add_field(
+                    f"files[{idx}]",
+                    f.data,
+                    filename=f.filename,
+                    content_type="application/octet-stream",
+                )
+            return await self.request(
+                "POST",
+                f"/channels/{channel_id}/messages",
+                payload=form,
+                is_json=False,
+            )
 
         return await self.request(
             "POST", f"/channels/{channel_id}/messages", payload=payload
