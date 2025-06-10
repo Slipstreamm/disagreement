@@ -7,10 +7,9 @@ import time
 from typing import Callable, Any, Optional, List, TYPE_CHECKING, Awaitable
 
 if TYPE_CHECKING:
-    from .core import Command, CommandContext  # For type hinting return or internal use
+    from .core import Command, CommandContext
     from disagreement.permissions import Permissions
-
-    # from .cog import Cog # For Cog specific decorators
+    from disagreement.models import Member, Guild, Channel
 
 
 def command(
@@ -35,32 +34,16 @@ def command(
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Command callback must be a coroutine function.")
 
-        from .core import (
-            Command,
-        )  # Late import to avoid circular dependencies at module load time
-
-        # The actual registration will happen when a Cog is added or if commands are global.
-        # For now, this decorator creates a Command instance and attaches it to the function,
-        # or returns a Command instance that can be collected.
+        from .core import Command
 
         cmd_name = name or func.__name__
 
-        # Store command attributes on the function itself for later collection by Cog or Client
-        # This is a common pattern.
         if hasattr(func, "__command_attrs__"):
-            # This case might occur if decorators are stacked in an unusual way,
-            # or if a function is decorated multiple times (which should be disallowed or handled).
-            # For now, let's assume one @command decorator per function.
             raise TypeError("Function is already a command or has command attributes.")
 
-        # Create the command object. It will be registered by the Cog or Client.
         cmd = Command(callback=func, name=cmd_name, aliases=aliases or [], **attrs)
-
-        # We can attach the command object to the function, so Cogs can find it.
-        func.__command_object__ = cmd  # type: ignore # type: ignore[attr-defined]
-        return func  # Return the original function, now marked.
-        # Or return `cmd` if commands are registered globally immediately.
-        # For Cogs, returning `func` and letting Cog collect is cleaner.
+        func.__command_object__ = cmd  # type: ignore
+        return func
 
     return decorator
 
@@ -70,11 +53,6 @@ def listener(
 ) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:
     """
     A decorator that marks a function as an event listener within a Cog.
-    The actual registration happens when the Cog is added to the client.
-
-    Args:
-        name (Optional[str]): The name of the event to listen to.
-                              Defaults to the function name (e.g., `on_message`).
     """
 
     def decorator(
@@ -83,13 +61,11 @@ def listener(
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("Listener callback must be a coroutine function.")
 
-        # 'name' here is from the outer 'listener' scope (closure)
         actual_event_name = name or func.__name__
-        # Store listener info on the function for Cog to collect
         setattr(func, "__listener_name__", actual_event_name)
         return func
 
-    return decorator  # This must be correctly indented under 'listener'
+    return decorator
 
 
 def check(
@@ -152,6 +128,53 @@ def cooldown(
     return check(predicate)
 
 
+def _compute_permissions(
+    member: "Member", channel: "Channel", guild: "Guild"
+) -> "Permissions":
+    """Compute the effective permissions for a member in a channel."""
+    from disagreement.models import Member, Guild, Channel
+    from disagreement.permissions import Permissions
+
+    if guild.owner_id == member.id:
+        return Permissions(~0)
+
+    roles = {str(r.id): r for r in guild.roles}
+    everyone_role = roles.get(str(guild.id))
+    if not everyone_role:
+        base_permissions = Permissions(0)
+    else:
+        base_permissions = Permissions(int(everyone_role.permissions))
+
+    for role_id in member.roles:
+        role = roles.get(str(role_id))
+        if role:
+            base_permissions |= Permissions(int(role.permissions))
+
+    if base_permissions & Permissions.ADMINISTRATOR:
+        return Permissions(~0)
+
+    overwrites = {
+        ow.id: ow for ow in getattr(channel, "permission_overwrites", [])
+    }
+    allow = Permissions(0)
+    deny = Permissions(0)
+
+    if everyone_overwrite := overwrites.get(str(guild.id)):
+        allow |= Permissions(int(everyone_overwrite.allow))
+        deny |= Permissions(int(everyone_overwrite.deny))
+
+    for role_id in member.roles:
+        if role_overwrite := overwrites.get(str(role_id)):
+            allow |= Permissions(int(role_overwrite.allow))
+            deny |= Permissions(int(role_overwrite.deny))
+
+    if member_overwrite := overwrites.get(str(member.id)):
+        allow |= Permissions(int(member_overwrite.allow))
+        deny |= Permissions(int(member_overwrite.deny))
+
+    return (base_permissions & ~deny) | allow
+
+
 def requires_permissions(
     *perms: "Permissions",
 ) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:
@@ -162,20 +185,43 @@ def requires_permissions(
         from disagreement.permissions import (
             has_permissions,
             missing_permissions,
-            Permissions,
         )
+        from disagreement.models import Member
 
-        channel = None
-        if hasattr(ctx.bot, "get_channel"):
+        channel = getattr(ctx, "channel", None)
+        if channel is None and hasattr(ctx.bot, "get_channel"):
             channel = ctx.bot.get_channel(ctx.message.channel_id)
         if channel is None and hasattr(ctx.bot, "fetch_channel"):
             channel = await ctx.bot.fetch_channel(ctx.message.channel_id)
-        if channel is None or not hasattr(channel, "permissions_for"):
-            raise CheckFailure("Channel for permission check not found")
 
-        perms_value = channel.permissions_for(ctx.author)
-        if inspect.isawaitable(perms_value):
-            perms_value = await perms_value
+        if channel is None:
+            raise CheckFailure("Channel for permission check not found.")
+
+        guild = getattr(channel, "guild", None)
+        if not guild and hasattr(channel, "guild_id") and channel.guild_id:
+            if hasattr(ctx.bot, "get_guild"):
+                guild = ctx.bot.get_guild(channel.guild_id)
+            if not guild and hasattr(ctx.bot, "fetch_guild"):
+                guild = await ctx.bot.fetch_guild(channel.guild_id)
+
+        if not guild:
+            is_dm = not hasattr(channel, "guild_id") or not channel.guild_id
+            if is_dm:
+                if perms:
+                    raise CheckFailure("Permission checks are not supported in DMs.")
+                return True
+            raise CheckFailure("Guild for permission check not found.")
+
+        member = ctx.author
+        if not isinstance(member, Member):
+            member = guild.get_member(ctx.author.id)
+            if not member and hasattr(ctx.bot, "fetch_member"):
+                member = await ctx.bot.fetch_member(guild.id, ctx.author.id)
+
+        if not member:
+            raise CheckFailure("Could not resolve author to a guild member.")
+
+        perms_value = _compute_permissions(member, channel, guild)
 
         if not has_permissions(perms_value, *perms):
             missing = missing_permissions(perms_value, *perms)
