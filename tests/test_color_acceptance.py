@@ -8,6 +8,7 @@ def test_color_parse():
     c = Color(0xABCDEF)
     assert Color.parse(c) is c
     assert Color.parse(None) is None
+    assert Color.parse((255, 0, 0)).value == 0xFF0000
 
 
 def test_embed_color_parsing():
