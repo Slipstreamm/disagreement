@@ -5,7 +5,7 @@ import sys
 from types import ModuleType
 from typing import Dict
 
-__all__ = ["load_extension", "unload_extension"]
+__all__ = ["load_extension", "unload_extension", "reload_extension"]
 
 _loaded_extensions: Dict[str, ModuleType] = {}
 
@@ -41,3 +41,14 @@ def unload_extension(name: str) -> None:
         module.teardown()
 
     sys.modules.pop(name, None)
+
+
+def reload_extension(name: str) -> ModuleType:
+    """Reload an extension by name.
+
+    This is a convenience wrapper around :func:`unload_extension` followed by
+    :func:`load_extension`.
+    """
+
+    unload_extension(name)
+    return load_extension(name)

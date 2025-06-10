@@ -10,6 +10,8 @@ from typing import Optional, Sequence
 
 import aiohttp
 
+from .audio import AudioSource, FFmpegAudioSource
+
 
 class VoiceClient:
     """Handles the Discord voice WebSocket connection and UDP streaming."""
@@ -43,6 +45,8 @@ class VoiceClient:
         self.secret_key: Optional[Sequence[int]] = None
         self._server_ip: Optional[str] = None
         self._server_port: Optional[int] = None
+        self._current_source: Optional[AudioSource] = None
+        self._play_task: Optional[asyncio.Task] = None
 
     async def connect(self) -> None:
         if self._ws is None:
@@ -107,34 +111,45 @@ class VoiceClient:
             raise RuntimeError("UDP socket not initialised")
         self._udp.send(frame)
 
-    async def play_file(self, filename: str) -> None:
-        """|coro| Stream an audio file to the voice connection using FFmpeg."""
-
-        process = await asyncio.create_subprocess_exec(
-            "ffmpeg",
-            "-i",
-            filename,
-            "-f",
-            "s16le",
-            "-ar",
-            "48000",
-            "-ac",
-            "2",
-            "pipe:1",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-        )
-        assert process.stdout is not None
+    async def _play_loop(self) -> None:
+        assert self._current_source is not None
         try:
             while True:
-                data = await process.stdout.read(3840)
+                data = await self._current_source.read()
                 if not data:
                     break
                 await self.send_audio_frame(data)
         finally:
-            await process.wait()
+            await self._current_source.close()
+            self._current_source = None
+            self._play_task = None
+
+    async def stop(self) -> None:
+        if self._play_task:
+            self._play_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._play_task
+            self._play_task = None
+        if self._current_source:
+            await self._current_source.close()
+            self._current_source = None
+
+    async def play(self, source: AudioSource, *, wait: bool = True) -> None:
+        """|coro| Play an :class:`AudioSource` on the voice connection."""
+
+        await self.stop()
+        self._current_source = source
+        self._play_task = self._loop.create_task(self._play_loop())
+        if wait:
+            await self._play_task
+
+    async def play_file(self, filename: str, *, wait: bool = True) -> None:
+        """|coro| Stream an audio file or URL using FFmpeg."""
+
+        await self.play(FFmpegAudioSource(filename), wait=wait)
 
     async def close(self) -> None:
+        await self.stop()
         if self._heartbeat_task:
             self._heartbeat_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):

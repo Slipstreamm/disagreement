@@ -1,10 +1,11 @@
 # Voice Features
 
-Disagreement includes experimental support for connecting to voice channels. You can join a voice channel and play audio using an FFmpeg subprocess.
+Disagreement includes experimental support for connecting to voice channels. You can join a voice channel and play audio using an :class:`AudioSource`.
 
 ```python
 voice = await client.join_voice(guild_id, channel_id)
 await voice.play_file("welcome.mp3")
+await voice.play_file("another.mp3")  # switch sources while connected
 await voice.close()
 ```
 

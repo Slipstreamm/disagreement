@@ -365,6 +365,13 @@ class Client:
         """Indicates if the client has successfully connected to the Gateway and is ready."""
         return self._ready_event.is_set()
 
+    @property
+    def latency(self) -> Optional[float]:
+        """Returns the gateway latency in seconds, or ``None`` if unavailable."""
+        if self._gateway:
+            return self._gateway.latency
+        return None
+
     async def wait_until_ready(self) -> None:
         """|coro|
         Waits until the client is fully connected to Discord and the initial state is processed.
@@ -853,6 +860,7 @@ class Client:
         allowed_mentions: Optional[Dict[str, Any]] = None,
         message_reference: Optional[Dict[str, Any]] = None,
         attachments: Optional[List[Any]] = None,
+        files: Optional[List[Any]] = None,
         flags: Optional[int] = None,
         view: Optional["View"] = None,
     ) -> "Message":
@@ -870,6 +878,7 @@ class Client:
             allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
             attachments (Optional[List[Any]]): Attachments to include with the message.
+            files (Optional[List[Any]]): Files to upload with the message.
             flags (Optional[int]): Message flags.
             view (Optional[View]): A view to send with the message.
 
@@ -922,6 +931,7 @@ class Client:
             allowed_mentions=allowed_mentions,
             message_reference=message_reference,
             attachments=attachments,
+            files=files,
             flags=flags,
         )
 
@@ -1280,3 +1290,19 @@ class Client:
 
         print(f"Unhandled exception in event listener for '{event_method}':")
         print(f"{type(exc).__name__}: {exc}")
+
+
+class AutoShardedClient(Client):
+    """A :class:`Client` that automatically determines the shard count.
+
+    If ``shard_count`` is not provided, the client will query the Discord API
+    via :meth:`HTTPClient.get_gateway_bot` for the recommended shard count and
+    use that when connecting.
+    """
+
+    async def connect(self, reconnect: bool = True) -> None:  # type: ignore[override]
+        if self.shard_count is None:
+            data = await self._http.get_gateway_bot()
+            self.shard_count = data.get("shards", 1)
+
+        await super().connect(reconnect=reconnect)
