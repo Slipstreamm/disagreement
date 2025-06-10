@@ -204,11 +204,20 @@ class HTTPClient:
         components: Optional[List[Dict[str, Any]]] = None,
         allowed_mentions: Optional[dict] = None,
         message_reference: Optional[Dict[str, Any]] = None,
+        attachments: Optional[List[Any]] = None,
         flags: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Sends a message to a channel.
 
-        Returns the created message data as a dict.
+        Parameters
+        ----------
+        attachments:
+            A list of attachment payloads to include with the message.
+
+        Returns
+        -------
+        Dict[str, Any]
+            The created message data.
         """
         payload: Dict[str, Any] = {}
         if content is not None:  # Content is optional if embeds/components are present
@@ -221,6 +230,10 @@ class HTTPClient:
             payload["components"] = components
         if allowed_mentions:
             payload["allowed_mentions"] = allowed_mentions
+        if attachments is not None:
+            payload["attachments"] = [
+                a.to_dict() if hasattr(a, "to_dict") else a for a in attachments
+            ]
         if flags:
             payload["flags"] = flags
         if message_reference:

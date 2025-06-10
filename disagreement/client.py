@@ -830,6 +830,7 @@ class Client:
         components: Optional[List["ActionRow"]] = None,
         allowed_mentions: Optional[Dict[str, Any]] = None,
         message_reference: Optional[Dict[str, Any]] = None,
+        attachments: Optional[List[Any]] = None,
         flags: Optional[int] = None,
         view: Optional["View"] = None,
     ) -> "Message":
@@ -846,6 +847,7 @@ class Client:
             components (Optional[List[ActionRow]]): A list of ActionRow components to include.
             allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
+            attachments (Optional[List[Any]]): Attachments to include with the message.
             flags (Optional[int]): Message flags.
             view (Optional[View]): A view to send with the message.
 
@@ -897,6 +899,7 @@ class Client:
             components=components_payload,
             allowed_mentions=allowed_mentions,
             message_reference=message_reference,
+            attachments=attachments,
             flags=flags,
         )
 

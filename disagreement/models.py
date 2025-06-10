@@ -72,6 +72,7 @@ class Message:
         timestamp (str): When this message was sent (ISO8601 timestamp).
         components (Optional[List[ActionRow]]): Structured components attached
             to the message if present.
+        attachments (List[Attachment]): Attachments included with the message.
     """
 
     def __init__(self, data: dict, client_instance: "Client"):
@@ -92,6 +93,9 @@ class Message:
             ]
         else:
             self.components = None
+        self.attachments: List[Attachment] = [
+            Attachment(a) for a in data.get("attachments", [])
+        ]
         # Add other fields as needed, e.g., attachments, embeds, reactions, etc.
         # self.mentions: List[User] = [User(u) for u in data.get("mentions", [])]
         # self.mention_roles: List[str] = data.get("mention_roles", [])
