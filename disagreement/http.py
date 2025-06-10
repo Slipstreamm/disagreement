@@ -348,6 +348,18 @@ class HTTPClient:
             f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}",
         )
 
+    async def bulk_delete_messages(
+        self, channel_id: "Snowflake", messages: List["Snowflake"]
+    ) -> List["Snowflake"]:
+        """Bulk deletes messages in a channel and returns their IDs."""
+
+        await self.request(
+            "POST",
+            f"/channels/{channel_id}/messages/bulk-delete",
+            payload={"messages": messages},
+        )
+        return messages
+
     async def delete_channel(
         self, channel_id: str, reason: Optional[str] = None
     ) -> None:
