@@ -10,7 +10,14 @@ from .core import (
     CommandContext,
     CommandHandler,
 )  # CommandHandler might be internal
-from .decorators import command, listener, check, check_any, cooldown
+from .decorators import (
+    command,
+    listener,
+    check,
+    check_any,
+    cooldown,
+    requires_permissions,
+)
 from .errors import (
     CommandError,
     CommandNotFound,
@@ -36,6 +43,7 @@ __all__ = [
     "check",
     "check_any",
     "cooldown",
+    "requires_permissions",
     # Errors
     "CommandError",
     "CommandNotFound",
