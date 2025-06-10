@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 from disagreement.client import Client
 from disagreement.errors import DisagreementException
-from disagreement.models import User, Reaction
+from disagreement.models import Message, User, Reaction
 
 
 @pytest.mark.asyncio
@@ -14,7 +14,16 @@ async def test_create_reaction_calls_http():
     client._http = http
     client._closed = False
 
-    await client.create_reaction("1", "2", "😀")
+    message_data = {
+        "id": "2",
+        "channel_id": "1",
+        "author": {"id": "3", "username": "u", "discriminator": "0001"},
+        "content": "hi",
+        "timestamp": "t",
+    }
+    message = Message(message_data, client_instance=client)
+
+    await message.add_reaction("😀")
 
     http.create_reaction.assert_called_once_with("1", "2", "😀")
 
@@ -26,8 +35,17 @@ async def test_create_reaction_closed():
     client._http = http
     client._closed = True
 
+    message_data = {
+        "id": "2",
+        "channel_id": "1",
+        "author": {"id": "3", "username": "u", "discriminator": "0001"},
+        "content": "hi",
+        "timestamp": "t",
+    }
+    message = Message(message_data, client_instance=client)
+
     with pytest.raises(DisagreementException):
-        await client.create_reaction("1", "2", "😀")
+        await message.add_reaction("😀")
 
 
 @pytest.mark.asyncio
@@ -37,7 +55,16 @@ async def test_delete_reaction_calls_http():
     client._http = http
     client._closed = False
 
-    await client.delete_reaction("1", "2", "😀")
+    message_data = {
+        "id": "2",
+        "channel_id": "1",
+        "author": {"id": "3", "username": "u", "discriminator": "0001"},
+        "content": "hi",
+        "timestamp": "t",
+    }
+    message = Message(message_data, client_instance=client)
+
+    await message.remove_reaction("😀")
 
     http.delete_reaction.assert_called_once_with("1", "2", "😀")
 
@@ -69,7 +96,16 @@ async def test_create_reaction_dispatches_event(monkeypatch):
 
     client._event_dispatcher.register("MESSAGE_REACTION_ADD", on_add)
 
-    await client.create_reaction("1", "2", "😀")
+    message_data = {
+        "id": "2",
+        "channel_id": "1",
+        "author": {"id": "3", "username": "u", "discriminator": "0001"},
+        "content": "hi",
+        "timestamp": "t",
+    }
+    message = Message(message_data, client_instance=client)
+
+    await message.add_reaction("😀")
 
     assert isinstance(events.get("add"), Reaction)
 
@@ -86,6 +122,15 @@ async def test_delete_reaction_dispatches_event(monkeypatch):
 
     client._event_dispatcher.register("MESSAGE_REACTION_REMOVE", on_remove)
 
-    await client.delete_reaction("1", "2", "😀")
+    message_data = {
+        "id": "2",
+        "channel_id": "1",
+        "author": {"id": "3", "username": "u", "discriminator": "0001"},
+        "content": "hi",
+        "timestamp": "t",
+    }
+    message = Message(message_data, client_instance=client)
+
+    await message.remove_reaction("😀")
 
     assert isinstance(events.get("remove"), Reaction)
