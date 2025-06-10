@@ -26,8 +26,8 @@ from .commands import (
     MessageCommand,
     AppCommand,
     AppCommandGroup,
-    HybridCommand,
 )
+from .hybrid import HybridCommand
 from disagreement.interactions import (
     ApplicationCommandOption,
     ApplicationCommandOptionChoice,

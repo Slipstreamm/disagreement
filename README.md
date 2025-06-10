@@ -21,7 +21,7 @@ pip install disagreement
 pip install -e .
 ```
 
-Requires Python 3.11 or newer.
+Requires Python 3.10 or newer.
 
 ## Basic Usage
 

@@ -1,5 +1,7 @@
 # disagreement/ext/commands/core.py
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 from typing import (
@@ -27,10 +29,10 @@ from .errors import (
     CommandInvokeError,
 )
 from .converters import run_converters, DEFAULT_CONVERTERS, Converter
-from .cog import Cog
 from disagreement.typing import Typing
 
 if TYPE_CHECKING:
+    from .cog import Cog
     from disagreement.client import Client
     from disagreement.models import Message, User
 
@@ -84,6 +86,9 @@ class Command:
             await self.callback(self.cog, ctx, *args, **kwargs)
         else:
             await self.callback(ctx, *args, **kwargs)
+
+
+PrefixCommand = Command  # Alias for clarity in hybrid commands
 
 
 class CommandContext:

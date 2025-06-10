@@ -3,7 +3,7 @@ name = "disagreement"
 version = "0.1.0rc1"
 description = "A Python library for the Discord API."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = {text = "BSD 3-Clause"}
 authors = [
   {name = "Slipstream", email = "me@slipstreamm.dev"}
@@ -15,6 +15,7 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -31,10 +32,10 @@ dependencies = [
 test = [
     "pytest>=8.0.0",
     "pytest-asyncio>=1.0.0",
-    "hypothesis>=6.89.0",
+    "hypothesis>=6.132.0",
 ]
 dev = [
-    "dotenv>=0.0.5",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.urls]

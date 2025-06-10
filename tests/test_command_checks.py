@@ -33,7 +33,7 @@ async def test_check_decorator_blocks(message):
 async def test_cooldown_per_user(message):
     uses = []
 
-    @cooldown(1, 0.05)
+    @cooldown(1, 0.1)
     async def cb(ctx):
         uses.append(1)
 
@@ -51,7 +51,7 @@ async def test_cooldown_per_user(message):
     with pytest.raises(CommandOnCooldown):
         await cmd.invoke(ctx)
 
-    await asyncio.sleep(0.05)
+    await asyncio.sleep(0.1)
     await cmd.invoke(ctx)
     assert len(uses) == 2
 

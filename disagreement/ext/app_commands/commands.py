@@ -1,58 +1,25 @@
 # disagreement/ext/app_commands/commands.py
 
 import inspect
-from typing import Callable, Optional, List, Dict, Any, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 
+from disagreement.enums import (
+    ApplicationCommandType,
+    ApplicationCommandOptionType,
+    IntegrationType,
+    InteractionContextType,
+)
+from disagreement.interactions import ApplicationCommandOption, Snowflake
 
 if TYPE_CHECKING:
-    from disagreement.ext.commands.core import (
-        Command as PrefixCommand,
-    )  # Alias to avoid name clash
-    from disagreement.interactions import ApplicationCommandOption, Snowflake
-    from disagreement.enums import (
-        ApplicationCommandType,
-        IntegrationType,
-        InteractionContextType,
-        ApplicationCommandOptionType,  # Added
-    )
-    from disagreement.ext.commands.cog import Cog  # Corrected import path
+    from disagreement.ext.commands.core import Command as PrefixCommand
+    from disagreement.ext.commands.cog import Cog
 
-# Placeholder for Cog if not using the existing one or if it needs adaptation
 if not TYPE_CHECKING:
-    # This dynamic Cog = Any might not be ideal if Cog is used in runtime type checks.
-    # However, for type hinting purposes when TYPE_CHECKING is false, it avoids import.
-    # If Cog is needed at runtime by this module (it is, for AppCommand.cog type hint),
-    # it should be imported directly.
-    # For now, the TYPE_CHECKING block handles the proper import for static analysis.
-    # Let's ensure Cog is available at runtime if AppCommand.cog is accessed.
-    # A simple way is to import it outside TYPE_CHECKING too, if it doesn't cause circularity.
-    # Given its usage, a forward reference string 'Cog' might be better in AppCommand.cog type hint.
-    # Let's try importing it directly for runtime, assuming no circularity with this specific module.
-    try:
-        from disagreement.ext.commands.cog import Cog
-    except ImportError:
-        Cog = Any  # Fallback if direct import fails (e.g. during partial builds/tests)
-    # Import PrefixCommand at runtime for HybridCommand
     try:
         from disagreement.ext.commands.core import Command as PrefixCommand
-    except Exception:  # pragma: no cover - safeguard against unusual import issues
-        PrefixCommand = Any  # type: ignore
-    # Import enums used at runtime
-    try:
-        from disagreement.enums import (
-            ApplicationCommandType,
-            IntegrationType,
-            InteractionContextType,
-            ApplicationCommandOptionType,
-        )
-        from disagreement.interactions import ApplicationCommandOption, Snowflake
-    except Exception:  # pragma: no cover
-        ApplicationCommandType = ApplicationCommandOptionType = IntegrationType = (
-            InteractionContextType
-        ) = Any  # type: ignore
-        ApplicationCommandOption = Snowflake = Any  # type: ignore
-else:  # When TYPE_CHECKING is true, Cog and PrefixCommand are already imported above.
-    pass
+    except ImportError:
+        PrefixCommand = Any
 
 
 class AppCommand:
@@ -235,59 +202,6 @@ class MessageCommand(AppCommand):
         super().__init__(callback, type=ApplicationCommandType.MESSAGE, **kwargs)
 
 
-class HybridCommand(SlashCommand, PrefixCommand):  # Inherit from both
-    """
-    Represents a command that can be invoked as both a slash command
-    and a traditional prefix-based command.
-    """
-
-    def __init__(self, callback: Callable[..., Any], **kwargs: Any):
-        # Initialize SlashCommand part (which calls AppCommand.__init__)
-        # We need to ensure 'type' is correctly passed for AppCommand
-        # kwargs for SlashCommand: name, description, guild_ids, default_member_permissions, nsfw, parent, cog, etc.
-        # kwargs for PrefixCommand: name, aliases, brief, description, cog
-
-        # Pop prefix-specific args before passing to SlashCommand constructor
-        prefix_aliases = kwargs.pop("aliases", [])
-        prefix_brief = kwargs.pop("brief", None)
-        # Description is used by both, AppCommand's constructor will handle it.
-        # Name is used by both. Cog is used by both.
-
-        # Call SlashCommand's __init__
-        # This will set up name, description, callback, type=CHAT_INPUT, options, etc.
-        super().__init__(callback, **kwargs)  # This is SlashCommand.__init__
-
-        # Now, explicitly initialize the PrefixCommand parts that SlashCommand didn't cover
-        # or that need specific values for the prefix version.
-        # PrefixCommand.__init__(self, callback, name=self.name, aliases=prefix_aliases, brief=prefix_brief, description=self.description, cog=self.cog)
-        # However, PrefixCommand.__init__ also sets self.params, which AppCommand already did.
-        # We need to be careful not to re-initialize things unnecessarily or incorrectly.
-        # Let's manually set the distinct attributes for the PrefixCommand aspect.
-
-        # Attributes from PrefixCommand:
-        # self.callback is already set by AppCommand
-        # self.name is already set by AppCommand
-        self.aliases: List[str] = (
-            prefix_aliases  # This was specific to HybridCommand before, now aligns with PrefixCommand
-        )
-        self.brief: Optional[str] = prefix_brief
-        # self.description is already set by AppCommand (SlashCommand ensures it exists)
-        # self.cog is already set by AppCommand
-        # self.params is already set by AppCommand
-
-        # Ensure the MRO is handled correctly. Python's MRO (C3 linearization)
-        # should call SlashCommand's __init__ then AppCommand's __init__.
-        # PrefixCommand.__init__ won't be called automatically unless we explicitly call it.
-        # By setting attributes directly, we avoid potential issues with multiple __init__ calls
-        # if their logic overlaps too much (e.g., both trying to set self.params).
-
-    # We might need to override invoke if the context or argument passing differs significantly
-    # between app command invocation and prefix command invocation.
-    # For now, SlashCommand.invoke and PrefixCommand.invoke are separate.
-    # The correct one will be called depending on how the command is dispatched.
-    # The AppCommandHandler will use AppCommand.invoke (via SlashCommand).
-    # The prefix CommandHandler will use PrefixCommand.invoke.
-    # This seems acceptable.
 
 
 class AppCommandGroup:
