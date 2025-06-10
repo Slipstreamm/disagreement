@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from .client import Client  # For type hinting to avoid circular imports
     from .enums import OverwriteType  # For PermissionOverwrite model
     from .ui.view import View
+    from .interactions import Snowflake
 
     # Forward reference Message if it were used in type hints before its definition
     # from .models import Message # Not needed as Message is defined before its use in TextChannel.send etc.
@@ -1084,6 +1085,27 @@ class TextChannel(Channel):
             embeds=embeds,
             components=components,
         )
+
+    async def purge(
+        self, limit: int, *, before: "Snowflake | None" = None
+    ) -> List["Snowflake"]:
+        """Bulk delete messages from this channel."""
+
+        params: Dict[str, Union[int, str]] = {"limit": limit}
+        if before is not None:
+            params["before"] = before
+
+        messages = await self._client._http.request(
+            "GET", f"/channels/{self.id}/messages", params=params
+        )
+        ids = [m["id"] for m in messages]
+        if not ids:
+            return []
+
+        await self._client._http.bulk_delete_messages(self.id, ids)
+        for mid in ids:
+            self._client._messages.pop(mid, None)
+        return ids
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"

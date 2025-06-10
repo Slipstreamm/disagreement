@@ -79,6 +79,10 @@ class EventDispatcher:
             self._client._messages.pop(message_id, None)
         return data
 
+    def _parse_message_reaction_raw(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Returns the raw reaction payload."""
+        return data
+
     def _parse_interaction_create(self, data: Dict[str, Any]) -> "Interaction":
         """Parses raw INTERACTION_CREATE data into an Interaction object."""
         from .interactions import Interaction
