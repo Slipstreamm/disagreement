@@ -1280,3 +1280,19 @@ class Client:
 
         print(f"Unhandled exception in event listener for '{event_method}':")
         print(f"{type(exc).__name__}: {exc}")
+
+
+class AutoShardedClient(Client):
+    """A :class:`Client` that automatically determines the shard count.
+
+    If ``shard_count`` is not provided, the client will query the Discord API
+    via :meth:`HTTPClient.get_gateway_bot` for the recommended shard count and
+    use that when connecting.
+    """
+
+    async def connect(self, reconnect: bool = True) -> None:  # type: ignore[override]
+        if self.shard_count is None:
+            data = await self._http.get_gateway_bot()
+            self.shard_count = data.get("shards", 1)
+
+        await super().connect(reconnect=reconnect)
