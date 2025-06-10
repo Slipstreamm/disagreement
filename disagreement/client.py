@@ -46,6 +46,7 @@ if TYPE_CHECKING:
         CategoryChannel,
         Thread,
         DMChannel,
+        Webhook,
     )
     from .ui.view import View
     from .enums import ChannelType as EnumChannelType
@@ -133,6 +134,7 @@ class Client:
         )  # Placeholder for User model cache if needed
         self._messages: Dict[Snowflake, "Message"] = {}
         self._views: Dict[Snowflake, "View"] = {}
+        self._webhooks: Dict[Snowflake, "Webhook"] = {}
 
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
@@ -648,6 +650,19 @@ class Client:
         self._messages[message.id] = message
         return message
 
+    def parse_webhook(self, data: Union[Dict[str, Any], "Webhook"]) -> "Webhook":
+        """Parses webhook data and returns a Webhook object, updating cache."""
+
+        from .models import Webhook
+
+        if isinstance(data, Webhook):
+            webhook = data
+            webhook._client = self  # type: ignore[attr-defined]
+        else:
+            webhook = Webhook(data, client_instance=self)
+        self._webhooks[webhook.id] = webhook
+        return webhook
+
     async def fetch_user(self, user_id: Snowflake) -> Optional["User"]:
         """Fetches a user by ID from Discord."""
         if self._closed:
@@ -1059,6 +1074,36 @@ class Client:
         except DisagreementException as e:  # Includes HTTPException
             print(f"Failed to fetch channel {channel_id}: {e}")
             return None
+
+    async def create_webhook(
+        self, channel_id: Snowflake, payload: Dict[str, Any]
+    ) -> "Webhook":
+        """|coro| Create a webhook in the given channel."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.create_webhook(channel_id, payload)
+        return self.parse_webhook(data)
+
+    async def edit_webhook(
+        self, webhook_id: Snowflake, payload: Dict[str, Any]
+    ) -> "Webhook":
+        """|coro| Edit an existing webhook."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.edit_webhook(webhook_id, payload)
+        return self.parse_webhook(data)
+
+    async def delete_webhook(self, webhook_id: Snowflake) -> None:
+        """|coro| Delete a webhook by ID."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        await self._http.delete_webhook(webhook_id)
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:

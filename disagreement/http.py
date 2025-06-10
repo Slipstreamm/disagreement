@@ -20,7 +20,7 @@ from . import __version__  # For User-Agent
 
 if TYPE_CHECKING:
     from .client import Client
-    from .models import Message
+    from .models import Message, Webhook
     from .interactions import ApplicationCommand, InteractionResponsePayload, Snowflake
 
 # Discord API constants
@@ -309,6 +309,33 @@ class HTTPClient:
     async def get_channel(self, channel_id: str) -> Dict[str, Any]:
         """Fetches a channel by ID."""
         return await self.request("GET", f"/channels/{channel_id}")
+
+    async def create_webhook(
+        self, channel_id: "Snowflake", payload: Dict[str, Any]
+    ) -> "Webhook":
+        """Creates a webhook in the specified channel."""
+
+        data = await self.request(
+            "POST", f"/channels/{channel_id}/webhooks", payload=payload
+        )
+        from .models import Webhook
+
+        return Webhook(data)
+
+    async def edit_webhook(
+        self, webhook_id: "Snowflake", payload: Dict[str, Any]
+    ) -> "Webhook":
+        """Edits an existing webhook."""
+
+        data = await self.request("PATCH", f"/webhooks/{webhook_id}", payload=payload)
+        from .models import Webhook
+
+        return Webhook(data)
+
+    async def delete_webhook(self, webhook_id: "Snowflake") -> None:
+        """Deletes a webhook."""
+
+        await self.request("DELETE", f"/webhooks/{webhook_id}")
 
     async def get_user(self, user_id: "Snowflake") -> Dict[str, Any]:
         """Fetches a user object for a given user ID."""

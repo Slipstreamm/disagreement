@@ -9,7 +9,7 @@ from disagreement.http import HTTPClient
 
 http = HTTPClient(token="TOKEN")
 payload = {"name": "My Webhook"}
-webhook_data = await http.create_webhook("123", payload)
+webhook = await http.create_webhook("123", payload)
 ```
 
 ## Edit a webhook
@@ -24,11 +24,10 @@ await http.edit_webhook("456", {"name": "Renamed"})
 await http.delete_webhook("456")
 ```
 
-The methods return the raw webhook JSON. You can construct a `Webhook` model if needed:
+The methods now return a `Webhook` object directly:
 
 ```python
 from disagreement.models import Webhook
 
-webhook = Webhook(webhook_data)
 print(webhook.id, webhook.name)
 ```

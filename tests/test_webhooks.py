@@ -42,3 +42,99 @@ async def test_delete_followup_message_calls_request():
         f"/webhooks/app_id/token/messages/456",
         use_auth_header=False,
     )
+
+
+@pytest.mark.asyncio
+async def test_create_webhook_returns_model_and_calls_request():
+    http = HTTPClient(token="t")
+    http.request = AsyncMock(return_value={"id": "1"})
+    payload = {"name": "wh"}
+    webhook = await http.create_webhook("123", payload)
+    http.request.assert_called_once_with(
+        "POST",
+        "/channels/123/webhooks",
+        payload=payload,
+    )
+    from disagreement.models import Webhook
+
+    assert isinstance(webhook, Webhook)
+
+
+@pytest.mark.asyncio
+async def test_edit_webhook_returns_model_and_calls_request():
+    http = HTTPClient(token="t")
+    http.request = AsyncMock(return_value={"id": "1"})
+    payload = {"name": "rename"}
+    webhook = await http.edit_webhook("1", payload)
+    http.request.assert_called_once_with(
+        "PATCH",
+        "/webhooks/1",
+        payload=payload,
+    )
+    from disagreement.models import Webhook
+
+    assert isinstance(webhook, Webhook)
+
+
+@pytest.mark.asyncio
+async def test_delete_webhook_calls_request():
+    http = HTTPClient(token="t")
+    http.request = AsyncMock()
+    await http.delete_webhook("1")
+    http.request.assert_called_once_with(
+        "DELETE",
+        "/webhooks/1",
+    )
+
+
+@pytest.mark.asyncio
+async def test_client_create_webhook_returns_model():
+    from types import SimpleNamespace
+    from disagreement.client import Client
+    from disagreement.models import Webhook
+
+    http = SimpleNamespace(create_webhook=AsyncMock(return_value={"id": "1"}))
+    client = Client.__new__(Client)
+    client._http = http
+    client._closed = False
+    client._webhooks = {}
+
+    webhook = await client.create_webhook("123", {"name": "wh"})
+
+    http.create_webhook.assert_awaited_once_with("123", {"name": "wh"})
+    assert isinstance(webhook, Webhook)
+    assert client._webhooks["1"] is webhook
+
+
+@pytest.mark.asyncio
+async def test_client_edit_webhook_returns_model():
+    from types import SimpleNamespace
+    from disagreement.client import Client
+    from disagreement.models import Webhook
+
+    http = SimpleNamespace(edit_webhook=AsyncMock(return_value={"id": "1"}))
+    client = Client.__new__(Client)
+    client._http = http
+    client._closed = False
+    client._webhooks = {}
+
+    webhook = await client.edit_webhook("1", {"name": "rename"})
+
+    http.edit_webhook.assert_awaited_once_with("1", {"name": "rename"})
+    assert isinstance(webhook, Webhook)
+    assert client._webhooks["1"] is webhook
+
+
+@pytest.mark.asyncio
+async def test_client_delete_webhook_calls_http():
+    from types import SimpleNamespace
+    from disagreement.client import Client
+
+    http = SimpleNamespace(delete_webhook=AsyncMock())
+    client = Client.__new__(Client)
+    client._http = http
+    client._closed = False
+
+    await client.delete_webhook("1")
+
+    http.delete_webhook.assert_awaited_once_with("1")
