@@ -166,6 +166,7 @@ class GatewayClient:
         print(
             f"Sent RESUME for session {self._session_id} at sequence {self._last_sequence}."
         )
+
     async def update_presence(
         self,
         status: str,
@@ -179,14 +180,16 @@ class GatewayClient:
             "op": GatewayOpcode.PRESENCE_UPDATE,
             "d": {
                 "since": since,
-                "activities": [
-                    {
-                        "name": activity_name,
-                        "type": activity_type,
-                    }
-                ]
-                if activity_name
-                else [],
+                "activities": (
+                    [
+                        {
+                            "name": activity_name,
+                            "type": activity_type,
+                        }
+                    ]
+                    if activity_name
+                    else []
+                ),
                 "status": status,
                 "afk": afk,
             },

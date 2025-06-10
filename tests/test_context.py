@@ -36,6 +36,8 @@ class DummyBot:
 
     async def fetch_channel(self, cid):
         return self._channels.get(cid)
+
+
 from disagreement.ext.commands.core import CommandContext, Command
 from disagreement.enums import MessageFlags, ButtonStyle, ComponentType
 from disagreement.models import ActionRow, Button, Container, TextDisplay
