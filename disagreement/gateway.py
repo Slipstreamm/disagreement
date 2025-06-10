@@ -68,6 +68,9 @@ class GatewayClient:
         self._keep_alive_task: Optional[asyncio.Task] = None
         self._receive_task: Optional[asyncio.Task] = None
 
+        self._last_heartbeat_sent: Optional[float] = None
+        self._last_heartbeat_ack: Optional[float] = None
+
         # For zlib decompression
         self._buffer = bytearray()
         self._inflator = zlib.decompressobj()
@@ -128,6 +131,7 @@ class GatewayClient:
 
     async def _heartbeat(self):
         """Sends a heartbeat to the Gateway."""
+        self._last_heartbeat_sent = time.monotonic()
         payload = {"op": GatewayOpcode.HEARTBEAT, "d": self._last_sequence}
         await self._send_json(payload)
         # print("Sent heartbeat.")
@@ -411,6 +415,7 @@ class GatewayClient:
                 print("Performing initial IDENTIFY.")
                 await self._identify()
         elif op == GatewayOpcode.HEARTBEAT_ACK:
+            self._last_heartbeat_ack = time.monotonic()
             # print("Received heartbeat ACK.")
             pass  # Good, connection is alive
         else:
@@ -515,5 +520,17 @@ class GatewayClient:
             self._last_sequence = None
             self._resume_gateway_url = None  # This might be re-fetched anyway
 
-        if reconnect:
-            await self._reconnect()
+    @property
+    def latency(self) -> Optional[float]:
+        """Returns the latency between heartbeat and ACK in seconds."""
+        if self._last_heartbeat_sent is None or self._last_heartbeat_ack is None:
+            return None
+        return self._last_heartbeat_ack - self._last_heartbeat_sent
+
+    @property
+    def last_heartbeat_sent(self) -> Optional[float]:
+        return self._last_heartbeat_sent
+
+    @property
+    def last_heartbeat_ack(self) -> Optional[float]:
+        return self._last_heartbeat_ack
