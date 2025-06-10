@@ -28,29 +28,33 @@ Requires Python 3.11 or newer.
 ```python
 import asyncio
 import os
+
 import disagreement
+from disagreement.ext import commands
 
-# Ensure DISCORD_BOT_TOKEN is set in your environment
-client = disagreement.Client(token=os.environ.get("DISCORD_BOT_TOKEN"))
 
-@client.on_event('MESSAGE_CREATE')
-async def on_message(message: disagreement.Message):
-    print(f"Received: {message.content} from {message.author.username}")
-    if message.content.lower() == '!ping':
-        await message.reply('Pong!')
+class Basics(commands.Cog):
+    def __init__(self, client: disagreement.Client) -> None:
+        super().__init__(client)
 
-async def main():
-    if not client.token:
-        print("Error: DISCORD_BOT_TOKEN environment variable not set.")
-        return
-    try:
-        async with client:
-            await asyncio.Future()  # run until cancelled
-    except KeyboardInterrupt:
-        print("Bot shutting down...")
-    # Add any other specific exception handling from your library, e.g., disagreement.AuthenticationError
+    @commands.command()
+    async def ping(self, ctx: commands.CommandContext) -> None:
+        await ctx.reply("Pong!")
 
-if __name__ == '__main__':
+
+token = os.getenv("DISCORD_BOT_TOKEN")
+if not token:
+    raise RuntimeError("DISCORD_BOT_TOKEN environment variable not set")
+
+client = disagreement.Client(token=token, command_prefix="!")
+client.add_cog(Basics(client))
+
+
+async def main() -> None:
+    await client.run()
+
+
+if __name__ == "__main__":
     asyncio.run(main())
 ```
 
@@ -85,21 +89,20 @@ setup_logging(logging.DEBUG, file="bot.log")
 ### Defining Subcommands with `AppCommandGroup`
 
 ```python
-from disagreement.ext.app_commands import AppCommandGroup
+from disagreement.ext.app_commands import AppCommandGroup, slash_command
+from disagreement.ext.app_commands.context import AppCommandContext
 
-settings = AppCommandGroup("settings", "Manage settings")
+settings_group = AppCommandGroup("settings", "Manage settings")
+admin_group = AppCommandGroup("admin", "Admin settings", parent=settings_group)
 
-@settings.command(name="show")
-async def show(ctx):
-    """Displays a setting."""
+
+@slash_command(name="show", description="Display a setting.", parent=settings_group)
+async def show(ctx: AppCommandContext, key: str):
     ...
 
-@settings.group("admin", description="Admin settings")
-def admin_group():
-    pass
 
-@admin_group.command(name="set")
-async def set_setting(ctx, key: str, value: str):
+@slash_command(name="set", description="Update a setting.", parent=admin_group)
+async def set_setting(ctx: AppCommandContext, key: str, value: str):
     ...
 ## Fetching Guilds
 
