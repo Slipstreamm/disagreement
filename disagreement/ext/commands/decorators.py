@@ -132,47 +132,7 @@ def _compute_permissions(
     member: "Member", channel: "Channel", guild: "Guild"
 ) -> "Permissions":
     """Compute the effective permissions for a member in a channel."""
-    from disagreement.models import Member, Guild, Channel
-    from disagreement.permissions import Permissions
-
-    if guild.owner_id == member.id:
-        return Permissions(~0)
-
-    roles = {str(r.id): r for r in guild.roles}
-    everyone_role = roles.get(str(guild.id))
-    if not everyone_role:
-        base_permissions = Permissions(0)
-    else:
-        base_permissions = Permissions(int(everyone_role.permissions))
-
-    for role_id in member.roles:
-        role = roles.get(str(role_id))
-        if role:
-            base_permissions |= Permissions(int(role.permissions))
-
-    if base_permissions & Permissions.ADMINISTRATOR:
-        return Permissions(~0)
-
-    overwrites = {
-        ow.id: ow for ow in getattr(channel, "permission_overwrites", [])
-    }
-    allow = Permissions(0)
-    deny = Permissions(0)
-
-    if everyone_overwrite := overwrites.get(str(guild.id)):
-        allow |= Permissions(int(everyone_overwrite.allow))
-        deny |= Permissions(int(everyone_overwrite.deny))
-
-    for role_id in member.roles:
-        if role_overwrite := overwrites.get(str(role_id)):
-            allow |= Permissions(int(role_overwrite.allow))
-            deny |= Permissions(int(role_overwrite.deny))
-
-    if member_overwrite := overwrites.get(str(member.id)):
-        allow |= Permissions(int(member_overwrite.allow))
-        deny |= Permissions(int(member_overwrite.deny))
-
-    return (base_permissions & ~deny) | allow
+    return channel.permissions_for(member)
 
 
 def requires_permissions(

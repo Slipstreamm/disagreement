@@ -57,7 +57,16 @@ async def test_cooldown_per_user(message):
 
 
 @pytest.mark.asyncio
+@pytest.mark.asyncio
 async def test_requires_permissions_pass(message):
+    class Guild:
+        id = "g"
+        owner_id = "owner"
+        roles = []
+
+        def get_member(self, mid):
+            return message.author
+
     class Channel:
         def __init__(self, perms):
             self.perms = perms
@@ -66,7 +75,9 @@ async def test_requires_permissions_pass(message):
         def permissions_for(self, member):
             return self.perms
 
+    message.author.roles = []
     message._client.get_channel = lambda cid: Channel(Permissions.SEND_MESSAGES)
+    message._client.get_guild = lambda gid: Guild()
 
     @requires_permissions(Permissions.SEND_MESSAGES)
     async def cb(ctx):
@@ -83,9 +94,17 @@ async def test_requires_permissions_pass(message):
 
     await cmd.invoke(ctx)
 
-
+@pytest.mark.asyncio
 @pytest.mark.asyncio
 async def test_requires_permissions_fail(message):
+    class Guild:
+        id = "g"
+        owner_id = "owner"
+        roles = []
+
+        def get_member(self, mid):
+            return message.author
+
     class Channel:
         def __init__(self, perms):
             self.perms = perms
@@ -94,7 +113,9 @@ async def test_requires_permissions_fail(message):
         def permissions_for(self, member):
             return self.perms
 
+    message.author.roles = []
     message._client.get_channel = lambda cid: Channel(Permissions.SEND_MESSAGES)
+    message._client.get_guild = lambda gid: Guild()
 
     @requires_permissions(Permissions.MANAGE_MESSAGES)
     async def cb(ctx):
