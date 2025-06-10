@@ -50,6 +50,11 @@ class GatewayIntent(IntEnum):
     AUTO_MODERATION_EXECUTION = 1 << 21
 
     @classmethod
+    def none(cls) -> int:
+        """Return a bitmask representing no intents."""
+        return 0
+
+    @classmethod
     def default(cls) -> int:
         """Returns default intents (excluding privileged ones like members, presences, message content)."""
         return (

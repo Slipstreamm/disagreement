@@ -48,3 +48,31 @@ class Color:
 
     def to_rgb(self) -> tuple[int, int, int]:
         return ((self.value >> 16) & 0xFF, (self.value >> 8) & 0xFF, self.value & 0xFF)
+
+    @classmethod
+    def parse(cls, value: "Color | int | str | tuple[int, int, int] | None") -> "Color | None":
+        """Convert ``value`` to a :class:`Color` instance.
+
+        Parameters
+        ----------
+        value:
+            The value to convert. May be ``None``, an existing ``Color``, an
+            integer in the ``0xRRGGBB`` format, or a hex string like ``"#RRGGBB"``.
+
+        Returns
+        -------
+        Optional[Color]
+            A ``Color`` object if ``value`` is not ``None``.
+        """
+
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        if isinstance(value, int):
+            return cls(value)
+        if isinstance(value, str):
+            return cls.from_hex(value)
+        if isinstance(value, tuple) and len(value) == 3:
+            return cls.from_rgb(*value)
+        raise TypeError("Color value must be Color, int, str, tuple, or None")
