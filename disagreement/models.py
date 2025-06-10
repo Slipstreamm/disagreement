@@ -5,6 +5,7 @@ Data models for Discord objects.
 """
 
 import json
+import asyncio
 from typing import Optional, TYPE_CHECKING, List, Dict, Any, Union
 
 from .errors import DisagreementException, HTTPException
@@ -530,6 +531,34 @@ class Member(User):  # Member inherits from User
             until=until,
             reason=reason,
         )
+
+    @property
+    def top_role(self) -> Optional["Role"]:
+        """Return the member's highest role from the guild cache."""
+
+        if not self.guild_id or not self._client:
+            return None
+
+        guild = self._client.get_guild(self.guild_id)
+        if not guild:
+            return None
+
+        if not guild.roles and hasattr(self._client, "fetch_roles"):
+            try:
+                self._client.loop.run_until_complete(
+                    self._client.fetch_roles(self.guild_id)
+                )
+            except RuntimeError:
+                future = asyncio.run_coroutine_threadsafe(
+                    self._client.fetch_roles(self.guild_id), self._client.loop
+                )
+                future.result()
+
+        role_objects = [r for r in guild.roles if r.id in self.roles]
+        if not role_objects:
+            return None
+
+        return max(role_objects, key=lambda r: r.position)
 
 
 class PartialEmoji:
