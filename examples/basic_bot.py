@@ -121,6 +121,21 @@ class ExampleCog(commands.Cog):  # Ensuring this uses commands.Cog
             f"Executed 'say' command for {ctx.author.username}, saying: {text_to_say}"
         )
 
+    @commands.command(name="whois")
+    async def whois(self, ctx: commands.CommandContext, *, name: str):
+        """Looks up a member by username or nickname using the guild cache."""
+        if not ctx.guild:
+            await ctx.reply("This command can only be used in a guild.")
+            return
+
+        member = ctx.guild.get_member_named(name)
+        if member:
+            await ctx.reply(
+                f"Found: {member.username}#{member.discriminator} (nick: {member.nick})"
+            )
+        else:
+            await ctx.reply("Member not found in cache.")
+
     @commands.command(name="quit")
     async def quit_command(self, ctx: commands.CommandContext):
         """Shuts down the bot (requires YOUR_USER_ID to be set)."""
