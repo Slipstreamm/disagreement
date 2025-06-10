@@ -47,6 +47,7 @@ if TYPE_CHECKING:
         CategoryChannel,
         Thread,
         DMChannel,
+        Webhook,
     )
     from .ui.view import View
     from .enums import ChannelType as EnumChannelType
@@ -135,6 +136,7 @@ class Client:
         self._messages: Dict[Snowflake, "Message"] = {}
         self._views: Dict[Snowflake, "View"] = {}
         self._voice_clients: Dict[Snowflake, VoiceClient] = {}
+        self._webhooks: Dict[Snowflake, "Webhook"] = {}
 
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
@@ -450,11 +452,16 @@ class Client:
         # Map common function names to Discord event types
         # e.g., on_ready -> READY, on_message -> MESSAGE_CREATE
         if event_name.startswith("on_"):
-            discord_event_name = event_name[3:].upper()  # e.g., on_message -> MESSAGE
-            if discord_event_name == "MESSAGE":  # Common case
-                discord_event_name = "MESSAGE_CREATE"
-            # Add other mappings if needed, e.g. on_member_join -> GUILD_MEMBER_ADD
-
+            discord_event_name = event_name[3:].upper()
+            mapping = {
+                "MESSAGE": "MESSAGE_CREATE",
+                "MESSAGE_EDIT": "MESSAGE_UPDATE",
+                "MESSAGE_UPDATE": "MESSAGE_UPDATE",
+                "MESSAGE_DELETE": "MESSAGE_DELETE",
+                "REACTION_ADD": "MESSAGE_REACTION_ADD",
+                "REACTION_REMOVE": "MESSAGE_REACTION_REMOVE",
+            }
+            discord_event_name = mapping.get(discord_event_name, discord_event_name)
             self._event_dispatcher.register(discord_event_name, coro)
         else:
             # If not starting with "on_", assume it's the direct Discord event name (e.g. "TYPING_START")
@@ -650,6 +657,19 @@ class Client:
         self._messages[message.id] = message
         return message
 
+    def parse_webhook(self, data: Union[Dict[str, Any], "Webhook"]) -> "Webhook":
+        """Parses webhook data and returns a Webhook object, updating cache."""
+
+        from .models import Webhook
+
+        if isinstance(data, Webhook):
+            webhook = data
+            webhook._client = self  # type: ignore[attr-defined]
+        else:
+            webhook = Webhook(data, client_instance=self)
+        self._webhooks[webhook.id] = webhook
+        return webhook
+
     async def fetch_user(self, user_id: Snowflake) -> Optional["User"]:
         """Fetches a user by ID from Discord."""
         if self._closed:
@@ -832,6 +852,7 @@ class Client:
         components: Optional[List["ActionRow"]] = None,
         allowed_mentions: Optional[Dict[str, Any]] = None,
         message_reference: Optional[Dict[str, Any]] = None,
+        attachments: Optional[List[Any]] = None,
         flags: Optional[int] = None,
         view: Optional["View"] = None,
     ) -> "Message":
@@ -848,6 +869,7 @@ class Client:
             components (Optional[List[ActionRow]]): A list of ActionRow components to include.
             allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
+            attachments (Optional[List[Any]]): Attachments to include with the message.
             flags (Optional[int]): Message flags.
             view (Optional[View]): A view to send with the message.
 
@@ -899,6 +921,7 @@ class Client:
             components=components_payload,
             allowed_mentions=allowed_mentions,
             message_reference=message_reference,
+            attachments=attachments,
             flags=flags,
         )
 
@@ -987,6 +1010,16 @@ class Client:
 
         await self._http.create_reaction(channel_id, message_id, emoji)
 
+        user_id = getattr(getattr(self, "user", None), "id", None)
+        payload = {
+            "user_id": user_id,
+            "channel_id": channel_id,
+            "message_id": message_id,
+            "emoji": {"name": emoji, "id": None},
+        }
+        if hasattr(self, "_event_dispatcher"):
+            await self._event_dispatcher.dispatch("MESSAGE_REACTION_ADD", payload)
+
     async def delete_reaction(
         self, channel_id: str, message_id: str, emoji: str
     ) -> None:
@@ -996,6 +1029,16 @@ class Client:
             raise DisagreementException("Client is closed.")
 
         await self._http.delete_reaction(channel_id, message_id, emoji)
+
+        user_id = getattr(getattr(self, "user", None), "id", None)
+        payload = {
+            "user_id": user_id,
+            "channel_id": channel_id,
+            "message_id": message_id,
+            "emoji": {"name": emoji, "id": None},
+        }
+        if hasattr(self, "_event_dispatcher"):
+            await self._event_dispatcher.dispatch("MESSAGE_REACTION_REMOVE", payload)
 
     async def get_reactions(
         self, channel_id: str, message_id: str, emoji: str
@@ -1124,6 +1167,36 @@ class Client:
         except DisagreementException as e:  # Includes HTTPException
             print(f"Failed to fetch channel {channel_id}: {e}")
             return None
+
+    async def create_webhook(
+        self, channel_id: Snowflake, payload: Dict[str, Any]
+    ) -> "Webhook":
+        """|coro| Create a webhook in the given channel."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.create_webhook(channel_id, payload)
+        return self.parse_webhook(data)
+
+    async def edit_webhook(
+        self, webhook_id: Snowflake, payload: Dict[str, Any]
+    ) -> "Webhook":
+        """|coro| Edit an existing webhook."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.edit_webhook(webhook_id, payload)
+        return self.parse_webhook(data)
+
+    async def delete_webhook(self, webhook_id: Snowflake) -> None:
+        """|coro| Delete a webhook by ID."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        await self._http.delete_webhook(webhook_id)
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:

@@ -72,6 +72,7 @@ class Message:
         timestamp (str): When this message was sent (ISO8601 timestamp).
         components (Optional[List[ActionRow]]): Structured components attached
             to the message if present.
+        attachments (List[Attachment]): Attachments included with the message.
     """
 
     def __init__(self, data: dict, client_instance: "Client"):
@@ -92,6 +93,9 @@ class Message:
             ]
         else:
             self.components = None
+        self.attachments: List[Attachment] = [
+            Attachment(a) for a in data.get("attachments", [])
+        ]
         # Add other fields as needed, e.g., attachments, embeds, reactions, etc.
         # self.mentions: List[User] = [User(u) for u in data.get("mentions", [])]
         # self.mention_roles: List[str] = data.get("mention_roles", [])
@@ -1090,6 +1094,28 @@ class PartialChannel:
         return f"<PartialChannel id='{self.id}' name='{self.name}' type='{type_name}'>"
 
 
+class Webhook:
+    """Represents a Discord Webhook."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client: Optional["Client"] = client_instance
+        self.id: str = data["id"]
+        self.type: int = int(data.get("type", 1))
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.channel_id: Optional[str] = data.get("channel_id")
+        self.name: Optional[str] = data.get("name")
+        self.avatar: Optional[str] = data.get("avatar")
+        self.token: Optional[str] = data.get("token")
+        self.application_id: Optional[str] = data.get("application_id")
+        self.url: Optional[str] = data.get("url")
+        self.user: Optional[User] = User(data["user"]) if data.get("user") else None
+
+    def __repr__(self) -> str:
+        return f"<Webhook id='{self.id}' name='{self.name}'>"
+
+
 # --- Message Components ---
 
 
@@ -1612,6 +1638,27 @@ class TypingStart:
 
     def __repr__(self) -> str:
         return f"<TypingStart channel_id='{self.channel_id}' user_id='{self.user_id}'>"
+
+
+class Reaction:
+    """Represents a message reaction event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.user_id: str = data["user_id"]
+        self.channel_id: str = data["channel_id"]
+        self.message_id: str = data["message_id"]
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.member: Optional[Member] = (
+            Member(data["member"], client_instance) if data.get("member") else None
+        )
+        self.emoji: Dict[str, Any] = data.get("emoji", {})
+
+    def __repr__(self) -> str:
+        emoji_value = self.emoji.get("name") or self.emoji.get("id")
+        return f"<Reaction message_id='{self.message_id}' user_id='{self.user_id}' emoji='{emoji_value}'>"
 
 
 def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:

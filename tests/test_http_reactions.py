@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 from disagreement.client import Client
 from disagreement.errors import DisagreementException
-from disagreement.models import User
+from disagreement.models import User, Reaction
 
 
 @pytest.mark.asyncio
@@ -55,3 +55,37 @@ async def test_get_reactions_parses_users():
 
     http.get_reactions.assert_called_once_with("1", "2", "😀")
     assert isinstance(users[0], User)
+
+
+@pytest.mark.asyncio
+async def test_create_reaction_dispatches_event(monkeypatch):
+    http = SimpleNamespace(create_reaction=AsyncMock())
+    client = Client(token="t")
+    client._http = http
+    events = {}
+
+    async def on_add(reaction):
+        events["add"] = reaction
+
+    client._event_dispatcher.register("MESSAGE_REACTION_ADD", on_add)
+
+    await client.create_reaction("1", "2", "😀")
+
+    assert isinstance(events.get("add"), Reaction)
+
+
+@pytest.mark.asyncio
+async def test_delete_reaction_dispatches_event(monkeypatch):
+    http = SimpleNamespace(delete_reaction=AsyncMock())
+    client = Client(token="t")
+    client._http = http
+    events = {}
+
+    async def on_remove(reaction):
+        events["remove"] = reaction
+
+    client._event_dispatcher.register("MESSAGE_REACTION_REMOVE", on_remove)
+
+    await client.delete_reaction("1", "2", "😀")
+
+    assert isinstance(events.get("remove"), Reaction)
