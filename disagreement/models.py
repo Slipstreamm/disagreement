@@ -21,6 +21,7 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     ButtonStyle,  # Added for Button
     # SelectMenuType will be part of ComponentType or a new enum if needed
 )
+from .permissions import Permissions
 
 
 if TYPE_CHECKING:
@@ -896,6 +897,75 @@ class Channel:
 
     def __repr__(self) -> str:
         return f"<Channel id='{self.id}' name='{self.name}' type='{self.type.name if hasattr(self.type, 'name') else self._type_val}'>"
+
+    def permission_overwrite_for(
+        self, target: Union["Role", "Member", str]
+    ) -> Optional["PermissionOverwrite"]:
+        """Return the :class:`PermissionOverwrite` for ``target`` if present."""
+
+        target_id = target.id if hasattr(target, "id") else str(target)
+        for overwrite in self.permission_overwrites:
+            if overwrite.id == target_id:
+                return overwrite
+        return None
+
+    @staticmethod
+    def _apply_overwrite(
+        perms: Permissions, overwrite: Optional["PermissionOverwrite"]
+    ) -> Permissions:
+        if overwrite is None:
+            return perms
+
+        perms &= ~Permissions(int(overwrite.deny))
+        perms |= Permissions(int(overwrite.allow))
+        return perms
+
+    def permissions_for(self, member: "Member") -> Permissions:
+        """Resolve channel permissions for ``member``."""
+
+        if self.guild_id is None:
+            return Permissions(~0)
+
+        if not hasattr(self._client, "get_guild"):
+            return Permissions(0)
+
+        guild = self._client.get_guild(self.guild_id)
+        if guild is None:
+            return Permissions(0)
+
+        base = Permissions(0)
+
+        everyone = guild.get_role(guild.id)
+        if everyone is not None:
+            base |= Permissions(int(everyone.permissions))
+
+        for rid in member.roles:
+            role = guild.get_role(rid)
+            if role is not None:
+                base |= Permissions(int(role.permissions))
+
+        if base & Permissions.ADMINISTRATOR:
+            return Permissions(~0)
+
+        # Apply @everyone overwrite
+        base = self._apply_overwrite(base, self.permission_overwrite_for(guild.id))
+
+        # Role overwrites
+        role_allow = Permissions(0)
+        role_deny = Permissions(0)
+        for rid in member.roles:
+            ow = self.permission_overwrite_for(rid)
+            if ow is not None:
+                role_allow |= Permissions(int(ow.allow))
+                role_deny |= Permissions(int(ow.deny))
+
+        base &= ~role_deny
+        base |= role_allow
+
+        # Member overwrite
+        base = self._apply_overwrite(base, self.permission_overwrite_for(member.id))
+
+        return base
 
 
 class TextChannel(Channel):
