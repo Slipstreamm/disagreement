@@ -402,7 +402,7 @@ class Interaction:
         await self._client._http.create_interaction_response(
             interaction_id=self.id,
             interaction_token=self.token,
-            payload=payload.to_dict(),
+            payload=payload.to_dict(),  # type: ignore[arg-type]
         )
 
     async def edit(
@@ -570,3 +570,6 @@ class InteractionResponsePayload:
 
     def __repr__(self) -> str:
         return f"<InteractionResponsePayload type={self.type!r}>"
+
+    def __getitem__(self, item: str) -> Any:
+        return self.to_dict()[item]
