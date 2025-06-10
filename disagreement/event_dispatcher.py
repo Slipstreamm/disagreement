@@ -54,7 +54,13 @@ class EventDispatcher:
             "INTERACTION_CREATE": self._parse_interaction_create,
             "GUILD_CREATE": self._parse_guild_create,
             "CHANNEL_CREATE": self._parse_channel_create,
+            "CHANNEL_UPDATE": self._parse_channel_update,
             "PRESENCE_UPDATE": self._parse_presence_update,
+            "GUILD_MEMBER_ADD": self._parse_guild_member_add,
+            "GUILD_MEMBER_REMOVE": self._parse_guild_member_remove,
+            "GUILD_BAN_ADD": self._parse_guild_ban_add,
+            "GUILD_BAN_REMOVE": self._parse_guild_ban_remove,
+            "GUILD_ROLE_UPDATE": self._parse_guild_role_update,
             "TYPING_START": self._parse_typing_start,
         }
 
@@ -109,6 +115,45 @@ class EventDispatcher:
         from .models import Reaction
 
         return Reaction(data, client_instance=self._client)
+
+    def _parse_guild_member_add(self, data: Dict[str, Any]):
+        """Parses GUILD_MEMBER_ADD into a Member object."""
+
+        guild_id = str(data.get("guild_id"))
+        return self._client.parse_member(data, guild_id)
+
+    def _parse_guild_member_remove(self, data: Dict[str, Any]):
+        """Parses GUILD_MEMBER_REMOVE into a GuildMemberRemove model."""
+
+        from .models import GuildMemberRemove
+
+        return GuildMemberRemove(data, client_instance=self._client)
+
+    def _parse_guild_ban_add(self, data: Dict[str, Any]):
+        """Parses GUILD_BAN_ADD into a GuildBanAdd model."""
+
+        from .models import GuildBanAdd
+
+        return GuildBanAdd(data, client_instance=self._client)
+
+    def _parse_guild_ban_remove(self, data: Dict[str, Any]):
+        """Parses GUILD_BAN_REMOVE into a GuildBanRemove model."""
+
+        from .models import GuildBanRemove
+
+        return GuildBanRemove(data, client_instance=self._client)
+
+    def _parse_channel_update(self, data: Dict[str, Any]):
+        """Parses CHANNEL_UPDATE into a Channel object."""
+
+        return self._client.parse_channel(data)
+
+    def _parse_guild_role_update(self, data: Dict[str, Any]):
+        """Parses GUILD_ROLE_UPDATE into a GuildRoleUpdate model."""
+
+        from .models import GuildRoleUpdate
+
+        return GuildRoleUpdate(data, client_instance=self._client)
 
     # Potentially add _parse_user for events that directly provide a full user object
     # def _parse_user_update(self, data: Dict[str, Any]) -> User:

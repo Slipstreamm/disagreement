@@ -23,3 +23,68 @@ Dispatched when a user begins typing in a channel. The callback receives a `Typi
 async def on_typing_start(typing: disagreement.TypingStart):
     ...
 ```
+
+## GUILD_MEMBER_ADD
+
+Fired when a new member joins a guild. The callback receives a `Member` model.
+
+```python
+@client.event
+async def on_guild_member_add(member: disagreement.Member):
+    ...
+```
+
+## GUILD_MEMBER_REMOVE
+
+Triggered when a member leaves or is removed from a guild. The callback
+receives a `GuildMemberRemove` model.
+
+```python
+@client.event
+async def on_guild_member_remove(event: disagreement.GuildMemberRemove):
+    ...
+```
+
+## GUILD_BAN_ADD
+
+Dispatched when a user is banned from a guild. The callback receives a
+`GuildBanAdd` model.
+
+```python
+@client.event
+async def on_guild_ban_add(event: disagreement.GuildBanAdd):
+    ...
+```
+
+## GUILD_BAN_REMOVE
+
+Dispatched when a user's ban is lifted. The callback receives a
+`GuildBanRemove` model.
+
+```python
+@client.event
+async def on_guild_ban_remove(event: disagreement.GuildBanRemove):
+    ...
+```
+
+## CHANNEL_UPDATE
+
+Sent when a channel's settings change. The callback receives an updated
+`Channel` model.
+
+```python
+@client.event
+async def on_channel_update(channel: disagreement.Channel):
+    ...
+```
+
+## GUILD_ROLE_UPDATE
+
+Emitted when a guild role is updated. The callback receives a
+`GuildRoleUpdate` model.
+
+```python
+@client.event
+async def on_guild_role_update(event: disagreement.GuildRoleUpdate):
+    ...
+```
