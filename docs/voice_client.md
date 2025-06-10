@@ -26,4 +26,10 @@ After connecting you can send raw Opus frames:
 await vc.send_audio_frame(opus_bytes)
 ```
 
+Or stream a file using FFmpeg:
+
+```python
+await vc.play_file("welcome.mp3")
+```
+
 Call `await vc.close()` when finished.

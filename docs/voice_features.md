@@ -4,7 +4,8 @@ Disagreement includes experimental support for connecting to voice channels. You
 
 ```python
 voice = await client.join_voice(guild_id, channel_id)
-voice.play_file("welcome.mp3")
+await voice.play_file("welcome.mp3")
+await voice.close()
 ```
 
 Voice support is optional and may require additional system dependencies such as FFmpeg.
