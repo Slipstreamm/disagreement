@@ -152,7 +152,7 @@ from disagreement.models import Container, TextDisplay
 
 container = Container(
     components=[TextDisplay(content="Inside a container")],
-    accent_color=0xFF0000,
+    accent_color="#FF0000",  # int or Color() also work
     spoiler=False,
 )
 ```
