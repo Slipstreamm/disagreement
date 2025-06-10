@@ -7,6 +7,7 @@ Data models for Discord objects.
 import json
 import asyncio
 import aiohttp  # pylint: disable=import-error
+import asyncio
 from typing import Optional, TYPE_CHECKING, List, Dict, Any, Union
 
 from .errors import DisagreementException, HTTPException
@@ -198,6 +199,22 @@ class Message:
             flags=flags,
             view=view,
         )
+
+    async def delete(self, delay: Optional[float] = None) -> None:
+        """|coro|
+
+        Deletes this message.
+
+        Parameters
+        ----------
+        delay:
+            If provided, wait this many seconds before deleting.
+        """
+
+        if delay is not None:
+            await asyncio.sleep(delay)
+
+        await self._client._http.delete_message(self.channel_id, self.id)
 
     def __repr__(self) -> str:
         return f"<Message id='{self.id}' channel_id='{self.channel_id}' author='{self.author!r}'>"
