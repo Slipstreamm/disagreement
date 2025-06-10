@@ -8,6 +8,7 @@ from disagreement.event_dispatcher import EventDispatcher
 class DummyClient:
     def __init__(self):
         self.parsed = {}
+        self._messages = {"1": "cached"}
 
     def parse_message(self, data):
         self.parsed["message"] = True
@@ -66,3 +67,27 @@ async def test_unregister_listener():
     dispatcher.unregister("MESSAGE_CREATE", listener)
     await dispatcher.dispatch("MESSAGE_CREATE", {"id": 1})
     assert not called
+
+
+@pytest.mark.asyncio
+async def test_raw_event_dispatched_before_parsing():
+    client = DummyClient()
+    dispatcher = EventDispatcher(client)
+
+    events = {}
+
+    async def raw_listener(payload):
+        events["raw"] = payload
+        events["cache_before"] = client._messages.get("1")
+
+    async def delete_listener(_):
+        events["cache_after"] = client._messages.get("1")
+
+    dispatcher.register("RAW_MESSAGE_DELETE", raw_listener)
+    dispatcher.register("MESSAGE_DELETE", delete_listener)
+
+    await dispatcher.dispatch("MESSAGE_DELETE", {"id": "1"})
+
+    assert events["raw"]["id"] == "1"
+    assert events["cache_before"] == "cached"
+    assert events["cache_after"] is None
