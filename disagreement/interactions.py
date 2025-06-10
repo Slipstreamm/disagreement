@@ -402,7 +402,7 @@ class Interaction:
         await self._client._http.create_interaction_response(
             interaction_id=self.id,
             interaction_token=self.token,
-            payload=payload,
+            payload=payload.to_dict(),  # type: ignore[arg-type]
         )
 
     async def edit(
@@ -503,9 +503,7 @@ class InteractionCallbackData:
         self.tts: Optional[bool] = data.get("tts")
         self.content: Optional[str] = data.get("content")
         self.embeds: Optional[List[Embed]] = (
-            [Embed(e) for e in data.get("embeds", [])]
-            if data.get("embeds")
-            else None
+            [Embed(e) for e in data.get("embeds", [])] if data.get("embeds") else None
         )
         self.allowed_mentions: Optional[AllowedMentions] = (
             AllowedMentions(data["allowed_mentions"])
@@ -572,3 +570,6 @@ class InteractionResponsePayload:
 
     def __repr__(self) -> str:
         return f"<InteractionResponsePayload type={self.type!r}>"
+
+    def __getitem__(self, item: str) -> Any:
+        return self.to_dict()[item]

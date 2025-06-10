@@ -16,3 +16,9 @@ bot = Client(
 ```
 
 These values are passed to `GatewayClient` and applied whenever the connection needs to be re-established.
+
+## Gateway Intents
+
+`GatewayIntent` values control which events your bot receives from the Gateway. Use
+`GatewayIntent.none()` to opt out of all events entirely. It returns `0`, which
+represents a bitmask with no intents enabled.
