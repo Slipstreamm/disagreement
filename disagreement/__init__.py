@@ -14,7 +14,7 @@ __title__ = "disagreement"
 __author__ = "Slipstream"
 __license__ = "BSD 3-Clause License"
 __copyright__ = "Copyright 2025 Slipstream"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 from .client import Client
 from .models import Message, User
