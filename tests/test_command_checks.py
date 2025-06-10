@@ -61,6 +61,7 @@ async def test_requires_permissions_pass(message):
     class Channel:
         def __init__(self, perms):
             self.perms = perms
+            self.guild_id = "g"
 
         def permissions_for(self, member):
             return self.perms
@@ -88,6 +89,7 @@ async def test_requires_permissions_fail(message):
     class Channel:
         def __init__(self, perms):
             self.perms = perms
+            self.guild_id = "g"
 
         def permissions_for(self, member):
             return self.perms

@@ -985,7 +985,7 @@ class Channel:
         """Return the :class:`PermissionOverwrite` for ``target`` if present."""
 
         if isinstance(target, str):
-            target_id = int(target)
+            target_id = target
         else:
             target_id = target.id
         for overwrite in self.permission_overwrites:
