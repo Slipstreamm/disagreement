@@ -1,4 +1,5 @@
 # disagreement/ext/commands/decorators.py
+from __future__ import annotations
 
 import asyncio
 import inspect
@@ -7,6 +8,7 @@ from typing import Callable, Any, Optional, List, TYPE_CHECKING, Awaitable
 
 if TYPE_CHECKING:
     from .core import Command, CommandContext  # For type hinting return or internal use
+    from disagreement.permissions import Permissions
 
     # from .cog import Cog # For Cog specific decorators
 
@@ -145,6 +147,40 @@ def cooldown(
         if now < reset:
             raise CommandOnCooldown(reset - now)
         user_buckets[ctx.author.id] = now + per
+        return True
+
+    return check(predicate)
+
+
+def requires_permissions(
+    *perms: "Permissions",
+) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:
+    """Check that the invoking member has the given permissions in the channel."""
+
+    async def predicate(ctx: "CommandContext") -> bool:
+        from .errors import CheckFailure
+        from disagreement.permissions import (
+            has_permissions,
+            missing_permissions,
+            Permissions,
+        )
+
+        channel = None
+        if hasattr(ctx.bot, "get_channel"):
+            channel = ctx.bot.get_channel(ctx.message.channel_id)
+        if channel is None and hasattr(ctx.bot, "fetch_channel"):
+            channel = await ctx.bot.fetch_channel(ctx.message.channel_id)
+        if channel is None or not hasattr(channel, "permissions_for"):
+            raise CheckFailure("Channel for permission check not found")
+
+        perms_value = channel.permissions_for(ctx.author)
+        if inspect.isawaitable(perms_value):
+            perms_value = await perms_value
+
+        if not has_permissions(perms_value, *perms):
+            missing = missing_permissions(perms_value, *perms)
+            missing_names = ", ".join(p.name for p in missing if p.name)
+            raise CheckFailure(f"Missing permissions: {missing_names}")
         return True
 
     return check(predicate)
