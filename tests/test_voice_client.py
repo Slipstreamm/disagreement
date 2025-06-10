@@ -2,6 +2,7 @@ import asyncio
 import pytest
 
 from disagreement.voice_client import VoiceClient
+from disagreement.audio import AudioSource
 
 
 class DummyWebSocket:
@@ -39,6 +40,16 @@ class DummyUDP:
         pass
 
 
+class DummySource(AudioSource):
+    def __init__(self, chunks):
+        self.chunks = list(chunks)
+
+    async def read(self) -> bytes:
+        if self.chunks:
+            return self.chunks.pop(0)
+        return b""
+
+
 @pytest.mark.asyncio
 async def test_voice_client_handshake():
     hello = {"d": {"heartbeat_interval": 50}}
@@ -73,3 +84,23 @@ async def test_send_audio_frame():
 
     await vc.send_audio_frame(b"abc")
     assert udp.sent[-1] == b"abc"
+
+
+@pytest.mark.asyncio
+async def test_play_and_switch_sources():
+    ws = DummyWebSocket(
+        [
+            {"d": {"heartbeat_interval": 50}},
+            {"d": {"ssrc": 1, "ip": "127.0.0.1", "port": 4000}},
+            {"d": {"secret_key": []}},
+        ]
+    )
+    udp = DummyUDP()
+    vc = VoiceClient("ws://localhost", "sess", "tok", 1, 2, ws=ws, udp=udp)
+    await vc.connect()
+    vc._heartbeat_task.cancel()
+
+    await vc.play(DummySource([b"a", b"b"]))
+    await vc.play(DummySource([b"c"]))
+
+    assert udp.sent == [b"a", b"b", b"c"]

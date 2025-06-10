@@ -19,6 +19,7 @@ __version__ = "0.0.2"
 from .client import Client
 from .models import Message, User, Reaction
 from .voice_client import VoiceClient
+from .audio import AudioSource, FFmpegAudioSource
 from .typing import Typing
 from .errors import (
     DisagreementException,
