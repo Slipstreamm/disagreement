@@ -528,6 +528,12 @@ class Member(User):  # Member inherits from User
     def __repr__(self) -> str:
         return f"<Member id='{self.id}' username='{self.username}' nick='{self.nick}'>"
 
+    @property
+    def display_name(self) -> str:
+        """Return the nickname if set, otherwise the username."""
+
+        return self.nick or self.username
+
     async def kick(self, *, reason: Optional[str] = None) -> None:
         if not self.guild_id or not self._client:
             raise DisagreementException("Member.kick requires guild_id and client")
