@@ -56,8 +56,6 @@ class EventDispatcher:
             "CHANNEL_CREATE": self._parse_channel_create,
             "PRESENCE_UPDATE": self._parse_presence_update,
             "TYPING_START": self._parse_typing_start,
-            "MESSAGE_REACTION_ADD": self._parse_message_reaction,
-            "MESSAGE_REACTION_REMOVE": self._parse_message_reaction,
         }
 
     def _parse_message_create(self, data: Dict[str, Any]) -> Message:
@@ -73,10 +71,6 @@ class EventDispatcher:
         message_id = data.get("id")
         if message_id:
             self._client._messages.pop(message_id, None)
-        return data
-
-    def _parse_message_reaction(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Returns the raw reaction payload."""
         return data
 
     def _parse_interaction_create(self, data: Dict[str, Any]) -> "Interaction":
