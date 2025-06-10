@@ -1661,6 +1661,64 @@ class Reaction:
         return f"<Reaction message_id='{self.message_id}' user_id='{self.user_id}' emoji='{emoji_value}'>"
 
 
+class GuildMemberRemove:
+    """Represents a GUILD_MEMBER_REMOVE event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.user: User = User(data["user"])
+
+    def __repr__(self) -> str:
+        return (
+            f"<GuildMemberRemove guild_id='{self.guild_id}' user_id='{self.user.id}'>"
+        )
+
+
+class GuildBanAdd:
+    """Represents a GUILD_BAN_ADD event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.user: User = User(data["user"])
+
+    def __repr__(self) -> str:
+        return f"<GuildBanAdd guild_id='{self.guild_id}' user_id='{self.user.id}'>"
+
+
+class GuildBanRemove:
+    """Represents a GUILD_BAN_REMOVE event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.user: User = User(data["user"])
+
+    def __repr__(self) -> str:
+        return f"<GuildBanRemove guild_id='{self.guild_id}' user_id='{self.user.id}'>"
+
+
+class GuildRoleUpdate:
+    """Represents a GUILD_ROLE_UPDATE event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: str = data["guild_id"]
+        self.role: Role = Role(data["role"])
+
+    def __repr__(self) -> str:
+        return f"<GuildRoleUpdate guild_id='{self.guild_id}' role_id='{self.role.id}'>"
+
+
 def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:
     """Create a channel object from raw API data."""
     channel_type = data.get("type")
