@@ -920,12 +920,12 @@ class Client:
             await view._start(self)
             components_payload = view.to_components_payload()
         elif components:
-            from .models import ActionRow as ActionRowModel
+            from .models import Component as ComponentModel
 
             components_payload = [
                 comp.to_dict()
                 for comp in components
-                if isinstance(comp, ActionRowModel)
+                if isinstance(comp, ComponentModel)
             ]
 
         message_data = await self._http.send_message(

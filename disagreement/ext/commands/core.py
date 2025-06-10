@@ -128,7 +128,7 @@ class CommandContext:
 
     async def reply(
         self,
-        content: str,
+        content: Optional[str] = None,
         *,
         mention_author: Optional[bool] = None,
         **kwargs: Any,
@@ -240,6 +240,7 @@ class CommandHandler:
         return self.commands.get(name.lower())
 
     def add_cog(self, cog_to_add: "Cog") -> None:
+        from .cog import Cog
         if not isinstance(cog_to_add, Cog):
             raise TypeError("Argument must be a subclass of Cog.")
 
