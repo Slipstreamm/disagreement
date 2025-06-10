@@ -402,7 +402,7 @@ class Interaction:
         await self._client._http.create_interaction_response(
             interaction_id=self.id,
             interaction_token=self.token,
-            payload=payload,
+            payload=payload.to_dict(),  # type: ignore[arg-type]
         )
 
     async def edit(
