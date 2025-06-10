@@ -21,7 +21,7 @@ from .http import HTTPClient
 from .gateway import GatewayClient
 from .shard_manager import ShardManager
 from .event_dispatcher import EventDispatcher
-from .enums import GatewayIntent, InteractionType
+from .enums import GatewayIntent, InteractionType, GatewayOpcode
 from .errors import DisagreementException, AuthenticationError
 from .typing import Typing
 from .ext.commands.core import CommandHandler
@@ -30,6 +30,7 @@ from .ext.app_commands.handler import AppCommandHandler
 from .ext.app_commands.context import AppCommandContext
 from .interactions import Interaction, Snowflake
 from .error_handler import setup_global_error_handler
+from .voice_client import VoiceClient
 
 if TYPE_CHECKING:
     from .models import (
@@ -134,6 +135,7 @@ class Client:
         )  # Placeholder for User model cache if needed
         self._messages: Dict[Snowflake, "Message"] = {}
         self._views: Dict[Snowflake, "View"] = {}
+        self._voice_clients: Dict[Snowflake, VoiceClient] = {}
         self._webhooks: Dict[Snowflake, "Webhook"] = {}
 
         # Default whether replies mention the user
@@ -934,6 +936,69 @@ class Client:
         """Return a context manager to show a typing indicator in a channel."""
 
         return Typing(self, channel_id)
+
+    async def join_voice(
+        self,
+        guild_id: Snowflake,
+        channel_id: Snowflake,
+        *,
+        self_mute: bool = False,
+        self_deaf: bool = False,
+    ) -> VoiceClient:
+        """|coro| Join a voice channel and return a :class:`VoiceClient`."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+        if not self.is_ready():
+            await self.wait_until_ready()
+        if self._gateway is None:
+            raise DisagreementException("Gateway is not connected.")
+        if not self.user:
+            raise DisagreementException("Client user unavailable.")
+        assert self.user is not None
+        user_id = self.user.id
+
+        if guild_id in self._voice_clients:
+            return self._voice_clients[guild_id]
+
+        payload = {
+            "op": GatewayOpcode.VOICE_STATE_UPDATE,
+            "d": {
+                "guild_id": str(guild_id),
+                "channel_id": str(channel_id),
+                "self_mute": self_mute,
+                "self_deaf": self_deaf,
+            },
+        }
+        await self._gateway._send_json(payload)  # type: ignore[attr-defined]
+
+        server = await self.wait_for(
+            "VOICE_SERVER_UPDATE",
+            check=lambda d: d.get("guild_id") == str(guild_id),
+            timeout=10,
+        )
+        state = await self.wait_for(
+            "VOICE_STATE_UPDATE",
+            check=lambda d, uid=user_id: d.get("guild_id") == str(guild_id)
+            and d.get("user_id") == str(uid),
+            timeout=10,
+        )
+
+        endpoint = f"wss://{server['endpoint']}?v=10"
+        token = server["token"]
+        session_id = state["session_id"]
+
+        voice = VoiceClient(
+            endpoint,
+            session_id,
+            token,
+            int(guild_id),
+            int(self.user.id),
+            verbose=self.verbose,
+        )
+        await voice.connect()
+        self._voice_clients[guild_id] = voice
+        return voice
 
     async def create_reaction(
         self, channel_id: str, message_id: str, emoji: str

@@ -107,6 +107,33 @@ class VoiceClient:
             raise RuntimeError("UDP socket not initialised")
         self._udp.send(frame)
 
+    async def play_file(self, filename: str) -> None:
+        """|coro| Stream an audio file to the voice connection using FFmpeg."""
+
+        process = await asyncio.create_subprocess_exec(
+            "ffmpeg",
+            "-i",
+            filename,
+            "-f",
+            "s16le",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
+            "pipe:1",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        assert process.stdout is not None
+        try:
+            while True:
+                data = await process.stdout.read(3840)
+                if not data:
+                    break
+                await self.send_audio_frame(data)
+        finally:
+            await process.wait()
+
     async def close(self) -> None:
         if self._heartbeat_task:
             self._heartbeat_task.cancel()
