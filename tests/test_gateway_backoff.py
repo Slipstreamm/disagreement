@@ -24,7 +24,8 @@ class DummyDispatcher:
 class DummyClient:
     def __init__(self):
         self.loop = asyncio.get_event_loop()
-        self.application_id = None # Mock application_id for Client.connect
+        self.application_id = None  # Mock application_id for Client.connect
+
 
 @pytest.mark.asyncio
 async def test_client_connect_backoff(monkeypatch):

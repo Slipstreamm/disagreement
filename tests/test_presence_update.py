@@ -7,6 +7,7 @@ from disagreement.errors import DisagreementException
 
 from unittest.mock import MagicMock
 
+
 class DummyGateway(MagicMock):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

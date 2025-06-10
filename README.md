@@ -129,3 +129,7 @@ Contributions are welcome! Please open an issue or submit a pull request.
 
 See the [docs](docs/) directory for detailed guides on components, slash commands, caching, and voice features.
 
+## License
+
+This project is licensed under the BSD 3-Clause license. See the [LICENSE](LICENSE) file for details.
+

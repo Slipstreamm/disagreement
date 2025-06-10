@@ -55,13 +55,9 @@ intents = GatewayIntent.default() | GatewayIntent.MESSAGE_CONTENT
 
 # Create a new client
 client = Client(
-    
     token=token,
-   
     intents=intents,
-   
     command_prefix="!",
-   
     mention_replies=True,
 )
 
