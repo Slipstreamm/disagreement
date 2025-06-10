@@ -10,7 +10,7 @@ Once you have a `Guild` object you can look up its cached members. `Guild.get_me
 guild = client.get_guild(123456789012345678)
 member = guild.get_member_named("Slipstream")
 if member:
-    print(member.id)
+    print(member.display_name)
 ```
 
 The cache can be cleared manually if needed:
