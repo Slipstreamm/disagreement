@@ -26,10 +26,19 @@ After connecting you can send raw Opus frames:
 await vc.send_audio_frame(opus_bytes)
 ```
 
-Or stream a file using FFmpeg:
+Or stream audio using an :class:`AudioSource`:
 
 ```python
-await vc.play_file("welcome.mp3")
+from disagreement import FFmpegAudioSource
+
+source = FFmpegAudioSource("welcome.mp3")
+await vc.play(source)
+```
+
+You can switch sources while connected:
+
+```python
+await vc.play(FFmpegAudioSource("other.mp3"))
 ```
 
 Call `await vc.close()` when finished.
