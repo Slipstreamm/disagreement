@@ -6,6 +6,7 @@ Data models for Discord objects.
 
 import json
 import asyncio
+import aiohttp  # pylint: disable=import-error
 from typing import Optional, TYPE_CHECKING, List, Dict, Any, Union
 
 from .errors import DisagreementException, HTTPException
@@ -1224,6 +1225,33 @@ class Webhook:
 
     def __repr__(self) -> str:
         return f"<Webhook id='{self.id}' name='{self.name}'>"
+
+    @classmethod
+    def from_url(
+        cls, url: str, session: Optional[aiohttp.ClientSession] = None
+    ) -> "Webhook":
+        """Create a minimal :class:`Webhook` from a webhook URL.
+
+        Parameters
+        ----------
+        url:
+            The full Discord webhook URL.
+        session:
+            Unused for now. Present for API compatibility.
+
+        Returns
+        -------
+        Webhook
+            A webhook instance containing only the ``id``, ``token`` and ``url``.
+        """
+
+        parts = url.rstrip("/").split("/")
+        if len(parts) < 2:
+            raise ValueError("Invalid webhook URL")
+        token = parts[-1]
+        webhook_id = parts[-2]
+
+        return cls({"id": webhook_id, "token": token, "url": url})
 
 
 # --- Message Components ---
