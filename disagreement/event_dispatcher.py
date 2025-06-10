@@ -52,6 +52,8 @@ class EventDispatcher:
             "CHANNEL_CREATE": self._parse_channel_create,
             "PRESENCE_UPDATE": self._parse_presence_update,
             "TYPING_START": self._parse_typing_start,
+            "MESSAGE_REACTION_ADD": self._parse_message_reaction,
+            "MESSAGE_REACTION_REMOVE": self._parse_message_reaction,
         }
 
     def _parse_message_create(self, data: Dict[str, Any]) -> Message:
@@ -87,6 +89,13 @@ class EventDispatcher:
         from .models import TypingStart
 
         return TypingStart(data, client_instance=self._client)
+
+    def _parse_message_reaction(self, data: Dict[str, Any]):
+        """Parses raw reaction data into a Reaction object."""
+
+        from .models import Reaction
+
+        return Reaction(data, client_instance=self._client)
 
     # Potentially add _parse_user for events that directly provide a full user object
     # def _parse_user_update(self, data: Dict[str, Any]) -> User:
