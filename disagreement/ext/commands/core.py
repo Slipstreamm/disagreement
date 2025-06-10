@@ -114,6 +114,13 @@ class CommandContext:
 
         self.author: "User" = message.author
 
+    @property
+    def guild(self):
+        """The guild this command was invoked in."""
+        if self.message.guild_id and hasattr(self.bot, "get_guild"):
+            return self.bot.get_guild(self.message.guild_id)
+        return None
+
     async def reply(
         self,
         content: str,
