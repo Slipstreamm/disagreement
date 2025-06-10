@@ -30,7 +30,7 @@ from .errors import (
     NotFound,
 )
 from .color import Color
-from .utils import utcnow
+from .utils import utcnow, message_pager
 from .enums import GatewayIntent, GatewayOpcode  # Export enums
 from .error_handler import setup_global_error_handler
 from .hybrid_context import HybridContext
