@@ -1,0 +1,25 @@
+name: Mirror to Gitea
+
+on:
+  push:
+    branches:
+      - master  # or change to your default branch
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Push to mirror
+        env:
+          MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
+        run: |
+          git remote add mirror https://slipstream:${MIRROR_PAT}@git.slipstreamm.dev/slipstream/disagreement.git
+          git push --mirror mirror
