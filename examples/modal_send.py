@@ -26,6 +26,7 @@ class NameModal(ui.Modal):
     def __init__(self):
         super().__init__(title="Your Name", custom_id="name_modal")
         self.name = ui.TextInput(label="Name", custom_id="name")
+        self.add_item(self.name)
 
 
 @slash_command(name="namemodal", description="Shows a modal")

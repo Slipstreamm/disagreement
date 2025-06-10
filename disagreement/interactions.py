@@ -395,17 +395,14 @@ class Interaction:
 
     async def respond_modal(self, modal: "Modal") -> None:
         """|coro| Send a modal in response to this interaction."""
-
-        from typing import Any, cast
-
-        payload = {
-            "type": InteractionCallbackType.MODAL.value,
-            "data": modal.to_dict(),
-        }
+        payload = InteractionResponsePayload(
+            type=InteractionCallbackType.MODAL,
+            data=modal.to_dict(),
+        )
         await self._client._http.create_interaction_response(
             interaction_id=self.id,
             interaction_token=self.token,
-            payload=cast(Any, payload),
+            payload=payload,
         )
 
     async def edit(
@@ -489,7 +486,7 @@ class InteractionResponse:
         """Sends a modal response."""
         payload = InteractionResponsePayload(
             type=InteractionCallbackType.MODAL,
-            data=InteractionCallbackData(modal.to_dict()),
+            data=modal.to_dict(),
         )
         await self._interaction._client._http.create_interaction_response(
             self._interaction.id,
@@ -506,11 +503,13 @@ class InteractionCallbackData:
         self.tts: Optional[bool] = data.get("tts")
         self.content: Optional[str] = data.get("content")
         self.embeds: Optional[List[Embed]] = (
-            [Embed(e) for e in data.get("embeds", [])] if data.get("embeds") else None
+            [Embed(e) for e in data.get("embeds", [])]
+            if data.get("embeds")
+            else None
         )
         self.allowed_mentions: Optional[AllowedMentions] = (
             AllowedMentions(data["allowed_mentions"])
-            if data.get("allowed_mentions")
+            if "allowed_mentions" in data
             else None
         )
         self.flags: Optional[int] = data.get("flags")  # MessageFlags enum could be used
@@ -557,15 +556,18 @@ class InteractionResponsePayload:
     def __init__(
         self,
         type: InteractionCallbackType,
-        data: Optional[InteractionCallbackData] = None,
+        data: Optional[Union[InteractionCallbackData, Dict[str, Any]]] = None,
     ):
-        self.type: InteractionCallbackType = type
-        self.data: Optional[InteractionCallbackData] = data
+        self.type = type
+        self.data = data
 
     def to_dict(self) -> Dict[str, Any]:
         payload: Dict[str, Any] = {"type": self.type.value}
         if self.data:
-            payload["data"] = self.data.to_dict()
+            if isinstance(self.data, dict):
+                payload["data"] = self.data
+            else:
+                payload["data"] = self.data.to_dict()
         return payload
 
     def __repr__(self) -> str:

@@ -28,6 +28,7 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
 
 try:
     import disagreement
+    from disagreement.models import Guild
     from disagreement.ext import commands  # Import the new commands extension
 except ImportError:
     print(
@@ -190,9 +191,9 @@ async def on_message(message: disagreement.Message):
 @client.on_event(
     "GUILD_CREATE"
 )  # Example of listening to a specific event by its Discord name
-async def on_guild_available(guild_data: dict):  # Receives raw data for now
-    # In a real scenario, guild_data would be parsed into a Guild model
-    print(f"Guild available: {guild_data.get('name')} (ID: {guild_data.get('id')})")
+async def on_guild_available(guild: Guild):
+    # The event now passes a Guild object directly
+    print(f"Guild available: {guild.name} (ID: {guild.id})")
 
 
 # --- Main Execution ---

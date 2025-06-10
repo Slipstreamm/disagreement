@@ -74,7 +74,7 @@ def text_input(
 
         item = TextInput(
             label=label,
-            custom_id=custom_id,
+            custom_id=custom_id or func.__name__,
             style=style,
             placeholder=placeholder,
             required=required,
