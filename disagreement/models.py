@@ -857,6 +857,31 @@ class Guild:
     def get_member(self, user_id: str) -> Optional[Member]:
         return self._members.get(user_id)
 
+    def get_member_named(self, name: str) -> Optional[Member]:
+        """Retrieve a cached member by username or nickname.
+
+        The lookup is case-insensitive and searches both the username and
+        guild nickname for a match.
+
+        Parameters
+        ----------
+        name: str
+            The username or nickname to search for.
+
+        Returns
+        -------
+        Optional[Member]
+            The matching member if found, otherwise ``None``.
+        """
+
+        lowered = name.lower()
+        for member in self._members.values():
+            if member.username.lower() == lowered:
+                return member
+            if member.nick and member.nick.lower() == lowered:
+                return member
+        return None
+
     def get_role(self, role_id: str) -> Optional[Role]:
         return next((role for role in self.roles if role.id == role_id), None)
 
