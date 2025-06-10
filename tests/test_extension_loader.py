@@ -42,3 +42,36 @@ def test_load_extension_twice_raises():
         loader.load_extension("repeat_ext")
     loader.unload_extension("repeat_ext")
     assert called["teardown"] is True
+
+
+def test_reload_extension(monkeypatch):
+    called_first = create_dummy_module("reload_ext")
+    loader.load_extension("reload_ext")
+
+    called_second = {"setup": False, "teardown": False}
+    module_second = types.ModuleType("reload_ext")
+
+    def setup_second():
+        called_second["setup"] = True
+
+    def teardown_second():
+        called_second["teardown"] = True
+
+    module_second.setup = setup_second
+    module_second.teardown = teardown_second
+
+    def import_stub(name):
+        assert name == "reload_ext"
+        sys.modules[name] = module_second
+        return module_second
+
+    monkeypatch.setattr(loader, "import_module", import_stub)
+
+    loader.reload_extension("reload_ext")
+
+    assert called_first["teardown"] is True
+    assert called_second["setup"] is True
+    assert loader._loaded_extensions["reload_ext"] is module_second
+
+    loader.unload_extension("reload_ext")
+    assert called_second["teardown"] is True

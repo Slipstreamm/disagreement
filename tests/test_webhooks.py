@@ -138,3 +138,14 @@ async def test_client_delete_webhook_calls_http():
     await client.delete_webhook("1")
 
     http.delete_webhook.assert_awaited_once_with("1")
+
+
+def test_webhook_from_url_parses_id_and_token():
+    from disagreement.models import Webhook
+
+    url = "https://discord.com/api/webhooks/123/token"
+    webhook = Webhook.from_url(url)
+
+    assert webhook.id == "123"
+    assert webhook.token == "token"
+    assert webhook.url == url

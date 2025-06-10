@@ -16,9 +16,10 @@ __license__ = "BSD 3-Clause License"
 __copyright__ = "Copyright 2025 Slipstream"
 __version__ = "0.0.2"
 
-from .client import Client
+from .client import Client, AutoShardedClient
 from .models import Message, User, Reaction
 from .voice_client import VoiceClient
+from .audio import AudioSource, FFmpegAudioSource
 from .typing import Typing
 from .errors import (
     DisagreementException,

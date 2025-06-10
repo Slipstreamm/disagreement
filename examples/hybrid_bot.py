@@ -92,10 +92,10 @@ class TestCog(Cog):
     async def ping_hybrid(
         self, ctx: Union[CommandContext, AppCommandContext], arg: Optional[str] = None
     ):
-        # latency = self.client.latency # Assuming client has latency attribute from gateway - Commented out for now
-        latency_ms = "N/A"  # Placeholder
+        latency = self.client.latency
+        latency_ms = f"{latency * 1000:.0f}" if latency is not None else "N/A"
         hybrid = HybridContext(ctx)
-        await hybrid.send(f"Pong! Arg: {arg} (Hybrid)")
+        await hybrid.send(f"Pong! {latency_ms}ms. Arg: {arg} (Hybrid)")
 
     @slash_command(name="options_test", description="Tests various option types.")
     async def options_test_slash(

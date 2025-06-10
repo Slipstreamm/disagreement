@@ -54,10 +54,14 @@ class EventDispatcher:
             "INTERACTION_CREATE": self._parse_interaction_create,
             "GUILD_CREATE": self._parse_guild_create,
             "CHANNEL_CREATE": self._parse_channel_create,
+            "CHANNEL_UPDATE": self._parse_channel_update,
             "PRESENCE_UPDATE": self._parse_presence_update,
+            "GUILD_MEMBER_ADD": self._parse_guild_member_add,
+            "GUILD_MEMBER_REMOVE": self._parse_guild_member_remove,
+            "GUILD_BAN_ADD": self._parse_guild_ban_add,
+            "GUILD_BAN_REMOVE": self._parse_guild_ban_remove,
+            "GUILD_ROLE_UPDATE": self._parse_guild_role_update,
             "TYPING_START": self._parse_typing_start,
-            "MESSAGE_REACTION_ADD": self._parse_message_reaction,
-            "MESSAGE_REACTION_REMOVE": self._parse_message_reaction,
         }
 
     def _parse_message_create(self, data: Dict[str, Any]) -> Message:
@@ -115,6 +119,45 @@ class EventDispatcher:
         from .models import Reaction
 
         return Reaction(data, client_instance=self._client)
+
+    def _parse_guild_member_add(self, data: Dict[str, Any]):
+        """Parses GUILD_MEMBER_ADD into a Member object."""
+
+        guild_id = str(data.get("guild_id"))
+        return self._client.parse_member(data, guild_id)
+
+    def _parse_guild_member_remove(self, data: Dict[str, Any]):
+        """Parses GUILD_MEMBER_REMOVE into a GuildMemberRemove model."""
+
+        from .models import GuildMemberRemove
+
+        return GuildMemberRemove(data, client_instance=self._client)
+
+    def _parse_guild_ban_add(self, data: Dict[str, Any]):
+        """Parses GUILD_BAN_ADD into a GuildBanAdd model."""
+
+        from .models import GuildBanAdd
+
+        return GuildBanAdd(data, client_instance=self._client)
+
+    def _parse_guild_ban_remove(self, data: Dict[str, Any]):
+        """Parses GUILD_BAN_REMOVE into a GuildBanRemove model."""
+
+        from .models import GuildBanRemove
+
+        return GuildBanRemove(data, client_instance=self._client)
+
+    def _parse_channel_update(self, data: Dict[str, Any]):
+        """Parses CHANNEL_UPDATE into a Channel object."""
+
+        return self._client.parse_channel(data)
+
+    def _parse_guild_role_update(self, data: Dict[str, Any]):
+        """Parses GUILD_ROLE_UPDATE into a GuildRoleUpdate model."""
+
+        from .models import GuildRoleUpdate
+
+        return GuildRoleUpdate(data, client_instance=self._client)
 
     # Potentially add _parse_user for events that directly provide a full user object
     # def _parse_user_update(self, data: Dict[str, Any]) -> User:
@@ -197,20 +240,53 @@ class EventDispatcher:
         if not waiters:
             self._waiters.pop(event_name, None)
 
-    async def dispatch(self, event_name: str, raw_data: Dict[str, Any]):
-        """
-        Dispatches an event to all registered listeners.
-
-        Args:
-            event_name (str): The name of the event (e.g., 'MESSAGE_CREATE').
-            raw_data (Dict[str, Any]): The raw data payload from the Discord Gateway for this event.
-        """
-        event_name_upper = event_name.upper()
-        listeners = self._listeners.get(event_name_upper)
-
+    async def _dispatch_to_listeners(self, event_name: str, data: Any) -> None:
+        listeners = self._listeners.get(event_name)
         if not listeners:
-            # print(f"No listeners for event {event_name_upper}")
             return
+
+        self._resolve_waiters(event_name, data)
+
+        for listener in listeners:
+            try:
+                sig = inspect.signature(listener)
+                num_params = len(sig.parameters)
+
+                if num_params == 0:
+                    await listener()
+                elif num_params == 1:
+                    await listener(data)
+                else:
+                    print(
+                        f"Warning: Listener {listener.__name__} for {event_name} has an unhandled number of parameters ({num_params}). Skipping or attempting with one arg."
+                    )
+                    if num_params > 0:
+                        await listener(data)
+
+            except Exception as e:
+                callback = self.on_dispatch_error
+                if callback is not None:
+                    try:
+                        await callback(event_name, e, listener)
+                    except Exception as hook_error:
+                        print(f"Error in on_dispatch_error hook itself: {hook_error}")
+                else:
+                    print(
+                        f"Error in event listener {listener.__name__} for {event_name}: {e}"
+                    )
+                    if hasattr(self._client, "on_error"):
+                        try:
+                            await self._client.on_error(event_name, e, listener)
+                        except Exception as client_err_e:
+                            print(f"Error in client.on_error itself: {client_err_e}")
+
+    async def dispatch(self, event_name: str, raw_data: Dict[str, Any]):
+        """Dispatch an event and its raw counterpart to all listeners."""
+
+        event_name_upper = event_name.upper()
+        raw_event_name = f"RAW_{event_name_upper}"
+
+        await self._dispatch_to_listeners(raw_event_name, raw_data)
 
         parsed_data: Any = raw_data
         if event_name_upper in self._event_parsers:
@@ -219,53 +295,6 @@ class EventDispatcher:
                 parsed_data = parser(raw_data)
             except Exception as e:
                 print(f"Error parsing event data for {event_name_upper}: {e}")
-                # Optionally, dispatch with raw_data or raise, or log more formally
-                # For now, we'll proceed to dispatch with raw_data if parsing fails,
-                # or just log and return if parsed_data is critical.
-                # Let's assume if a parser exists, its output is critical.
                 return
 
-        self._resolve_waiters(event_name_upper, parsed_data)
-        # print(f"Dispatching event {event_name_upper} with data: {parsed_data} to {len(listeners)} listeners.")
-        for listener in listeners:
-            try:
-                # Inspect the listener to see how many arguments it expects
-                sig = inspect.signature(listener)
-                num_params = len(sig.parameters)
-
-                if num_params == 0:  # Listener takes no arguments
-                    await listener()
-                elif (
-                    num_params == 1
-                ):  # Listener takes one argument (the parsed data or model)
-                    await listener(parsed_data)
-                # elif num_params == 2 and event_name_upper == "MESSAGE_CREATE": # Special case for (client, message)
-                # await listener(self._client, parsed_data) # This might be too specific here
-                else:
-                    # Fallback or error if signature doesn't match expected patterns
-                    # For now, assume one arg is the most common for parsed data.
-                    # Or, if you want to be strict:
-                    print(
-                        f"Warning: Listener {listener.__name__} for {event_name_upper} has an unhandled number of parameters ({num_params}). Skipping or attempting with one arg."
-                    )
-                    if num_params > 0:  # Try with one arg if it takes any
-                        await listener(parsed_data)
-
-            except Exception as e:
-                callback = self.on_dispatch_error
-                if callback is not None:
-                    try:
-                        await callback(event_name_upper, e, listener)
-
-                    except Exception as hook_error:
-                        print(f"Error in on_dispatch_error hook itself: {hook_error}")
-                else:
-                    # Default error handling if no hook is set
-                    print(
-                        f"Error in event listener {listener.__name__} for {event_name_upper}: {e}"
-                    )
-                    if hasattr(self._client, "on_error"):
-                        try:
-                            await self._client.on_error(event_name_upper, e, listener)
-                        except Exception as client_err_e:
-                            print(f"Error in client.on_error itself: {client_err_e}")
+        await self._dispatch_to_listeners(event_name_upper, parsed_data)

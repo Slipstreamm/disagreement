@@ -1,5 +1,6 @@
 import asyncio
 from unittest.mock import AsyncMock
+import random
 
 import pytest
 
@@ -66,3 +67,37 @@ async def test_client_connect_backoff(monkeypatch):
     assert mock_gateway_connect.call_count == 3
     # Assert the delays experienced due to exponential backoff
     assert delays == [5, 10]
+
+
+@pytest.mark.asyncio
+async def test_gateway_reconnect_backoff(monkeypatch):
+    http = DummyHTTP()
+    dispatcher = DummyDispatcher()
+    client = DummyClient()
+    gw = GatewayClient(
+        http_client=http,
+        event_dispatcher=dispatcher,
+        token="t",
+        intents=0,
+        client_instance=client,
+        max_retries=3,
+        max_backoff=10.0,
+    )
+
+    connect_mock = AsyncMock(
+        side_effect=[GatewayException("boom"), GatewayException("boom"), None]
+    )
+    monkeypatch.setattr(gw, "connect", connect_mock)
+
+    delays = []
+
+    async def fake_sleep(d):
+        delays.append(d)
+
+    monkeypatch.setattr(asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(random, "uniform", lambda a, b: 0)
+
+    await gw._reconnect()
+
+    assert connect_mock.call_count == 3
+    assert delays == [1.0, 2.0]

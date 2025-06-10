@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 
 from disagreement.shard_manager import ShardManager
-from disagreement.client import Client
+from disagreement.client import Client, AutoShardedClient
 
 
 class DummyGateway:
@@ -18,6 +18,8 @@ class DummyClient:
         self.token = "t"
         self.intents = 0
         self.verbose = False
+        self.gateway_max_retries = 5
+        self.gateway_max_backoff = 60.0
 
 
 def test_shard_manager_creates_shards(monkeypatch):
@@ -50,3 +52,19 @@ async def test_client_uses_shard_manager(monkeypatch):
     monkeypatch.setattr(c, "wait_until_ready", AsyncMock())
     await c.connect()
     dummy_manager.start.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_auto_sharded_client_fetches_count(monkeypatch):
+    class DummyHTTP:
+        async def get_gateway_bot(self):
+            return {"shards": 4}
+
+    dummy_manager = AsyncMock()
+    monkeypatch.setattr("disagreement.client.ShardManager", lambda c, n: dummy_manager)
+    c = AutoShardedClient(token="x")
+    c._http = DummyHTTP()
+    monkeypatch.setattr(c, "wait_until_ready", AsyncMock())
+    await c.connect()
+    dummy_manager.start.assert_awaited_once()
+    assert c.shard_count == 4

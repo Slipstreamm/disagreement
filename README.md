@@ -117,11 +117,18 @@ roles = await client.fetch_roles(guild.id)
 
 ## Sharding
 
-To run your bot across multiple gateway shards, pass `shard_count` when creating
+To run your bot across multiple gateway shards, pass ``shard_count`` when creating
 the client:
 
 ```python
 client = disagreement.Client(token=BOT_TOKEN, shard_count=2)
+```
+
+If you want the library to determine the recommended shard count automatically,
+use ``AutoShardedClient``:
+
+```python
+client = disagreement.AutoShardedClient(token=BOT_TOKEN)
 ```
 
 See `examples/sharded_bot.py` for a full example.

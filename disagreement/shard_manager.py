@@ -51,6 +51,8 @@ class ShardManager:
                 verbose=self.client.verbose,
                 shard_id=shard_id,
                 shard_count=self.shard_count,
+                max_retries=self.client.gateway_max_retries,
+                max_backoff=self.client.gateway_max_backoff,
             )
             self.shards.append(Shard(shard_id, self.shard_count, gateway))
 

@@ -84,6 +84,8 @@ class Client:
         verbose: bool = False,
         mention_replies: bool = False,
         shard_count: Optional[int] = None,
+        gateway_max_retries: int = 5,
+        gateway_max_backoff: float = 60.0,
     ):
         if not token:
             raise ValueError("A bot token must be provided.")
@@ -103,6 +105,8 @@ class Client:
             None  # Initialized in run() or connect()
         )
         self.shard_count: Optional[int] = shard_count
+        self.gateway_max_retries: int = gateway_max_retries
+        self.gateway_max_backoff: float = gateway_max_backoff
         self._shard_manager: Optional[ShardManager] = None
 
         # Initialize CommandHandler
@@ -169,6 +173,8 @@ class Client:
                 intents=self.intents,
                 client_instance=self,
                 verbose=self.verbose,
+                max_retries=self.gateway_max_retries,
+                max_backoff=self.gateway_max_backoff,
             )
 
     async def _initialize_shard_manager(self) -> None:
@@ -364,6 +370,13 @@ class Client:
     def is_ready(self) -> bool:
         """Indicates if the client has successfully connected to the Gateway and is ready."""
         return self._ready_event.is_set()
+
+    @property
+    def latency(self) -> Optional[float]:
+        """Returns the gateway latency in seconds, or ``None`` if unavailable."""
+        if self._gateway:
+            return self._gateway.latency
+        return None
 
     async def wait_until_ready(self) -> None:
         """|coro|
@@ -853,6 +866,7 @@ class Client:
         allowed_mentions: Optional[Dict[str, Any]] = None,
         message_reference: Optional[Dict[str, Any]] = None,
         attachments: Optional[List[Any]] = None,
+        files: Optional[List[Any]] = None,
         flags: Optional[int] = None,
         view: Optional["View"] = None,
     ) -> "Message":
@@ -870,6 +884,7 @@ class Client:
             allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
             attachments (Optional[List[Any]]): Attachments to include with the message.
+            files (Optional[List[Any]]): Files to upload with the message.
             flags (Optional[int]): Message flags.
             view (Optional[View]): A view to send with the message.
 
@@ -922,6 +937,7 @@ class Client:
             allowed_mentions=allowed_mentions,
             message_reference=message_reference,
             attachments=attachments,
+            files=files,
             flags=flags,
         )
 
@@ -1280,3 +1296,19 @@ class Client:
 
         print(f"Unhandled exception in event listener for '{event_method}':")
         print(f"{type(exc).__name__}: {exc}")
+
+
+class AutoShardedClient(Client):
+    """A :class:`Client` that automatically determines the shard count.
+
+    If ``shard_count`` is not provided, the client will query the Discord API
+    via :meth:`HTTPClient.get_gateway_bot` for the recommended shard count and
+    use that when connecting.
+    """
+
+    async def connect(self, reconnect: bool = True) -> None:  # type: ignore[override]
+        if self.shard_count is None:
+            data = await self._http.get_gateway_bot()
+            self.shard_count = data.get("shards", 1)
+
+        await super().connect(reconnect=reconnect)
