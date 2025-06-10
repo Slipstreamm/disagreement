@@ -18,7 +18,7 @@ from .models import (
     Thumbnail,
     MediaGallery,
     MediaGalleryItem,
-    File,
+    FileComponent,
     Separator,
     Container,
     UnfurledMediaItem,
@@ -140,7 +140,7 @@ def component_factory(
         )
 
     if ctype == ComponentType.FILE:
-        return File(
+        return FileComponent(
             file=UnfurledMediaItem(**data["file"]),
             spoiler=data.get("spoiler", False),
             id=data.get("id"),

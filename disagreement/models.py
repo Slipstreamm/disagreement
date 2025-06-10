@@ -377,6 +377,14 @@ class Attachment:
         return payload
 
 
+class File:
+    """Represents a file to be uploaded."""
+
+    def __init__(self, filename: str, data: bytes):
+        self.filename = filename
+        self.data = data
+
+
 class AllowedMentions:
     """Represents allowed mentions for a message or interaction response."""
 
@@ -1459,7 +1467,7 @@ class MediaGallery(Component):
         return payload
 
 
-class File(Component):
+class FileComponent(Component):
     """Represents a file component."""
 
     def __init__(
