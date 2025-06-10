@@ -77,14 +77,19 @@ class RateLimitError(HTTPException):
         )
 
 
-# You can add more specific exceptions as needed, e.g.:
-# class NotFound(HTTPException):
-#     """Raised for 404 Not Found errors."""
-#     pass
+# Specific HTTP error exceptions
 
-# class Forbidden(HTTPException):
-#     """Raised for 403 Forbidden errors."""
-#     pass
+
+class NotFound(HTTPException):
+    """Raised for 404 Not Found errors."""
+
+    pass
+
+
+class Forbidden(HTTPException):
+    """Raised for 403 Forbidden errors."""
+
+    pass
 
 
 class AppCommandError(DisagreementException):
