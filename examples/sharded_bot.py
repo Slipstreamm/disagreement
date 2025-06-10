@@ -9,6 +9,9 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import disagreement
+from dotenv import load_dotenv
+
+load_dotenv()
 
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 if not TOKEN:
