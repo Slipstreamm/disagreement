@@ -47,6 +47,10 @@ class EventDispatcher:
         # Pre-defined parsers for specific event types to convert raw data to models
         self._event_parsers: Dict[str, Callable[[Dict[str, Any]], Any]] = {
             "MESSAGE_CREATE": self._parse_message_create,
+            "MESSAGE_UPDATE": self._parse_message_update,
+            "MESSAGE_DELETE": self._parse_message_delete,
+            "MESSAGE_REACTION_ADD": self._parse_message_reaction,
+            "MESSAGE_REACTION_REMOVE": self._parse_message_reaction,
             "INTERACTION_CREATE": self._parse_interaction_create,
             "GUILD_CREATE": self._parse_guild_create,
             "CHANNEL_CREATE": self._parse_channel_create,
@@ -59,6 +63,21 @@ class EventDispatcher:
     def _parse_message_create(self, data: Dict[str, Any]) -> Message:
         """Parses raw MESSAGE_CREATE data into a Message object."""
         return self._client.parse_message(data)
+
+    def _parse_message_update(self, data: Dict[str, Any]) -> Message:
+        """Parses raw MESSAGE_UPDATE data into a Message object."""
+        return self._client.parse_message(data)
+
+    def _parse_message_delete(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Parses MESSAGE_DELETE and updates message cache."""
+        message_id = data.get("id")
+        if message_id:
+            self._client._messages.pop(message_id, None)
+        return data
+
+    def _parse_message_reaction(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Returns the raw reaction payload."""
+        return data
 
     def _parse_interaction_create(self, data: Dict[str, Any]) -> "Interaction":
         """Parses raw INTERACTION_CREATE data into an Interaction object."""

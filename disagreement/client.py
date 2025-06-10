@@ -450,11 +450,16 @@ class Client:
         # Map common function names to Discord event types
         # e.g., on_ready -> READY, on_message -> MESSAGE_CREATE
         if event_name.startswith("on_"):
-            discord_event_name = event_name[3:].upper()  # e.g., on_message -> MESSAGE
-            if discord_event_name == "MESSAGE":  # Common case
-                discord_event_name = "MESSAGE_CREATE"
-            # Add other mappings if needed, e.g. on_member_join -> GUILD_MEMBER_ADD
-
+            discord_event_name = event_name[3:].upper()
+            mapping = {
+                "MESSAGE": "MESSAGE_CREATE",
+                "MESSAGE_EDIT": "MESSAGE_UPDATE",
+                "MESSAGE_UPDATE": "MESSAGE_UPDATE",
+                "MESSAGE_DELETE": "MESSAGE_DELETE",
+                "REACTION_ADD": "MESSAGE_REACTION_ADD",
+                "REACTION_REMOVE": "MESSAGE_REACTION_REMOVE",
+            }
+            discord_event_name = mapping.get(discord_event_name, discord_event_name)
             self._event_dispatcher.register(discord_event_name, coro)
         else:
             # If not starting with "on_", assume it's the direct Discord event name (e.g. "TYPING_START")
