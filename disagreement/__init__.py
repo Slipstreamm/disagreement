@@ -25,7 +25,11 @@ from .errors import (
     HTTPException,
     GatewayException,
     AuthenticationError,
+    Forbidden,
+    NotFound,
 )
+from .color import Color
+from .utils import utcnow
 from .enums import GatewayIntent, GatewayOpcode  # Export enums
 from .error_handler import setup_global_error_handler
 from .hybrid_context import HybridContext
