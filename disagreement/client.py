@@ -860,6 +860,7 @@ class Client:
         allowed_mentions: Optional[Dict[str, Any]] = None,
         message_reference: Optional[Dict[str, Any]] = None,
         attachments: Optional[List[Any]] = None,
+        files: Optional[List[Any]] = None,
         flags: Optional[int] = None,
         view: Optional["View"] = None,
     ) -> "Message":
@@ -877,6 +878,7 @@ class Client:
             allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
             attachments (Optional[List[Any]]): Attachments to include with the message.
+            files (Optional[List[Any]]): Files to upload with the message.
             flags (Optional[int]): Message flags.
             view (Optional[View]): A view to send with the message.
 
@@ -929,6 +931,7 @@ class Client:
             allowed_mentions=allowed_mentions,
             message_reference=message_reference,
             attachments=attachments,
+            files=files,
             flags=flags,
         )
 
