@@ -202,6 +202,21 @@ class Message:
             view=view,
         )
 
+    async def add_reaction(self, emoji: str) -> None:
+        """|coro| Add a reaction to this message."""
+
+        await self._client.add_reaction(self.channel_id, self.id, emoji)
+
+    async def remove_reaction(self, emoji: str) -> None:
+        """|coro| Remove the bot's reaction from this message."""
+
+        await self._client.remove_reaction(self.channel_id, self.id, emoji)
+
+    async def clear_reactions(self) -> None:
+        """|coro| Remove all reactions from this message."""
+
+        await self._client.clear_reactions(self.channel_id, self.id)
+
     async def delete(self, delay: Optional[float] = None) -> None:
         """|coro|
 
