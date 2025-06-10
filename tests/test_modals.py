@@ -28,5 +28,6 @@ async def test_respond_modal(dummy_bot, interaction):
     await interaction.respond_modal(modal)
     dummy_bot._http.create_interaction_response.assert_called_once()
     payload = dummy_bot._http.create_interaction_response.call_args.kwargs["payload"]
-    assert payload["type"] == InteractionCallbackType.MODAL.value
-    assert payload["data"]["custom_id"] == "m1"
+    data = payload.to_dict()
+    assert data["type"] == InteractionCallbackType.MODAL.value
+    assert data["data"]["custom_id"] == "m1"
