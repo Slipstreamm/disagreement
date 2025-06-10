@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 
 import pytest
 
@@ -12,6 +13,41 @@ class Dummy:
     @tasks.loop(seconds=0.01)
     async def work(self) -> None:
         self.count += 1
+
+
+@pytest.mark.asyncio
+async def test_loop_on_error_callback_called() -> None:
+    called = False
+
+    def handler(exc: Exception) -> None:  # pragma: no cover - simple callback
+        nonlocal called
+        called = True
+
+    @tasks.loop(seconds=0.01, on_error=handler)
+    async def failing() -> None:
+        raise RuntimeError("fail")
+
+    failing.start()
+    await asyncio.sleep(0.03)
+    failing.stop()
+    assert called
+
+
+@pytest.mark.asyncio
+async def test_loop_time_of_day() -> None:
+    run_count = 0
+
+    target_time = (datetime.datetime.now() + datetime.timedelta(seconds=0.05)).time()
+
+    @tasks.loop(time_of_day=target_time)
+    async def daily() -> None:
+        nonlocal run_count
+        run_count += 1
+
+    daily.start()
+    await asyncio.sleep(0.1)
+    daily.stop()
+    assert run_count >= 1
 
 
 @pytest.mark.asyncio
