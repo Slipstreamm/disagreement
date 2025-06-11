@@ -115,6 +115,7 @@ class FFmpegAudioSource(AudioSource):
             with contextlib.suppress(Exception):
                 self.source.close()
 
+
 class AudioSink:
     """Abstract base class for audio sinks."""
 

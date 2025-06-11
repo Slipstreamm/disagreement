@@ -353,7 +353,10 @@ class GatewayClient:
                         future._members.extend(raw_event_d_payload.get("members", []))  # type: ignore
 
                         # If this is the last chunk, resolve the future
-                        if raw_event_d_payload.get("chunk_index") == raw_event_d_payload.get("chunk_count", 1) - 1:
+                        if (
+                            raw_event_d_payload.get("chunk_index")
+                            == raw_event_d_payload.get("chunk_count", 1) - 1
+                        ):
                             future.set_result(future._members)  # type: ignore
                             del self._member_chunk_requests[nonce]
 

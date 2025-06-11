@@ -72,7 +72,7 @@ class View:
         rows: List[ActionRow] = []
 
         for item in self.children:
-           rows.append(ActionRow(components=[item]))
+            rows.append(ActionRow(components=[item]))
 
         return rows
 

@@ -369,18 +369,18 @@ class HTTPClient:
         )
 
     async def delete_user_reaction(
-       self,
-       channel_id: "Snowflake",
-       message_id: "Snowflake",
-       emoji: str,
-       user_id: "Snowflake",
-   ) -> None:
-       """Removes another user's reaction from a message."""
-       encoded = quote(emoji)
-       await self.request(
-           "DELETE",
-           f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}/{user_id}",
-       )
+        self,
+        channel_id: "Snowflake",
+        message_id: "Snowflake",
+        emoji: str,
+        user_id: "Snowflake",
+    ) -> None:
+        """Removes another user's reaction from a message."""
+        encoded = quote(emoji)
+        await self.request(
+            "DELETE",
+            f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}/{user_id}",
+        )
 
     async def get_reactions(
         self, channel_id: "Snowflake", message_id: "Snowflake", emoji: str

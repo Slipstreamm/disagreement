@@ -10,6 +10,7 @@ import threading
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import aiohttp
+
 # The following import is correct, but may be flagged by Pylance if the virtual
 # environment is not configured correctly.
 from nacl.secret import SecretBox

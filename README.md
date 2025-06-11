@@ -120,6 +120,7 @@ async def show(ctx: AppCommandContext, key: str):
 @slash_command(name="set", description="Update a setting.", parent=admin_group)
 async def set_setting(ctx: AppCommandContext, key: str, value: str):
     ...
+```
 ## Fetching Guilds
 
 Use `Client.fetch_guild` to retrieve a guild from the Discord API if it
