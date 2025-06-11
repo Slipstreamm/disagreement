@@ -28,6 +28,8 @@ class View:
         self._client: Optional[Client] = None
         self._message_id: Optional[str] = None
 
+        # The below is a bit of a hack to support items defined as class members
+        # e.g. button = Button(...)
         for item in self.__class__.__dict__.values():
             if isinstance(item, Item):
                 self.add_item(item)
@@ -43,6 +45,11 @@ class View:
 
         if len(self.__children) >= 25:
             raise ValueError("A view can only have a maximum of 25 components.")
+
+        if self.timeout is None and item.custom_id is None:
+            raise ValueError(
+                "All components in a persistent view must have a 'custom_id'."
+            )
 
         item._view = self
         self.__children.append(item)
@@ -65,12 +72,7 @@ class View:
         rows: List[ActionRow] = []
 
         for item in self.children:
-            if item.custom_id is None:
-                item.custom_id = (
-                    f"{self.id}:{item.__class__.__name__}:{len(self.__children)}"
-                )
-
-            rows.append(ActionRow(components=[item]))
+           rows.append(ActionRow(components=[item]))
 
         return rows
 

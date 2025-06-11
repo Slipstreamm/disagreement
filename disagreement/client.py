@@ -1490,6 +1490,37 @@ class Client:
         data = await self._http.get_channel_invites(channel_id)
         return [self.parse_invite(inv) for inv in data]
 
+    def add_persistent_view(self, view: "View") -> None:
+       """
+       Registers a persistent view with the client.
+
+       Persistent views have a timeout of `None` and their components must have a `custom_id`.
+       This allows the view to be re-instantiated across bot restarts.
+
+       Args:
+           view (View): The view instance to register.
+
+       Raises:
+           ValueError: If the view is not persistent (timeout is not None) or if a component's
+                       custom_id is already registered.
+       """
+       if self.is_ready():
+           print(
+               "Warning: Adding a persistent view after the client is ready. "
+               "This view will only be available for interactions on this session."
+           )
+
+       if view.timeout is not None:
+           raise ValueError("Persistent views must have a timeout of None.")
+
+       for item in view.children:
+           if item.custom_id:  # Ensure custom_id is not None
+               if item.custom_id in self._persistent_views:
+                   raise ValueError(
+                       f"A component with custom_id '{item.custom_id}' is already registered."
+                   )
+               self._persistent_views[item.custom_id] = view
+
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:
         """Internal method to process an interaction from the gateway."""
@@ -1500,11 +1531,25 @@ class Client:
         if (
             interaction.type == InteractionType.MESSAGE_COMPONENT
             and interaction.message
+            and interaction.data
         ):
             view = self._views.get(interaction.message.id)
             if view:
                 asyncio.create_task(view._dispatch(interaction))
                 return
+            else:
+                # No active view found, check for persistent views
+                custom_id = interaction.data.custom_id
+                if custom_id:
+                    registered_view = self._persistent_views.get(custom_id)
+                    if registered_view:
+                        # Create a new instance of the persistent view
+                        new_view = registered_view.__class__()
+                        await new_view._start(self)
+                        new_view.message_id = interaction.message.id
+                        self._views[interaction.message.id] = new_view
+                        asyncio.create_task(new_view._dispatch(interaction))
+                        return
 
         await self.app_command_handler.process_interaction(interaction)
 
