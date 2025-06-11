@@ -48,7 +48,7 @@ class Basics(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx: commands.CommandContext) -> None:
-        await ctx.reply(f"Pong! Gateway Latency: {self.client.latency_ms} ms.") # type: ignore (latency is None during static analysis)
+        await ctx.reply(f"Pong! Gateway Latency: {self.client.latency_ms} ms.")
 
 
 token = os.getenv("DISCORD_BOT_TOKEN")
