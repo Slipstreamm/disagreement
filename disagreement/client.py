@@ -415,9 +415,8 @@ class Client:
     @property
     def latency_ms(self) -> Optional[float]:
         """Returns the gateway latency in milliseconds, or ``None`` if unavailable."""
-        if self._gateway and self._gateway.latency_ms is not None:
-            return round(self._gateway.latency_ms, 2)
-        return None
+        latency = getattr(self._gateway, "latency_ms", None)
+        return round(latency, 2) if latency is not None else None
 
     async def wait_until_ready(self) -> None:
         """|coro|
