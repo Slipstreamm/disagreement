@@ -67,7 +67,7 @@ class TypingCog(commands.Cog):
     @commands.command(name="typing")
     async def typing_test_command(self, ctx: commands.CommandContext):
         """Shows a typing indicator for 5 seconds."""
-        await ctx.reply("Okay, I will pretend to be typing for 5 seconds.")
+        await ctx.reply("Showing typing indicator for 5 seconds...")
         try:
             async with client.typing(ctx.message.channel_id):
                 print(f"Displaying typing indicator in channel {ctx.message.channel_id} for 5 seconds.")
