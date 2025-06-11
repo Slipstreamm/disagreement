@@ -873,3 +873,7 @@ class HTTPClient:
     async def trigger_typing(self, channel_id: str) -> None:
         """Sends a typing indicator to the specified channel."""
         await self.request("POST", f"/channels/{channel_id}/typing")
+
+    async def get_voice_regions(self) -> List[Dict[str, Any]]:
+        """Returns available voice regions."""
+        return await self.request("GET", "/voice/regions")

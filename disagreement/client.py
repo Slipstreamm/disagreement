@@ -22,7 +22,7 @@ from .http import HTTPClient
 from .gateway import GatewayClient
 from .shard_manager import ShardManager
 from .event_dispatcher import EventDispatcher
-from .enums import GatewayIntent, InteractionType, GatewayOpcode
+from .enums import GatewayIntent, InteractionType, GatewayOpcode, VoiceRegion
 from .errors import DisagreementException, AuthenticationError
 from .typing import Typing
 from .ext.commands.core import CommandHandler
@@ -1218,6 +1218,20 @@ class Client:
         except DisagreementException as e:  # Includes HTTPException
             print(f"Failed to fetch channel {channel_id}: {e}")
             return None
+
+    async def fetch_voice_regions(self) -> List[VoiceRegion]:
+        """Fetches available voice regions."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.get_voice_regions()
+        regions = []
+        for region in data:
+            region_id = region.get("id")
+            if region_id:
+                regions.append(VoiceRegion(region_id))
+        return regions
 
     async def create_webhook(
         self, channel_id: Snowflake, payload: Dict[str, Any]
