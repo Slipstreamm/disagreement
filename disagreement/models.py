@@ -24,6 +24,7 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     PremiumTier,
     GuildFeature,
     ChannelType,
+    AutoArchiveDuration,
     ComponentType,
     ButtonStyle,  # Added for Button
     GuildScheduledEventPrivacyLevel,
@@ -115,30 +116,30 @@ class Message:
         # self.mention_everyone: bool = data.get("mention_everyone", False)
 
     async def pin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Pins this message to its channel.
+        Pins this message to its channel.
 
-       Raises
-       ------
-       HTTPException
-           Pinning the message failed.
-       """
-       await self._client._http.pin_message(self.channel_id, self.id)
-       self.pinned = True
+        Raises
+        ------
+        HTTPException
+            Pinning the message failed.
+        """
+        await self._client._http.pin_message(self.channel_id, self.id)
+        self.pinned = True
 
     async def unpin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Unpins this message from its channel.
+        Unpins this message from its channel.
 
-       Raises
-       ------
-       HTTPException
-           Unpinning the message failed.
-       """
-       await self._client._http.unpin_message(self.channel_id, self.id)
-       self.pinned = False
+        Raises
+        ------
+        HTTPException
+            Unpinning the message failed.
+        """
+        await self._client._http.unpin_message(self.channel_id, self.id)
+        self.pinned = False
 
     async def reply(
         self,
@@ -241,16 +242,16 @@ class Message:
         await self._client.add_reaction(self.channel_id, self.id, emoji)
 
     async def remove_reaction(self, emoji: str, member: Optional[User] = None) -> None:
-       """|coro|
-       Removes a reaction from this message.
-       If no ``member`` is provided, removes the bot's own reaction.
-       """
-       if member:
-           await self._client._http.delete_user_reaction(
-               self.channel_id, self.id, emoji, member.id
-           )
-       else:
-           await self._client.remove_reaction(self.channel_id, self.id, emoji)
+        """|coro|
+        Removes a reaction from this message.
+        If no ``member`` is provided, removes the bot's own reaction.
+        """
+        if member:
+            await self._client._http.delete_user_reaction(
+                self.channel_id, self.id, emoji, member.id
+            )
+        else:
+            await self._client.remove_reaction(self.channel_id, self.id, emoji)
 
     async def clear_reactions(self) -> None:
         """|coro| Remove all reactions from this message."""
@@ -280,7 +281,7 @@ class Message:
         self,
         name: str,
         *,
-        auto_archive_duration: Optional[int] = None,
+        auto_archive_duration: Optional[AutoArchiveDuration] = None,
         rate_limit_per_user: Optional[int] = None,
         reason: Optional[str] = None,
     ) -> "Thread":
@@ -292,9 +293,9 @@ class Message:
         ----------
         name: str
             The name of the thread.
-        auto_archive_duration: Optional[int]
-            The duration in minutes to automatically archive the thread after recent activity.
-            Can be one of 60, 1440, 4320, 10080.
+        auto_archive_duration: Optional[AutoArchiveDuration]
+            How long before the thread is automatically archived after recent activity.
+            See :class:`AutoArchiveDuration` for allowed values.
         rate_limit_per_user: Optional[int]
             The number of seconds a user has to wait before sending another message.
         reason: Optional[str]
@@ -307,7 +308,7 @@ class Message:
         """
         payload: Dict[str, Any] = {"name": name}
         if auto_archive_duration is not None:
-            payload["auto_archive_duration"] = auto_archive_duration
+            payload["auto_archive_duration"] = int(auto_archive_duration)
         if rate_limit_per_user is not None:
             payload["rate_limit_per_user"] = rate_limit_per_user
 
@@ -1088,7 +1089,9 @@ class Guild:
 
         # Internal caches, populated by events or specific fetches
         self._channels: ChannelCache = ChannelCache()
-        self._members: MemberCache = MemberCache(getattr(client_instance, "member_cache_flags", MemberCacheFlags()))
+        self._members: MemberCache = MemberCache(
+            getattr(client_instance, "member_cache_flags", MemberCacheFlags())
+        )
         self._threads: Dict[str, "Thread"] = {}
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:
@@ -1347,41 +1350,41 @@ class TextChannel(Channel):
         return ids
 
     def get_partial_message(self, id: int) -> "PartialMessage":
-       """Returns a :class:`PartialMessage` for the given ID.
+        """Returns a :class:`PartialMessage` for the given ID.
 
-       This allows performing actions on a message without fetching it first.
+        This allows performing actions on a message without fetching it first.
 
-       Parameters
-       ----------
-       id: int
-           The ID of the message to get a partial instance of.
+        Parameters
+        ----------
+        id: int
+            The ID of the message to get a partial instance of.
 
-       Returns
-       -------
-       PartialMessage
-           The partial message instance.
-       """
-       return PartialMessage(id=str(id), channel=self)
+        Returns
+        -------
+        PartialMessage
+            The partial message instance.
+        """
+        return PartialMessage(id=str(id), channel=self)
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
 
     async def pins(self) -> List["Message"]:
         """|coro|
-        
+
         Fetches all pinned messages in this channel.
-        
+
         Returns
         -------
         List[Message]
             The pinned messages.
-            
+
         Raises
         ------
         HTTPException
             Fetching the pinned messages failed.
         """
-        
+
         messages_data = await self._client._http.get_pinned_messages(self.id)
         return [self._client.parse_message(m) for m in messages_data]
 
@@ -1390,7 +1393,7 @@ class TextChannel(Channel):
         name: str,
         *,
         type: ChannelType = ChannelType.PUBLIC_THREAD,
-        auto_archive_duration: Optional[int] = None,
+        auto_archive_duration: Optional[AutoArchiveDuration] = None,
         invitable: Optional[bool] = None,
         rate_limit_per_user: Optional[int] = None,
         reason: Optional[str] = None,
@@ -1406,8 +1409,8 @@ class TextChannel(Channel):
         type: ChannelType
             The type of thread to create. Defaults to PUBLIC_THREAD.
             Can be PUBLIC_THREAD, PRIVATE_THREAD, or ANNOUNCEMENT_THREAD.
-        auto_archive_duration: Optional[int]
-            The duration in minutes to automatically archive the thread after recent activity.
+        auto_archive_duration: Optional[AutoArchiveDuration]
+            How long before the thread is automatically archived after recent activity.
         invitable: Optional[bool]
             Whether non-moderators can invite other non-moderators to a private thread.
             Only applicable to private threads.
@@ -1426,7 +1429,7 @@ class TextChannel(Channel):
             "type": type.value,
         }
         if auto_archive_duration is not None:
-            payload["auto_archive_duration"] = auto_archive_duration
+            payload["auto_archive_duration"] = int(auto_archive_duration)
         if invitable is not None and type == ChannelType.PRIVATE_THREAD:
             payload["invitable"] = invitable
         if rate_limit_per_user is not None:
@@ -1606,7 +1609,9 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         """
         await self._client._http.leave_thread(self.id)
 
-    async def archive(self, locked: bool = False, *, reason: Optional[str] = None) -> "Thread":
+    async def archive(
+        self, locked: bool = False, *, reason: Optional[str] = None
+    ) -> "Thread":
         """|coro|
 
         Archives this thread.
