@@ -16,6 +16,7 @@ from typing import (
     List,
     Dict,
 )
+from types import ModuleType
 
 from .http import HTTPClient
 from .gateway import GatewayClient
@@ -28,6 +29,7 @@ from .ext.commands.core import CommandHandler
 from .ext.commands.cog import Cog
 from .ext.app_commands.handler import AppCommandHandler
 from .ext.app_commands.context import AppCommandContext
+from .ext import loader as ext_loader
 from .interactions import Interaction, Snowflake
 from .error_handler import setup_global_error_handler
 from .voice_client import VoiceClient
@@ -638,6 +640,23 @@ class Client:
             # import traceback
             # traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
 
+    # --- Extension Management Methods ---
+
+    def load_extension(self, name: str) -> ModuleType:
+        """Load an extension by name using :mod:`disagreement.ext.loader`."""
+
+        return ext_loader.load_extension(name)
+
+    def unload_extension(self, name: str) -> None:
+        """Unload a previously loaded extension."""
+
+        ext_loader.unload_extension(name)
+
+    def reload_extension(self, name: str) -> ModuleType:
+        """Reload an extension by name."""
+
+        return ext_loader.reload_extension(name)
+
     # --- Model Parsing and Fetching ---
 
     def parse_user(self, data: Dict[str, Any]) -> "User":
@@ -1015,6 +1034,26 @@ class Client:
         await voice.connect()
         self._voice_clients[guild_id] = voice
         return voice
+
+    async def add_reaction(self, channel_id: str, message_id: str, emoji: str) -> None:
+        """|coro| Add a reaction to a message."""
+
+        await self.create_reaction(channel_id, message_id, emoji)
+
+    async def remove_reaction(
+        self, channel_id: str, message_id: str, emoji: str
+    ) -> None:
+        """|coro| Remove the bot's reaction from a message."""
+
+        await self.delete_reaction(channel_id, message_id, emoji)
+
+    async def clear_reactions(self, channel_id: str, message_id: str) -> None:
+        """|coro| Remove all reactions from a message."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        await self._http.clear_reactions(channel_id, message_id)
 
     async def create_reaction(
         self, channel_id: str, message_id: str, emoji: str

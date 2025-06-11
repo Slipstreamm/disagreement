@@ -58,3 +58,27 @@ async def test_loop_runs_and_stops() -> None:
     dummy.work.stop()  # pylint: disable=no-member
     assert dummy.count >= 2
     assert not dummy.work.running  # pylint: disable=no-member
+
+
+@pytest.mark.asyncio
+async def test_before_after_loop_callbacks() -> None:
+    events: list[str] = []
+
+    @tasks.loop(seconds=0.01)
+    async def ticker() -> None:
+        events.append("tick")
+
+    @ticker.before_loop
+    async def before() -> None:  # pragma: no cover - trivial callback
+        events.append("before")
+
+    @ticker.after_loop
+    async def after() -> None:  # pragma: no cover - trivial callback
+        events.append("after")
+
+    ticker.start()
+    await asyncio.sleep(0.03)
+    ticker.stop()
+    await asyncio.sleep(0.01)
+    assert events and events[0] == "before"
+    assert "after" in events

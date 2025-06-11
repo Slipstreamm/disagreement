@@ -18,6 +18,8 @@ class Task:
         delta: Optional[datetime.timedelta] = None,
         time_of_day: Optional[datetime.time] = None,
         on_error: Optional[Callable[[Exception], Awaitable[None]]] = None,
+        before_loop: Optional[Callable[[], Awaitable[None] | None]] = None,
+        after_loop: Optional[Callable[[], Awaitable[None] | None]] = None,
     ) -> None:
         self._coro = coro
         self._task: Optional[asyncio.Task[None]] = None
@@ -36,6 +38,8 @@ class Task:
         self._seconds = float(interval_seconds)
         self._time_of_day = time_of_day
         self._on_error = on_error
+        self._before_loop = before_loop
+        self._after_loop = after_loop
 
     def _seconds_until_time(self) -> float:
         assert self._time_of_day is not None
@@ -47,6 +51,9 @@ class Task:
 
     async def _run(self, *args: Any, **kwargs: Any) -> None:
         try:
+            if self._before_loop is not None:
+                await _maybe_call_no_args(self._before_loop)
+
             first = True
             while True:
                 if self._time_of_day is not None:
@@ -65,6 +72,9 @@ class Task:
                 first = False
         except asyncio.CancelledError:
             pass
+        finally:
+            if self._after_loop is not None:
+                await _maybe_call_no_args(self._after_loop)
 
     def start(self, *args: Any, **kwargs: Any) -> asyncio.Task[None]:
         if self._task is None or self._task.done():
@@ -85,6 +95,12 @@ async def _maybe_call(
     func: Callable[[Exception], Awaitable[None] | None], exc: Exception
 ) -> None:
     result = func(exc)
+    if asyncio.iscoroutine(result):
+        await result
+
+
+async def _maybe_call_no_args(func: Callable[[], Awaitable[None] | None]) -> None:
+    result = func()
     if asyncio.iscoroutine(result):
         await result
 
@@ -110,6 +126,8 @@ class _Loop:
         self.on_error = on_error
         self._task: Optional[Task] = None
         self._owner: Any = None
+        self._before_loop: Optional[Callable[..., Awaitable[Any]]] = None
+        self._after_loop: Optional[Callable[..., Awaitable[Any]]] = None
 
     def __get__(self, obj: Any, objtype: Any) -> "_BoundLoop":
         return _BoundLoop(self, obj)
@@ -119,7 +137,33 @@ class _Loop:
             return self.func(*args, **kwargs)
         return self.func(self._owner, *args, **kwargs)
 
+    def before_loop(
+        self, func: Callable[..., Awaitable[Any]]
+    ) -> Callable[..., Awaitable[Any]]:
+        self._before_loop = func
+        return func
+
+    def after_loop(
+        self, func: Callable[..., Awaitable[Any]]
+    ) -> Callable[..., Awaitable[Any]]:
+        self._after_loop = func
+        return func
+
     def start(self, *args: Any, **kwargs: Any) -> asyncio.Task[None]:
+        def call_before() -> Awaitable[None] | None:
+            if self._before_loop is None:
+                return None
+            if self._owner is not None:
+                return self._before_loop(self._owner)
+            return self._before_loop()
+
+        def call_after() -> Awaitable[None] | None:
+            if self._after_loop is None:
+                return None
+            if self._owner is not None:
+                return self._after_loop(self._owner)
+            return self._after_loop()
+
         self._task = Task(
             self._coro,
             seconds=self.seconds,
@@ -128,6 +172,8 @@ class _Loop:
             delta=self.delta,
             time_of_day=self.time_of_day,
             on_error=self.on_error,
+            before_loop=call_before,
+            after_loop=call_after,
         )
         return self._task.start(*args, **kwargs)
 

@@ -17,11 +17,13 @@ from .errors import (
     DisagreementException,
 )
 from . import __version__  # For User-Agent
+from .rate_limiter import RateLimiter
+from .interactions import InteractionResponsePayload
 
 if TYPE_CHECKING:
     from .client import Client
     from .models import Message, Webhook, File
-    from .interactions import ApplicationCommand, InteractionResponsePayload, Snowflake
+    from .interactions import ApplicationCommand, Snowflake
 
 # Discord API constants
 API_BASE_URL = "https://discord.com/api/v10"  # Using API v10
@@ -44,8 +46,7 @@ class HTTPClient:
 
         self.verbose = verbose
 
-        self._global_rate_limit_lock = asyncio.Event()
-        self._global_rate_limit_lock.set()  # Initially unlocked
+        self._rate_limiter = RateLimiter()
 
     async def _ensure_session(self):
         if self._session is None or self._session.closed:
@@ -87,10 +88,10 @@ class HTTPClient:
         if self.verbose:
             print(f"HTTP REQUEST: {method} {url} | payload={payload} params={params}")
 
-        # Global rate limit handling
-        await self._global_rate_limit_lock.wait()
+        route = f"{method.upper()}:{endpoint}"
 
         for attempt in range(5):  # Max 5 retries for rate limits
+            await self._rate_limiter.acquire(route)
             assert self._session is not None, "ClientSession not initialized"
             async with self._session.request(
                 method,
@@ -120,6 +121,8 @@ class HTTPClient:
                 if self.verbose:
                     print(f"HTTP RESPONSE: {response.status} {url} | {data}")
 
+                self._rate_limiter.release(route, response.headers)
+
                 if 200 <= response.status < 300:
                     if response.status == 204:
                         return None
@@ -142,12 +145,9 @@ class HTTPClient:
                     if data and isinstance(data, dict) and "message" in data:
                         error_message += f" Discord says: {data['message']}"
 
-                    if is_global:
-                        self._global_rate_limit_lock.clear()
-                        await asyncio.sleep(retry_after)
-                        self._global_rate_limit_lock.set()
-                    else:
-                        await asyncio.sleep(retry_after)
+                    await self._rate_limiter.handle_rate_limit(
+                        route, retry_after, is_global
+                    )
 
                     if attempt < 4:  # Don't log on the last attempt before raising
                         print(
@@ -346,6 +346,16 @@ class HTTPClient:
         return await self.request(
             "GET",
             f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}",
+        )
+
+    async def clear_reactions(
+        self, channel_id: "Snowflake", message_id: "Snowflake"
+    ) -> None:
+        """Removes all reactions from a message."""
+
+        await self.request(
+            "DELETE",
+            f"/channels/{channel_id}/messages/{message_id}/reactions",
         )
 
     async def bulk_delete_messages(
@@ -743,7 +753,7 @@ class HTTPClient:
         self,
         interaction_id: "Snowflake",
         interaction_token: str,
-        payload: "InteractionResponsePayload",
+        payload: Union["InteractionResponsePayload", Dict[str, Any]],
         *,
         ephemeral: bool = False,
     ) -> None:
@@ -756,10 +766,16 @@ class HTTPClient:
         """
         # Interaction responses do not use the bot token in the Authorization header.
         # They are authenticated by the interaction_token in the URL.
+        payload_data: Dict[str, Any]
+        if isinstance(payload, InteractionResponsePayload):
+            payload_data = payload.to_dict()
+        else:
+            payload_data = payload
+
         await self.request(
             "POST",
             f"/interactions/{interaction_id}/{interaction_token}/callback",
-            payload=payload.to_dict(),
+            payload=payload_data,
             use_auth_header=False,
         )
 

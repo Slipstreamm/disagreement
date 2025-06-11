@@ -25,6 +25,7 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     # SelectMenuType will be part of ComponentType or a new enum if needed
 )
 from .permissions import Permissions
+from .color import Color
 
 
 if TYPE_CHECKING:
@@ -201,6 +202,21 @@ class Message:
             view=view,
         )
 
+    async def add_reaction(self, emoji: str) -> None:
+        """|coro| Add a reaction to this message."""
+
+        await self._client.add_reaction(self.channel_id, self.id, emoji)
+
+    async def remove_reaction(self, emoji: str) -> None:
+        """|coro| Remove the bot's reaction from this message."""
+
+        await self._client.remove_reaction(self.channel_id, self.id, emoji)
+
+    async def clear_reactions(self) -> None:
+        """|coro| Remove all reactions from this message."""
+
+        await self._client.clear_reactions(self.channel_id, self.id)
+
     async def delete(self, delay: Optional[float] = None) -> None:
         """|coro|
 
@@ -312,7 +328,7 @@ class Embed:
         self.description: Optional[str] = data.get("description")
         self.url: Optional[str] = data.get("url")
         self.timestamp: Optional[str] = data.get("timestamp")  # ISO8601 timestamp
-        self.color: Optional[int] = data.get("color")
+        self.color = Color.parse(data.get("color"))
 
         self.footer: Optional[EmbedFooter] = (
             EmbedFooter(data["footer"]) if data.get("footer") else None
@@ -342,7 +358,7 @@ class Embed:
         if self.timestamp:
             payload["timestamp"] = self.timestamp
         if self.color is not None:
-            payload["color"] = self.color
+            payload["color"] = self.color.value
         if self.footer:
             payload["footer"] = self.footer.to_dict()
         if self.image:
@@ -527,6 +543,12 @@ class Member(User):  # Member inherits from User
 
     def __repr__(self) -> str:
         return f"<Member id='{self.id}' username='{self.username}' nick='{self.nick}'>"
+
+    @property
+    def display_name(self) -> str:
+        """Return the nickname if set, otherwise the username."""
+
+        return self.nick or self.username
 
     async def kick(self, *, reason: Optional[str] = None) -> None:
         if not self.guild_id or not self._client:
@@ -1107,6 +1129,36 @@ class TextChannel(Channel):
             self._client._messages.pop(mid, None)
         return ids
 
+    async def history(
+        self,
+        *,
+        limit: Optional[int] = 100,
+        before: "Snowflake | None" = None,
+    ):
+        """An async iterator over messages in the channel."""
+
+        params: Dict[str, Union[int, str]] = {}
+        if before is not None:
+            params["before"] = before
+
+        fetched = 0
+        while True:
+            to_fetch = 100 if limit is None else min(100, limit - fetched)
+            if to_fetch <= 0:
+                break
+            params["limit"] = to_fetch
+            messages = await self._client._http.request(
+                "GET", f"/channels/{self.id}/messages", params=params.copy()
+            )
+            if not messages:
+                break
+            params["before"] = messages[-1]["id"]
+            for msg in messages:
+                yield Message(msg, self._client)
+                fetched += 1
+                if limit is not None and fetched >= limit:
+                    return
+
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
 
@@ -1223,6 +1275,36 @@ class DMChannel(Channel):
             embeds=embeds,
             components=components,
         )
+
+    async def history(
+        self,
+        *,
+        limit: Optional[int] = 100,
+        before: "Snowflake | None" = None,
+    ):
+        """An async iterator over messages in this DM."""
+
+        params: Dict[str, Union[int, str]] = {}
+        if before is not None:
+            params["before"] = before
+
+        fetched = 0
+        while True:
+            to_fetch = 100 if limit is None else min(100, limit - fetched)
+            if to_fetch <= 0:
+                break
+            params["limit"] = to_fetch
+            messages = await self._client._http.request(
+                "GET", f"/channels/{self.id}/messages", params=params.copy()
+            )
+            if not messages:
+                break
+            params["before"] = messages[-1]["id"]
+            for msg in messages:
+                yield Message(msg, self._client)
+                fetched += 1
+                if limit is not None and fetched >= limit:
+                    return
 
     def __repr__(self) -> str:
         recipient_repr = self.recipient.username if self.recipient else "Unknown"
@@ -1759,13 +1841,13 @@ class Container(Component):
     def __init__(
         self,
         components: List[Component],
-        accent_color: Optional[int] = None,
+        accent_color: Color | int | str | None = None,
         spoiler: bool = False,
         id: Optional[int] = None,
     ):
         super().__init__(ComponentType.CONTAINER)
         self.components = components
-        self.accent_color = accent_color
+        self.accent_color = Color.parse(accent_color)
         self.spoiler = spoiler
         self.id = id
 
@@ -1773,7 +1855,7 @@ class Container(Component):
         payload = super().to_dict()
         payload["components"] = [c.to_dict() for c in self.components]
         if self.accent_color:
-            payload["accent_color"] = self.accent_color
+            payload["accent_color"] = self.accent_color.value
         if self.spoiler:
             payload["spoiler"] = self.spoiler
         if self.id is not None:
