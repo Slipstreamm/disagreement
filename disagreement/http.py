@@ -628,6 +628,17 @@ class HTTPClient:
         """Fetches a guild object for a given guild ID."""
         return await self.request("GET", f"/guilds/{guild_id}")
 
+    async def get_audit_logs(
+        self, guild_id: "Snowflake", **filters: Any
+    ) -> Dict[str, Any]:
+        """Fetches audit log entries for a guild."""
+        params = {k: v for k, v in filters.items() if v is not None}
+        return await self.request(
+            "GET",
+            f"/guilds/{guild_id}/audit-logs",
+            params=params if params else None,
+        )
+
     # Add other methods like:
     # async def get_guild(self, guild_id: str) -> Dict[str, Any]: ...
     # async def create_reaction(self, channel_id: str, message_id: str, emoji: str) -> None: ...
