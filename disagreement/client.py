@@ -82,6 +82,8 @@ class Client:
         http_options (Optional[Dict[str, Any]]): Extra options passed to
             :class:`HTTPClient` for creating the internal
             :class:`aiohttp.ClientSession`.
+        message_cache_maxlen (Optional[int]): Maximum number of messages to keep
+            in the cache. When ``None``, the cache size is unlimited.
     """
 
     def __init__(
@@ -99,6 +101,7 @@ class Client:
         gateway_max_retries: int = 5,
         gateway_max_backoff: float = 60.0,
         member_cache_flags: Optional[MemberCacheFlags] = None,
+        message_cache_maxlen: Optional[int] = None,
         http_options: Optional[Dict[str, Any]] = None,
     ):
         if not token:
@@ -108,6 +111,7 @@ class Client:
         self.member_cache_flags: MemberCacheFlags = (
             member_cache_flags if member_cache_flags is not None else MemberCacheFlags()
         )
+        self.message_cache_maxlen: Optional[int] = message_cache_maxlen
         self.intents: int = intents if intents is not None else GatewayIntent.default()
         if loop:
             self.loop: asyncio.AbstractEventLoop = loop
@@ -157,7 +161,7 @@ class Client:
         self._guilds: GuildCache = GuildCache()
         self._channels: ChannelCache = ChannelCache()
         self._users: Cache["User"] = Cache()
-        self._messages: Cache["Message"] = Cache(ttl=3600)  # Cache messages for an hour
+        self._messages: Cache["Message"] = Cache(ttl=3600, maxlen=message_cache_maxlen)
         self._views: Dict[Snowflake, "View"] = {}
         self._persistent_views: Dict[str, "View"] = {}
         self._voice_clients: Dict[Snowflake, VoiceClient] = {}
@@ -693,7 +697,7 @@ class Client:
             )
             # import traceback
             # traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
- 
+
     async def on_command_completion(self, ctx: "CommandContext") -> None:
         """
         Default command completion handler. Called when a command has successfully completed.
@@ -1514,35 +1518,35 @@ class Client:
         return [self.parse_invite(inv) for inv in data]
 
     def add_persistent_view(self, view: "View") -> None:
-       """
-       Registers a persistent view with the client.
+        """
+        Registers a persistent view with the client.
 
-       Persistent views have a timeout of `None` and their components must have a `custom_id`.
-       This allows the view to be re-instantiated across bot restarts.
+        Persistent views have a timeout of `None` and their components must have a `custom_id`.
+        This allows the view to be re-instantiated across bot restarts.
 
-       Args:
-           view (View): The view instance to register.
+        Args:
+            view (View): The view instance to register.
 
-       Raises:
-           ValueError: If the view is not persistent (timeout is not None) or if a component's
-                       custom_id is already registered.
-       """
-       if self.is_ready():
-           print(
-               "Warning: Adding a persistent view after the client is ready. "
-               "This view will only be available for interactions on this session."
-           )
+        Raises:
+            ValueError: If the view is not persistent (timeout is not None) or if a component's
+                        custom_id is already registered.
+        """
+        if self.is_ready():
+            print(
+                "Warning: Adding a persistent view after the client is ready. "
+                "This view will only be available for interactions on this session."
+            )
 
-       if view.timeout is not None:
-           raise ValueError("Persistent views must have a timeout of None.")
+        if view.timeout is not None:
+            raise ValueError("Persistent views must have a timeout of None.")
 
-       for item in view.children:
-           if item.custom_id:  # Ensure custom_id is not None
-               if item.custom_id in self._persistent_views:
-                   raise ValueError(
-                       f"A component with custom_id '{item.custom_id}' is already registered."
-                   )
-               self._persistent_views[item.custom_id] = view
+        for item in view.children:
+            if item.custom_id:  # Ensure custom_id is not None
+                if item.custom_id in self._persistent_views:
+                    raise ValueError(
+                        f"A component with custom_id '{item.custom_id}' is already registered."
+                    )
+                self._persistent_views[item.custom_id] = view
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:

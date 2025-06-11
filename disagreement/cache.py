@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from typing import TYPE_CHECKING, Dict, Generic, Optional, TypeVar
+from collections import OrderedDict
 
 if TYPE_CHECKING:
     from .models import Channel, Guild, Member
@@ -11,15 +12,22 @@ T = TypeVar("T")
 
 
 class Cache(Generic[T]):
-    """Simple in-memory cache with optional TTL support."""
+    """Simple in-memory cache with optional TTL and max size support."""
 
-    def __init__(self, ttl: Optional[float] = None) -> None:
+    def __init__(
+        self, ttl: Optional[float] = None, maxlen: Optional[int] = None
+    ) -> None:
         self.ttl = ttl
-        self._data: Dict[str, tuple[T, Optional[float]]] = {}
+        self.maxlen = maxlen
+        self._data: "OrderedDict[str, tuple[T, Optional[float]]]" = OrderedDict()
 
     def set(self, key: str, value: T) -> None:
         expiry = time.monotonic() + self.ttl if self.ttl is not None else None
+        if key in self._data:
+            self._data.move_to_end(key)
         self._data[key] = (value, expiry)
+        if self.maxlen is not None and len(self._data) > self.maxlen:
+            self._data.popitem(last=False)
 
     def get(self, key: str) -> Optional[T]:
         item = self._data.get(key)
@@ -29,6 +37,7 @@ class Cache(Generic[T]):
         if expiry is not None and expiry < time.monotonic():
             self.invalidate(key)
             return None
+        self._data.move_to_end(key)
         return value
 
     def invalidate(self, key: str) -> None:
