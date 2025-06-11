@@ -412,6 +412,13 @@ class Client:
             return self._gateway.latency
         return None
 
+    @property
+    def latency_ms(self) -> Optional[float]:
+        """Returns the gateway latency in milliseconds, or ``None`` if unavailable."""
+        if self._gateway:
+            return self._gateway.latency_ms
+        return None
+
     async def wait_until_ready(self) -> None:
         """|coro|
         Waits until the client is fully connected to Discord and the initial state is processed.

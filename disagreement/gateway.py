@@ -622,6 +622,13 @@ class GatewayClient:
         return self._last_heartbeat_ack - self._last_heartbeat_sent
 
     @property
+    def latency_ms(self) -> Optional[float]:
+        """Returns the latency between heartbeat and ACK in milliseconds."""
+        if self._last_heartbeat_sent is None or self._last_heartbeat_ack is None:
+            return None
+        return (self._last_heartbeat_ack - self._last_heartbeat_sent) * 1000
+
+    @property
     def last_heartbeat_sent(self) -> Optional[float]:
         return self._last_heartbeat_sent
 

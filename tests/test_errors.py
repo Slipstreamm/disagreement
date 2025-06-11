@@ -19,6 +19,7 @@ def http_client():
     # Using a real session and patching the request method is more robust
     client = HTTPClient(token="fake_token")
     yield client
+
     # Cleanup: close the session after the test
     # This requires making the fixture async or running this in an event loop
     async def close_session():
