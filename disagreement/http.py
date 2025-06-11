@@ -23,7 +23,7 @@ from .interactions import InteractionResponsePayload
 
 if TYPE_CHECKING:
     from .client import Client
-    from .models import Message, Webhook, File
+    from .models import Message, Webhook, File, Invite
     from .interactions import ApplicationCommand, Snowflake
 
 # Discord API constants
@@ -408,6 +408,30 @@ class HTTPClient:
     async def get_channel(self, channel_id: str) -> Dict[str, Any]:
         """Fetches a channel by ID."""
         return await self.request("GET", f"/channels/{channel_id}")
+
+    async def get_channel_invites(
+        self, channel_id: "Snowflake"
+    ) -> List[Dict[str, Any]]:
+        """Fetches the invites for a channel."""
+
+        return await self.request("GET", f"/channels/{channel_id}/invites")
+
+    async def create_invite(
+        self, channel_id: "Snowflake", payload: Dict[str, Any]
+    ) -> "Invite":
+        """Creates an invite for a channel."""
+
+        data = await self.request(
+            "POST", f"/channels/{channel_id}/invites", payload=payload
+        )
+        from .models import Invite
+
+        return Invite.from_dict(data)
+
+    async def delete_invite(self, code: str) -> None:
+        """Deletes an invite by code."""
+
+        await self.request("DELETE", f"/invites/{code}")
 
     async def create_webhook(
         self, channel_id: "Snowflake", payload: Dict[str, Any]
