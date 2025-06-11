@@ -1,5 +1,3 @@
-# disagreement/interactions.py
-
 """
 Data models for Discord Interaction objects.
 """

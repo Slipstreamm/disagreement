@@ -1,4 +1,3 @@
-# disagreement/voice_client.py
 """Voice gateway and UDP audio client."""
 
 from __future__ import annotations

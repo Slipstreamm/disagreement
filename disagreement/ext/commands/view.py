@@ -1,5 +1,3 @@
-# disagreement/ext/commands/view.py
-
 import re
 
 
@@ -47,7 +45,7 @@ class StringView:
             word = match.group(0)
             self.index += len(word)
             return word
-        return ""  # Should not happen if not eof and skip_whitespace was called
+        return ""
 
     def get_quoted_string(self) -> str:
         """

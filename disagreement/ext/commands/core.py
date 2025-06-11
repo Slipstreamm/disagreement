@@ -1,5 +1,3 @@
-# disagreement/ext/commands/core.py
-
 from __future__ import annotations
 
 import asyncio
@@ -567,9 +565,7 @@ class CommandHandler:
 
                 # If final_value_for_param was not set by greedy logic, try conversion
                 if final_value_for_param is inspect.Parameter.empty:
-                    if (
-                        arg_str_value is None
-                    ):  # Should not happen if view.get_word/get_quoted_string is robust
+                    if arg_str_value is None:
                         if param.default is not inspect.Parameter.empty:
                             final_value_for_param = param.default
                         else:
@@ -609,7 +605,7 @@ class CommandHandler:
                                     final_value_for_param = None
                                 elif last_err_union:
                                     raise last_err_union
-                                else:  # Should not be reached if logic is correct
+                                else:
                                     raise BadArgument(
                                         f"Could not convert '{arg_str_value}' to any of {union_args} for param '{param.name}'."
                                     )

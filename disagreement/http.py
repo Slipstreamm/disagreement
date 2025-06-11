@@ -1,5 +1,3 @@
-# disagreement/http.py
-
 """
 HTTP client for interacting with the Discord REST API.
 """
@@ -447,8 +445,6 @@ class HTTPClient:
                     text=error_text,
                     error_code=discord_error_code,
                 )
-
-        # Should not be reached if retries are exhausted by RateLimitError
         raise DisagreementException(
             f"Failed request to {method} {endpoint} after multiple retries."
         )

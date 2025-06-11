@@ -1,5 +1,3 @@
-# disagreement/ext/commands/errors.py
-
 """
 Custom exceptions for the command extension.
 """

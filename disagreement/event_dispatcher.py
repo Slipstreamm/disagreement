@@ -1,5 +1,3 @@
-# disagreement/event_dispatcher.py
-
 """
 Event dispatcher for handling Discord Gateway events.
 """
@@ -198,7 +196,7 @@ class EventDispatcher:
             try:
                 self._listeners[event_name_upper].remove(coro)
             except ValueError:
-                pass  # Listener not in list
+                pass
 
     def add_waiter(
         self,

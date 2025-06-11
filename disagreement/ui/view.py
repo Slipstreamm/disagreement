@@ -147,7 +147,7 @@ class View:
 
     async def on_timeout(self):
         """Called when the view times out."""
-        pass  # User can override this
+        pass
 
     async def _start(self, client: Client):
         """Starts the view's internal listener."""

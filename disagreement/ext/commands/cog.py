@@ -1,5 +1,3 @@
-# disagreement/ext/commands/cog.py
-
 import inspect
 import logging
 from typing import TYPE_CHECKING, List, Tuple, Callable, Awaitable, Any, Dict, Union

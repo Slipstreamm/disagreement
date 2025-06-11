@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/commands.py
-
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Union, TYPE_CHECKING
 

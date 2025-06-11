@@ -1,5 +1,3 @@
-# disagreement/shard_manager.py
-
 """Sharding utilities for managing multiple gateway connections."""
 
 from __future__ import annotations

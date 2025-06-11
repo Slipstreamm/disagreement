@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/decorators.py
-
 import inspect
 import asyncio
 from dataclasses import dataclass
@@ -134,7 +132,7 @@ def _extract_options_from_signature(
         first_param = next(param_iter, None)  # Consume 'self', get next
 
     if first_param and first_param.name == "ctx":  # Consume 'ctx'
-        pass  # ctx is handled, now iterate over actual command options
+        pass
     elif (
         first_param
     ):  # If first_param was not 'self' and not 'ctx', it's a command option
@@ -147,7 +145,7 @@ def _extract_options_from_signature(
         if param.kind == param.VAR_POSITIONAL or param.kind == param.VAR_KEYWORD:
             # *args and **kwargs are not directly supported by slash command options structure.
             # Could raise an error or ignore. For now, ignore.
-            # print(f"Warning: *args/**kwargs ({param.name}) are not supported for slash command options.")
+
             continue
 
         option_name = param.name
@@ -190,7 +188,7 @@ def _extract_options_from_signature(
                 # More complex Unions are not directly supported by a single option type.
                 # Could default to STRING or raise.
                 # For now, let's assume simple Optional[T] or direct types.
-                # print(f"Warning: Complex Union type for '{option_name}' not fully supported, defaulting to STRING.")
+
                 actual_type_for_mapping = str
 
         elif origin is list and len(args) == 1:
@@ -198,7 +196,7 @@ def _extract_options_from_signature(
             # via repeated options or specific component interactions, not directly in slash command options.
             # This might indicate a need for a different interaction pattern or custom parsing.
             # For now, treat List[str] as a string, others might error or default.
-            # print(f"Warning: List type for '{option_name}' not directly supported as a single option. Consider type {args[0]}.")
+
             actual_type_for_mapping = args[
                 0
             ]  # Use the inner type for mapping, but this is a simplification.
@@ -247,7 +245,7 @@ def _extract_options_from_signature(
 
         if not option_type:
             # Fallback or error if type couldn't be mapped
-            # print(f"Warning: Could not map type '{actual_type_for_mapping}' for option '{option_name}'. Defaulting to STRING.")
+
             option_type = ApplicationCommandOptionType.STRING  # Default fallback
 
         required = (param.default == inspect.Parameter.empty) and not is_optional

@@ -1,5 +1,3 @@
-# disagreement/client.py
-
 """
 The main Client class for interacting with the Discord API.
 """
@@ -274,7 +272,6 @@ class Client:
                     print("Max connection retries reached. Giving up.")
                     await self.close()  # Ensure cleanup
                     raise
-        # Should not be reached if max_retries is > 0
         if max_retries == 0:  # If max_retries was 0, means no retries attempted
             raise DisagreementException("Connection failed with 0 retries allowed.")
 
