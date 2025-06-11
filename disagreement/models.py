@@ -1433,6 +1433,33 @@ class Webhook:
         return self._client.parse_message(message_data)
 
 
+class GuildTemplate:
+    """Represents a guild template."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.code: str = data["code"]
+        self.name: str = data["name"]
+        self.description: Optional[str] = data.get("description")
+        self.usage_count: int = data.get("usage_count", 0)
+        self.creator_id: str = data.get("creator_id", "")
+        self.creator: Optional[User] = (
+            User(data["creator"]) if data.get("creator") else None
+        )
+        self.created_at: Optional[str] = data.get("created_at")
+        self.updated_at: Optional[str] = data.get("updated_at")
+        self.source_guild_id: Optional[str] = data.get("source_guild_id")
+        self.serialized_source_guild: Dict[str, Any] = data.get(
+            "serialized_source_guild", {}
+        )
+        self.is_dirty: Optional[bool] = data.get("is_dirty")
+
+    def __repr__(self) -> str:
+        return f"<GuildTemplate code='{self.code}' name='{self.name}'>"
+
+
 # --- Message Components ---
 
 
