@@ -1160,6 +1160,85 @@ class VoiceChannel(Channel):
         return f"<VoiceChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
 
 
+class StageChannel(VoiceChannel):
+    """Represents a guild stage channel."""
+
+    def __repr__(self) -> str:
+        return f"<StageChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
+
+    async def start_stage_instance(
+        self,
+        topic: str,
+        *,
+        privacy_level: int = 2,
+        reason: Optional[str] = None,
+        guild_scheduled_event_id: Optional[str] = None,
+    ) -> "StageInstance":
+        if not hasattr(self._client, "_http"):
+            raise DisagreementException("Client missing HTTP for stage instance")
+
+        payload: Dict[str, Any] = {
+            "channel_id": self.id,
+            "topic": topic,
+            "privacy_level": privacy_level,
+        }
+        if guild_scheduled_event_id is not None:
+            payload["guild_scheduled_event_id"] = guild_scheduled_event_id
+
+        instance = await self._client._http.start_stage_instance(payload, reason=reason)
+        instance._client = self._client
+        return instance
+
+    async def edit_stage_instance(
+        self,
+        *,
+        topic: Optional[str] = None,
+        privacy_level: Optional[int] = None,
+        reason: Optional[str] = None,
+    ) -> "StageInstance":
+        if not hasattr(self._client, "_http"):
+            raise DisagreementException("Client missing HTTP for stage instance")
+
+        payload: Dict[str, Any] = {}
+        if topic is not None:
+            payload["topic"] = topic
+        if privacy_level is not None:
+            payload["privacy_level"] = privacy_level
+
+        instance = await self._client._http.edit_stage_instance(
+            self.id, payload, reason=reason
+        )
+        instance._client = self._client
+        return instance
+
+    async def end_stage_instance(self, *, reason: Optional[str] = None) -> None:
+        if not hasattr(self._client, "_http"):
+            raise DisagreementException("Client missing HTTP for stage instance")
+
+        await self._client._http.end_stage_instance(self.id, reason=reason)
+
+
+class StageInstance:
+    """Represents a stage instance."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ) -> None:
+        self._client = client_instance
+        self.id: str = data["id"]
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.channel_id: str = data["channel_id"]
+        self.topic: str = data["topic"]
+        self.privacy_level: int = data.get("privacy_level", 2)
+        self.discoverable_disabled: bool = data.get("discoverable_disabled", False)
+        self.guild_scheduled_event_id: Optional[str] = data.get(
+            "guild_scheduled_event_id"
+        )
+
+    def __repr__(self) -> str:
+        return f"<StageInstance id='{self.id}' channel_id='{self.channel_id}'>"
+
+
 class CategoryChannel(Channel):
     """Represents a guild category channel."""
 
@@ -2100,11 +2179,10 @@ def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:
         ChannelType.GUILD_ANNOUNCEMENT.value,
     ):
         return TextChannel(data, client)
-    if channel_type in (
-        ChannelType.GUILD_VOICE.value,
-        ChannelType.GUILD_STAGE_VOICE.value,
-    ):
+    if channel_type == ChannelType.GUILD_VOICE.value:
         return VoiceChannel(data, client)
+    if channel_type == ChannelType.GUILD_STAGE_VOICE.value:
+        return StageChannel(data, client)
     if channel_type == ChannelType.GUILD_CATEGORY.value:
         return CategoryChannel(data, client)
     if channel_type in (

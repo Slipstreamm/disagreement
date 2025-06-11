@@ -23,7 +23,7 @@ from .interactions import InteractionResponsePayload
 
 if TYPE_CHECKING:
     from .client import Client
-    from .models import Message, Webhook, File, Invite
+    from .models import Message, Webhook, File, StageInstance, Invite
     from .interactions import ApplicationCommand, Snowflake
 
 # Discord API constants
@@ -923,6 +923,48 @@ class HTTPClient:
     async def trigger_typing(self, channel_id: str) -> None:
         """Sends a typing indicator to the specified channel."""
         await self.request("POST", f"/channels/{channel_id}/typing")
+
+    async def start_stage_instance(
+        self, payload: Dict[str, Any], reason: Optional[str] = None
+    ) -> "StageInstance":
+        """Starts a stage instance."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        data = await self.request(
+            "POST", "/stage-instances", payload=payload, custom_headers=headers
+        )
+        from .models import StageInstance
+
+        return StageInstance(data)
+
+    async def edit_stage_instance(
+        self,
+        channel_id: "Snowflake",
+        payload: Dict[str, Any],
+        reason: Optional[str] = None,
+    ) -> "StageInstance":
+        """Edits an existing stage instance."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        data = await self.request(
+            "PATCH",
+            f"/stage-instances/{channel_id}",
+            payload=payload,
+            custom_headers=headers,
+        )
+        from .models import StageInstance
+
+        return StageInstance(data)
+
+    async def end_stage_instance(
+        self, channel_id: "Snowflake", reason: Optional[str] = None
+    ) -> None:
+        """Ends a stage instance."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        await self.request(
+            "DELETE", f"/stage-instances/{channel_id}", custom_headers=headers
+        )
 
     async def get_voice_regions(self) -> List[Dict[str, Any]]:
         """Returns available voice regions."""
