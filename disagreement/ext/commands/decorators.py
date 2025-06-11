@@ -218,6 +218,7 @@ def requires_permissions(
 
     return check(predicate)
 
+
 def has_role(
     name_or_id: str | int,
 ) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:
@@ -241,9 +242,7 @@ def has_role(
             raise CheckFailure("Could not resolve author to a guild member.")
 
         # Create a list of the member's role objects by looking them up in the guild's roles list
-        member_roles = [
-            role for role in ctx.guild.roles if role.id in author.roles
-        ]
+        member_roles = [role for role in ctx.guild.roles if role.id in author.roles]
 
         if any(
             role.id == str(name_or_id) or role.name == name_or_id
@@ -278,9 +277,7 @@ def has_any_role(
         if not author:
             raise CheckFailure("Could not resolve author to a guild member.")
 
-        member_roles = [
-            role for role in ctx.guild.roles if role.id in author.roles
-        ]
+        member_roles = [role for role in ctx.guild.roles if role.id in author.roles]
         # Convert names_or_ids to a set for efficient lookup
         names_or_ids_set = set(map(str, names_or_ids))
 
