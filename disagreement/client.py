@@ -73,6 +73,9 @@ class Client:
         command_prefix (Union[str, List[str], Callable[['Client', Message], Union[str, List[str]]]]):
             The prefix(es) for commands. Defaults to '!'.
         verbose (bool): If True, print raw HTTP and Gateway traffic for debugging.
+        http_options (Optional[Dict[str, Any]]): Extra options passed to
+            :class:`HTTPClient` for creating the internal
+            :class:`aiohttp.ClientSession`.
     """
 
     def __init__(
@@ -89,6 +92,7 @@ class Client:
         shard_count: Optional[int] = None,
         gateway_max_retries: int = 5,
         gateway_max_backoff: float = 60.0,
+        http_options: Optional[Dict[str, Any]] = None,
     ):
         if not token:
             raise ValueError("A bot token must be provided.")
@@ -102,7 +106,11 @@ class Client:
         setup_global_error_handler(self.loop)
 
         self.verbose: bool = verbose
-        self._http: HTTPClient = HTTPClient(token=self.token, verbose=verbose)
+        self._http: HTTPClient = HTTPClient(
+            token=self.token,
+            verbose=verbose,
+            **(http_options or {}),
+        )
         self._event_dispatcher: EventDispatcher = EventDispatcher(client_instance=self)
         self._gateway: Optional[GatewayClient] = (
             None  # Initialized in run() or connect()

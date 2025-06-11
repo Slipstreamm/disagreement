@@ -19,6 +19,7 @@ Use `AppCommandGroup` to group related commands. See the [components guide](usin
 - [Components](using_components.md)
 - [Caching](caching.md)
 - [Voice Features](voice_features.md)
+- [HTTP Client Options](http_client.md)
 
 ## Command Persistence
 

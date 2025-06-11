@@ -40,11 +40,26 @@ class HTTPClient:
         token: str,
         client_session: Optional[aiohttp.ClientSession] = None,
         verbose: bool = False,
+        **session_kwargs: Any,
     ):
+        """Create a new HTTP client.
+
+        Parameters
+        ----------
+        token:
+            Bot token for authentication.
+        client_session:
+            Optional existing :class:`aiohttp.ClientSession`.
+        verbose:
+            If ``True``, log HTTP requests and responses.
+        **session_kwargs:
+            Additional options forwarded to :class:`aiohttp.ClientSession`, such
+            as ``proxy`` or ``connector``.
+        """
+
         self.token = token
-        self._session: Optional[aiohttp.ClientSession] = (
-            client_session  # Can be externally managed
-        )
+        self._session: Optional[aiohttp.ClientSession] = client_session
+        self._session_kwargs: Dict[str, Any] = session_kwargs
         self.user_agent = f"DiscordBot (https://github.com/Slipstreamm/disagreement, {__version__})"  # Customize URL
 
         self.verbose = verbose
@@ -53,7 +68,7 @@ class HTTPClient:
 
     async def _ensure_session(self):
         if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession()
+            self._session = aiohttp.ClientSession(**self._session_kwargs)
 
     async def close(self):
         """Closes the underlying aiohttp.ClientSession."""
