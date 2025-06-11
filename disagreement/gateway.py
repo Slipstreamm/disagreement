@@ -14,6 +14,8 @@ import time
 import random
 from typing import Optional, TYPE_CHECKING, Any, Dict
 
+from .models import Activity
+
 from .enums import GatewayOpcode, GatewayIntent
 from .errors import GatewayException, DisagreementException, AuthenticationError
 from .interactions import Interaction
@@ -213,26 +215,17 @@ class GatewayClient:
     async def update_presence(
         self,
         status: str,
-        activity_name: Optional[str] = None,
-        activity_type: int = 0,
+        activity: Optional[Activity] = None,
+        *,
         since: int = 0,
         afk: bool = False,
-    ):
+    ) -> None:
         """Sends the presence update payload to the Gateway."""
         payload = {
             "op": GatewayOpcode.PRESENCE_UPDATE,
             "d": {
                 "since": since,
-                "activities": (
-                    [
-                        {
-                            "name": activity_name,
-                            "type": activity_type,
-                        }
-                    ]
-                    if activity_name
-                    else []
-                ),
+                "activities": [activity.to_dict()] if activity else [],
                 "status": status,
                 "afk": afk,
             },
@@ -353,7 +346,10 @@ class GatewayClient:
                         future._members.extend(raw_event_d_payload.get("members", []))  # type: ignore
 
                         # If this is the last chunk, resolve the future
-                        if raw_event_d_payload.get("chunk_index") == raw_event_d_payload.get("chunk_count", 1) - 1:
+                        if (
+                            raw_event_d_payload.get("chunk_index")
+                            == raw_event_d_payload.get("chunk_count", 1) - 1
+                        ):
                             future.set_result(future._members)  # type: ignore
                             del self._member_chunk_requests[nonce]
 

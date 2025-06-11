@@ -2361,6 +2361,37 @@ class ThreadMember:
         return f"<ThreadMember user_id='{self.user_id}' thread_id='{self.id}'>"
 
 
+class Activity:
+    """Represents a user's presence activity."""
+
+    def __init__(self, name: str, type: int) -> None:
+        self.name = name
+        self.type = type
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"name": self.name, "type": self.type}
+
+
+class Game(Activity):
+    """Represents a playing activity."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name, 0)
+
+
+class Streaming(Activity):
+    """Represents a streaming activity."""
+
+    def __init__(self, name: str, url: str) -> None:
+        super().__init__(name, 1)
+        self.url = url
+
+    def to_dict(self) -> Dict[str, Any]:
+        payload = super().to_dict()
+        payload["url"] = self.url
+        return payload
+
+
 class PresenceUpdate:
     """Represents a PRESENCE_UPDATE event."""
 
@@ -2371,7 +2402,17 @@ class PresenceUpdate:
         self.user = User(data["user"])
         self.guild_id: Optional[str] = data.get("guild_id")
         self.status: Optional[str] = data.get("status")
-        self.activities: List[Dict[str, Any]] = data.get("activities", [])
+        self.activities: List[Activity] = []
+        for activity in data.get("activities", []):
+            act_type = activity.get("type", 0)
+            name = activity.get("name", "")
+            if act_type == 0:
+                obj = Game(name)
+            elif act_type == 1:
+                obj = Streaming(name, activity.get("url", ""))
+            else:
+                obj = Activity(name, act_type)
+            self.activities.append(obj)
         self.client_status: Dict[str, Any] = data.get("client_status", {})
 
     def __repr__(self) -> str:

@@ -36,6 +36,7 @@ from .ext import loader as ext_loader
 from .interactions import Interaction, Snowflake
 from .error_handler import setup_global_error_handler
 from .voice_client import VoiceClient
+from .models import Activity
 
 if TYPE_CHECKING:
     from .models import (
@@ -439,8 +440,7 @@ class Client:
     async def change_presence(
         self,
         status: str,
-        activity_name: Optional[str] = None,
-        activity_type: int = 0,
+        activity: Optional[Activity] = None,
         since: int = 0,
         afk: bool = False,
     ):
@@ -449,8 +449,7 @@ class Client:
 
         Args:
             status (str): The new status for the client (e.g., "online", "idle", "dnd", "invisible").
-            activity_name (Optional[str]): The name of the activity.
-            activity_type (int): The type of the activity.
+            activity (Optional[Activity]): Activity instance describing what the bot is doing.
             since (int): The timestamp (in milliseconds) of when the client went idle.
             afk (bool): Whether the client is AFK.
         """
@@ -460,8 +459,7 @@ class Client:
         if self._gateway:
             await self._gateway.update_presence(
                 status=status,
-                activity_name=activity_name,
-                activity_type=activity_type,
+                activity=activity,
                 since=since,
                 afk=afk,
             )
