@@ -12,6 +12,7 @@ from typing import (
     Any,
     TYPE_CHECKING,
     Awaitable,
+    AsyncIterator,
     Union,
     List,
     Dict,
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
         Thread,
         DMChannel,
         Webhook,
+        AuditLogEntry,
     )
     from .ui.view import View
     from .enums import ChannelType as EnumChannelType
@@ -698,6 +700,12 @@ class Client:
         self._webhooks[webhook.id] = webhook
         return webhook
 
+    def parse_audit_log_entry(self, data: Dict[str, Any]) -> "AuditLogEntry":
+        """Parses audit log entry data."""
+        from .models import AuditLogEntry
+
+        return AuditLogEntry(data, client_instance=self)
+
     async def fetch_user(self, user_id: Snowflake) -> Optional["User"]:
         """Fetches a user by ID from Discord."""
         if self._closed:
@@ -1218,6 +1226,17 @@ class Client:
         except DisagreementException as e:  # Includes HTTPException
             print(f"Failed to fetch channel {channel_id}: {e}")
             return None
+
+    async def fetch_audit_logs(
+        self, guild_id: Snowflake, **filters: Any
+    ) -> AsyncIterator["AuditLogEntry"]:
+        """Fetch audit log entries for a guild."""
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.get_audit_logs(guild_id, **filters)
+        for entry in data.get("audit_log_entries", []):
+            yield self.parse_audit_log_entry(entry)
 
     async def create_webhook(
         self, channel_id: Snowflake, payload: Dict[str, Any]

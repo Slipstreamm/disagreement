@@ -2036,6 +2036,25 @@ class GuildRoleUpdate:
         return f"<GuildRoleUpdate guild_id='{self.guild_id}' role_id='{self.role.id}'>"
 
 
+class AuditLogEntry:
+    """Represents a single entry in a guild's audit log."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ) -> None:
+        self._client = client_instance
+        self.id: str = data["id"]
+        self.user_id: Optional[str] = data.get("user_id")
+        self.target_id: Optional[str] = data.get("target_id")
+        self.action_type: int = data["action_type"]
+        self.reason: Optional[str] = data.get("reason")
+        self.changes: List[Dict[str, Any]] = data.get("changes", [])
+        self.options: Optional[Dict[str, Any]] = data.get("options")
+
+    def __repr__(self) -> str:
+        return f"<AuditLogEntry id='{self.id}' action_type={self.action_type} user_id='{self.user_id}'>"
+
+
 def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:
     """Create a channel object from raw API data."""
     channel_type = data.get("type")
