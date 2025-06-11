@@ -115,30 +115,30 @@ class Message:
         # self.mention_everyone: bool = data.get("mention_everyone", False)
 
     async def pin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Pins this message to its channel.
+        Pins this message to its channel.
 
-       Raises
-       ------
-       HTTPException
-           Pinning the message failed.
-       """
-       await self._client._http.pin_message(self.channel_id, self.id)
-       self.pinned = True
+        Raises
+        ------
+        HTTPException
+            Pinning the message failed.
+        """
+        await self._client._http.pin_message(self.channel_id, self.id)
+        self.pinned = True
 
     async def unpin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Unpins this message from its channel.
+        Unpins this message from its channel.
 
-       Raises
-       ------
-       HTTPException
-           Unpinning the message failed.
-       """
-       await self._client._http.unpin_message(self.channel_id, self.id)
-       self.pinned = False
+        Raises
+        ------
+        HTTPException
+            Unpinning the message failed.
+        """
+        await self._client._http.unpin_message(self.channel_id, self.id)
+        self.pinned = False
 
     async def reply(
         self,
@@ -241,16 +241,16 @@ class Message:
         await self._client.add_reaction(self.channel_id, self.id, emoji)
 
     async def remove_reaction(self, emoji: str, member: Optional[User] = None) -> None:
-       """|coro|
-       Removes a reaction from this message.
-       If no ``member`` is provided, removes the bot's own reaction.
-       """
-       if member:
-           await self._client._http.delete_user_reaction(
-               self.channel_id, self.id, emoji, member.id
-           )
-       else:
-           await self._client.remove_reaction(self.channel_id, self.id, emoji)
+        """|coro|
+        Removes a reaction from this message.
+        If no ``member`` is provided, removes the bot's own reaction.
+        """
+        if member:
+            await self._client._http.delete_user_reaction(
+                self.channel_id, self.id, emoji, member.id
+            )
+        else:
+            await self._client.remove_reaction(self.channel_id, self.id, emoji)
 
     async def clear_reactions(self) -> None:
         """|coro| Remove all reactions from this message."""
@@ -1088,7 +1088,9 @@ class Guild:
 
         # Internal caches, populated by events or specific fetches
         self._channels: ChannelCache = ChannelCache()
-        self._members: MemberCache = MemberCache(getattr(client_instance, "member_cache_flags", MemberCacheFlags()))
+        self._members: MemberCache = MemberCache(
+            getattr(client_instance, "member_cache_flags", MemberCacheFlags())
+        )
         self._threads: Dict[str, "Thread"] = {}
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:
@@ -1347,41 +1349,41 @@ class TextChannel(Channel):
         return ids
 
     def get_partial_message(self, id: int) -> "PartialMessage":
-       """Returns a :class:`PartialMessage` for the given ID.
+        """Returns a :class:`PartialMessage` for the given ID.
 
-       This allows performing actions on a message without fetching it first.
+        This allows performing actions on a message without fetching it first.
 
-       Parameters
-       ----------
-       id: int
-           The ID of the message to get a partial instance of.
+        Parameters
+        ----------
+        id: int
+            The ID of the message to get a partial instance of.
 
-       Returns
-       -------
-       PartialMessage
-           The partial message instance.
-       """
-       return PartialMessage(id=str(id), channel=self)
+        Returns
+        -------
+        PartialMessage
+            The partial message instance.
+        """
+        return PartialMessage(id=str(id), channel=self)
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
 
     async def pins(self) -> List["Message"]:
         """|coro|
-        
+
         Fetches all pinned messages in this channel.
-        
+
         Returns
         -------
         List[Message]
             The pinned messages.
-            
+
         Raises
         ------
         HTTPException
             Fetching the pinned messages failed.
         """
-        
+
         messages_data = await self._client._http.get_pinned_messages(self.id)
         return [self._client.parse_message(m) for m in messages_data]
 
@@ -1606,7 +1608,9 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         """
         await self._client._http.leave_thread(self.id)
 
-    async def archive(self, locked: bool = False, *, reason: Optional[str] = None) -> "Thread":
+    async def archive(
+        self, locked: bool = False, *, reason: Optional[str] = None
+    ) -> "Thread":
         """|coro|
 
         Archives this thread.
@@ -2356,6 +2360,37 @@ class ThreadMember:
         return f"<ThreadMember user_id='{self.user_id}' thread_id='{self.id}'>"
 
 
+class Activity:
+    """Represents a user's presence activity."""
+
+    def __init__(self, name: str, type: int) -> None:
+        self.name = name
+        self.type = type
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"name": self.name, "type": self.type}
+
+
+class Game(Activity):
+    """Represents a playing activity."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name, 0)
+
+
+class Streaming(Activity):
+    """Represents a streaming activity."""
+
+    def __init__(self, name: str, url: str) -> None:
+        super().__init__(name, 1)
+        self.url = url
+
+    def to_dict(self) -> Dict[str, Any]:
+        payload = super().to_dict()
+        payload["url"] = self.url
+        return payload
+
+
 class PresenceUpdate:
     """Represents a PRESENCE_UPDATE event."""
 
@@ -2366,7 +2401,17 @@ class PresenceUpdate:
         self.user = User(data["user"])
         self.guild_id: Optional[str] = data.get("guild_id")
         self.status: Optional[str] = data.get("status")
-        self.activities: List[Dict[str, Any]] = data.get("activities", [])
+        self.activities: List[Activity] = []
+        for activity in data.get("activities", []):
+            act_type = activity.get("type", 0)
+            name = activity.get("name", "")
+            if act_type == 0:
+                obj = Game(name)
+            elif act_type == 1:
+                obj = Streaming(name, activity.get("url", ""))
+            else:
+                obj = Activity(name, act_type)
+            self.activities.append(obj)
         self.client_status: Dict[str, Any] = data.get("client_status", {})
 
     def __repr__(self) -> str:

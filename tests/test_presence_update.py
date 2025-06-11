@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 
 from disagreement.client import Client
+from disagreement.models import Game
 from disagreement.errors import DisagreementException
 
 
@@ -18,11 +19,11 @@ class DummyGateway(MagicMock):
 async def test_change_presence_passes_arguments():
     client = Client(token="t")
     client._gateway = DummyGateway()
-
-    await client.change_presence(status="idle", activity_name="hi", activity_type=0)
+    game = Game("hi")
+    await client.change_presence(status="idle", activity=game)
 
     client._gateway.update_presence.assert_awaited_once_with(
-        status="idle", activity_name="hi", activity_type=0, since=0, afk=False
+        status="idle", activity=game, since=0, afk=False
     )
 
 
