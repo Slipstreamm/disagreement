@@ -4,7 +4,11 @@ import asyncio
 import os
 import sys
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - example helper
+    load_dotenv = None
+    print("python-dotenv is not installed. Environment variables will not be loaded")
 
 # Allow running from the examples folder without installing
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
@@ -12,7 +16,8 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
 
 from disagreement import Client
 
-load_dotenv()
+if load_dotenv:
+    load_dotenv()
 
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 

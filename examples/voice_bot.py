@@ -10,11 +10,16 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
 
 from typing import cast
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - example helper
+    load_dotenv = None
+    print("python-dotenv is not installed. Environment variables will not be loaded")
 
 import disagreement
 
-load_dotenv()
+if load_dotenv:
+    load_dotenv()
 
 _TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 _GUILD_ID = os.getenv("DISCORD_GUILD_ID")
