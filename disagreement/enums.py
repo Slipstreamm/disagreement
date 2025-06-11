@@ -278,6 +278,62 @@ class GuildFeature(str, Enum):  # Changed from IntEnum to Enum
         return str(value)
 
 
+# --- Guild Scheduled Event Enums ---
+
+
+class GuildScheduledEventPrivacyLevel(IntEnum):
+    """Privacy level for a scheduled event."""
+
+    GUILD_ONLY = 2
+
+
+class GuildScheduledEventStatus(IntEnum):
+    """Status of a scheduled event."""
+
+    SCHEDULED = 1
+    ACTIVE = 2
+    COMPLETED = 3
+    CANCELED = 4
+
+
+class GuildScheduledEventEntityType(IntEnum):
+    """Entity type for a scheduled event."""
+
+    STAGE_INSTANCE = 1
+    VOICE = 2
+    EXTERNAL = 3
+
+
+class VoiceRegion(str, Enum):
+    """Voice region identifier."""
+
+    AMSTERDAM = "amsterdam"
+    BRAZIL = "brazil"
+    DUBAI = "dubai"
+    EU_CENTRAL = "eu-central"
+    EU_WEST = "eu-west"
+    EUROPE = "europe"
+    FRANKFURT = "frankfurt"
+    HONGKONG = "hongkong"
+    INDIA = "india"
+    JAPAN = "japan"
+    RUSSIA = "russia"
+    SINGAPORE = "singapore"
+    SOUTHAFRICA = "southafrica"
+    SOUTH_KOREA = "south-korea"
+    SYDNEY = "sydney"
+    US_CENTRAL = "us-central"
+    US_EAST = "us-east"
+    US_SOUTH = "us-south"
+    US_WEST = "us-west"
+    VIP_US_EAST = "vip-us-east"
+    VIP_US_WEST = "vip-us-west"
+
+    @classmethod
+    def _missing_(cls, value):  # type: ignore
+        return str(value)
+
+
 # --- Channel Enums ---
 
 
@@ -303,6 +359,13 @@ class ChannelType(IntEnum):
     GUILD_DIRECTORY = 14  # a channel in a hub containing the listed servers
     GUILD_FORUM = 15  # (Still in development) a channel that can only contain threads
     GUILD_MEDIA = 16  # (Still in development) a channel that can only contain media
+
+
+class StageInstancePrivacyLevel(IntEnum):
+    """Privacy level of a stage instance."""
+
+    PUBLIC = 1
+    GUILD_ONLY = 2
 
 
 class OverwriteType(IntEnum):

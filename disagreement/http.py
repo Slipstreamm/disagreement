@@ -23,7 +23,7 @@ from .interactions import InteractionResponsePayload
 
 if TYPE_CHECKING:
     from .client import Client
-    from .models import Message, Webhook, File
+    from .models import Message, Webhook, File, StageInstance, Invite
     from .interactions import ApplicationCommand, Snowflake
 
 # Discord API constants
@@ -40,11 +40,26 @@ class HTTPClient:
         token: str,
         client_session: Optional[aiohttp.ClientSession] = None,
         verbose: bool = False,
+        **session_kwargs: Any,
     ):
+        """Create a new HTTP client.
+
+        Parameters
+        ----------
+        token:
+            Bot token for authentication.
+        client_session:
+            Optional existing :class:`aiohttp.ClientSession`.
+        verbose:
+            If ``True``, log HTTP requests and responses.
+        **session_kwargs:
+            Additional options forwarded to :class:`aiohttp.ClientSession`, such
+            as ``proxy`` or ``connector``.
+        """
+
         self.token = token
-        self._session: Optional[aiohttp.ClientSession] = (
-            client_session  # Can be externally managed
-        )
+        self._session: Optional[aiohttp.ClientSession] = client_session
+        self._session_kwargs: Dict[str, Any] = session_kwargs
         self.user_agent = f"DiscordBot (https://github.com/Slipstreamm/disagreement, {__version__})"  # Customize URL
 
         self.verbose = verbose
@@ -53,7 +68,7 @@ class HTTPClient:
 
     async def _ensure_session(self):
         if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession()
+            self._session = aiohttp.ClientSession(**self._session_kwargs)
 
     async def close(self):
         """Closes the underlying aiohttp.ClientSession."""
@@ -409,6 +424,30 @@ class HTTPClient:
         """Fetches a channel by ID."""
         return await self.request("GET", f"/channels/{channel_id}")
 
+    async def get_channel_invites(
+        self, channel_id: "Snowflake"
+    ) -> List[Dict[str, Any]]:
+        """Fetches the invites for a channel."""
+
+        return await self.request("GET", f"/channels/{channel_id}/invites")
+
+    async def create_invite(
+        self, channel_id: "Snowflake", payload: Dict[str, Any]
+    ) -> "Invite":
+        """Creates an invite for a channel."""
+
+        data = await self.request(
+            "POST", f"/channels/{channel_id}/invites", payload=payload
+        )
+        from .models import Invite
+
+        return Invite.from_dict(data)
+
+    async def delete_invite(self, code: str) -> None:
+        """Deletes an invite by code."""
+
+        await self.request("DELETE", f"/invites/{code}")
+
     async def create_webhook(
         self, channel_id: "Snowflake", payload: Dict[str, Any]
     ) -> "Webhook":
@@ -615,6 +654,60 @@ class HTTPClient:
     ) -> None:
         """Deletes a guild template."""
         await self.request("DELETE", f"/guilds/{guild_id}/templates/{template_code}")
+
+    async def get_guild_scheduled_events(
+        self, guild_id: "Snowflake"
+    ) -> List[Dict[str, Any]]:
+        """Returns a list of scheduled events for the guild."""
+
+        return await self.request("GET", f"/guilds/{guild_id}/scheduled-events")
+
+    async def get_guild_scheduled_event(
+        self, guild_id: "Snowflake", event_id: "Snowflake"
+    ) -> Dict[str, Any]:
+        """Returns a guild scheduled event."""
+
+        return await self.request(
+            "GET", f"/guilds/{guild_id}/scheduled-events/{event_id}"
+        )
+
+    async def create_guild_scheduled_event(
+        self, guild_id: "Snowflake", payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Creates a guild scheduled event."""
+
+        return await self.request(
+            "POST", f"/guilds/{guild_id}/scheduled-events", payload=payload
+        )
+
+    async def edit_guild_scheduled_event(
+        self, guild_id: "Snowflake", event_id: "Snowflake", payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Edits a guild scheduled event."""
+
+        return await self.request(
+            "PATCH",
+            f"/guilds/{guild_id}/scheduled-events/{event_id}",
+            payload=payload,
+        )
+
+    async def delete_guild_scheduled_event(
+        self, guild_id: "Snowflake", event_id: "Snowflake"
+    ) -> None:
+        """Deletes a guild scheduled event."""
+
+        await self.request("DELETE", f"/guilds/{guild_id}/scheduled-events/{event_id}")
+
+    async def get_audit_logs(
+        self, guild_id: "Snowflake", **filters: Any
+    ) -> Dict[str, Any]:
+        """Fetches audit log entries for a guild."""
+        params = {k: v for k, v in filters.items() if v is not None}
+        return await self.request(
+            "GET",
+            f"/guilds/{guild_id}/audit-logs",
+            params=params if params else None,
+        )
 
     # Add other methods like:
     # async def get_guild(self, guild_id: str) -> Dict[str, Any]: ...
@@ -900,3 +993,49 @@ class HTTPClient:
     async def trigger_typing(self, channel_id: str) -> None:
         """Sends a typing indicator to the specified channel."""
         await self.request("POST", f"/channels/{channel_id}/typing")
+
+    async def start_stage_instance(
+        self, payload: Dict[str, Any], reason: Optional[str] = None
+    ) -> "StageInstance":
+        """Starts a stage instance."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        data = await self.request(
+            "POST", "/stage-instances", payload=payload, custom_headers=headers
+        )
+        from .models import StageInstance
+
+        return StageInstance(data)
+
+    async def edit_stage_instance(
+        self,
+        channel_id: "Snowflake",
+        payload: Dict[str, Any],
+        reason: Optional[str] = None,
+    ) -> "StageInstance":
+        """Edits an existing stage instance."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        data = await self.request(
+            "PATCH",
+            f"/stage-instances/{channel_id}",
+            payload=payload,
+            custom_headers=headers,
+        )
+        from .models import StageInstance
+
+        return StageInstance(data)
+
+    async def end_stage_instance(
+        self, channel_id: "Snowflake", reason: Optional[str] = None
+    ) -> None:
+        """Ends a stage instance."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        await self.request(
+            "DELETE", f"/stage-instances/{channel_id}", custom_headers=headers
+        )
+
+    async def get_voice_regions(self) -> List[Dict[str, Any]]:
+        """Returns available voice regions."""
+        return await self.request("GET", "/voice/regions")

@@ -17,7 +17,7 @@ __copyright__ = "Copyright 2025 Slipstream"
 __version__ = "0.1.0rc3"
 
 from .client import Client, AutoShardedClient
-from .models import Message, User, Reaction
+from .models import Message, User, Reaction, AuditLogEntry
 from .voice_client import VoiceClient
 from .audio import AudioSource, FFmpegAudioSource
 from .typing import Typing

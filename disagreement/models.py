@@ -6,6 +6,7 @@ Data models for Discord objects.
 
 import asyncio
 import json
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union
 
 import aiohttp  # pylint: disable=import-error
@@ -22,6 +23,9 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     ChannelType,
     ComponentType,
     ButtonStyle,  # Added for Button
+    GuildScheduledEventPrivacyLevel,
+    GuildScheduledEventStatus,
+    GuildScheduledEventEntityType,
     # SelectMenuType will be part of ComponentType or a new enum if needed
 )
 from .permissions import Permissions
@@ -1159,6 +1163,85 @@ class VoiceChannel(Channel):
         return f"<VoiceChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
 
 
+class StageChannel(VoiceChannel):
+    """Represents a guild stage channel."""
+
+    def __repr__(self) -> str:
+        return f"<StageChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
+
+    async def start_stage_instance(
+        self,
+        topic: str,
+        *,
+        privacy_level: int = 2,
+        reason: Optional[str] = None,
+        guild_scheduled_event_id: Optional[str] = None,
+    ) -> "StageInstance":
+        if not hasattr(self._client, "_http"):
+            raise DisagreementException("Client missing HTTP for stage instance")
+
+        payload: Dict[str, Any] = {
+            "channel_id": self.id,
+            "topic": topic,
+            "privacy_level": privacy_level,
+        }
+        if guild_scheduled_event_id is not None:
+            payload["guild_scheduled_event_id"] = guild_scheduled_event_id
+
+        instance = await self._client._http.start_stage_instance(payload, reason=reason)
+        instance._client = self._client
+        return instance
+
+    async def edit_stage_instance(
+        self,
+        *,
+        topic: Optional[str] = None,
+        privacy_level: Optional[int] = None,
+        reason: Optional[str] = None,
+    ) -> "StageInstance":
+        if not hasattr(self._client, "_http"):
+            raise DisagreementException("Client missing HTTP for stage instance")
+
+        payload: Dict[str, Any] = {}
+        if topic is not None:
+            payload["topic"] = topic
+        if privacy_level is not None:
+            payload["privacy_level"] = privacy_level
+
+        instance = await self._client._http.edit_stage_instance(
+            self.id, payload, reason=reason
+        )
+        instance._client = self._client
+        return instance
+
+    async def end_stage_instance(self, *, reason: Optional[str] = None) -> None:
+        if not hasattr(self._client, "_http"):
+            raise DisagreementException("Client missing HTTP for stage instance")
+
+        await self._client._http.end_stage_instance(self.id, reason=reason)
+
+
+class StageInstance:
+    """Represents a stage instance."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ) -> None:
+        self._client = client_instance
+        self.id: str = data["id"]
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.channel_id: str = data["channel_id"]
+        self.topic: str = data["topic"]
+        self.privacy_level: int = data.get("privacy_level", 2)
+        self.discoverable_disabled: bool = data.get("discoverable_disabled", False)
+        self.guild_scheduled_event_id: Optional[str] = data.get(
+            "guild_scheduled_event_id"
+        )
+
+    def __repr__(self) -> str:
+        return f"<StageInstance id='{self.id}' channel_id='{self.channel_id}'>"
+
+
 class CategoryChannel(Channel):
     """Represents a guild category channel."""
 
@@ -2005,6 +2088,77 @@ class Reaction:
         return f"<Reaction message_id='{self.message_id}' user_id='{self.user_id}' emoji='{emoji_value}'>"
 
 
+class ScheduledEvent:
+    """Represents a guild scheduled event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.id: str = data["id"]
+        self.guild_id: str = data["guild_id"]
+        self.channel_id: Optional[str] = data.get("channel_id")
+        self.creator_id: Optional[str] = data.get("creator_id")
+        self.name: str = data["name"]
+        self.description: Optional[str] = data.get("description")
+        self.scheduled_start_time: str = data["scheduled_start_time"]
+        self.scheduled_end_time: Optional[str] = data.get("scheduled_end_time")
+        self.privacy_level: GuildScheduledEventPrivacyLevel = (
+            GuildScheduledEventPrivacyLevel(data["privacy_level"])
+        )
+        self.status: GuildScheduledEventStatus = GuildScheduledEventStatus(
+            data["status"]
+        )
+        self.entity_type: GuildScheduledEventEntityType = GuildScheduledEventEntityType(
+            data["entity_type"]
+        )
+        self.entity_id: Optional[str] = data.get("entity_id")
+        self.entity_metadata: Optional[Dict[str, Any]] = data.get("entity_metadata")
+        self.creator: Optional[User] = (
+            User(data["creator"]) if data.get("creator") else None
+        )
+        self.user_count: Optional[int] = data.get("user_count")
+        self.image: Optional[str] = data.get("image")
+
+    def __repr__(self) -> str:
+        return f"<ScheduledEvent id='{self.id}' name='{self.name}'>"
+
+
+@dataclass
+class Invite:
+    """Represents a Discord invite."""
+
+    code: str
+    channel_id: Optional[str]
+    guild_id: Optional[str]
+    inviter_id: Optional[str]
+    uses: Optional[int]
+    max_uses: Optional[int]
+    max_age: Optional[int]
+    temporary: Optional[bool]
+    created_at: Optional[str]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Invite":
+        channel = data.get("channel")
+        guild = data.get("guild")
+        inviter = data.get("inviter")
+        return cls(
+            code=data["code"],
+            channel_id=(channel or {}).get("id") if channel else data.get("channel_id"),
+            guild_id=(guild or {}).get("id") if guild else data.get("guild_id"),
+            inviter_id=(inviter or {}).get("id"),
+            uses=data.get("uses"),
+            max_uses=data.get("max_uses"),
+            max_age=data.get("max_age"),
+            temporary=data.get("temporary"),
+            created_at=data.get("created_at"),
+        )
+
+    def __repr__(self) -> str:
+        return f"<Invite code='{self.code}' guild_id='{self.guild_id}' channel_id='{self.channel_id}'>"
+
+
 class GuildMemberRemove:
     """Represents a GUILD_MEMBER_REMOVE event."""
 
@@ -2063,6 +2217,25 @@ class GuildRoleUpdate:
         return f"<GuildRoleUpdate guild_id='{self.guild_id}' role_id='{self.role.id}'>"
 
 
+class AuditLogEntry:
+    """Represents a single entry in a guild's audit log."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ) -> None:
+        self._client = client_instance
+        self.id: str = data["id"]
+        self.user_id: Optional[str] = data.get("user_id")
+        self.target_id: Optional[str] = data.get("target_id")
+        self.action_type: int = data["action_type"]
+        self.reason: Optional[str] = data.get("reason")
+        self.changes: List[Dict[str, Any]] = data.get("changes", [])
+        self.options: Optional[Dict[str, Any]] = data.get("options")
+
+    def __repr__(self) -> str:
+        return f"<AuditLogEntry id='{self.id}' action_type={self.action_type} user_id='{self.user_id}'>"
+
+
 def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:
     """Create a channel object from raw API data."""
     channel_type = data.get("type")
@@ -2072,11 +2245,10 @@ def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:
         ChannelType.GUILD_ANNOUNCEMENT.value,
     ):
         return TextChannel(data, client)
-    if channel_type in (
-        ChannelType.GUILD_VOICE.value,
-        ChannelType.GUILD_STAGE_VOICE.value,
-    ):
+    if channel_type == ChannelType.GUILD_VOICE.value:
         return VoiceChannel(data, client)
+    if channel_type == ChannelType.GUILD_STAGE_VOICE.value:
+        return StageChannel(data, client)
     if channel_type == ChannelType.GUILD_CATEGORY.value:
         return CategoryChannel(data, client)
     if channel_type in (

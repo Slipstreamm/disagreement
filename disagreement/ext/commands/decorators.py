@@ -107,6 +107,33 @@ def check_any(
     return check(predicate)
 
 
+def max_concurrency(
+    number: int, per: str = "user"
+) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:
+    """Limit how many concurrent invocations of a command are allowed.
+
+    Parameters
+    ----------
+    number:
+        The maximum number of concurrent invocations.
+    per:
+        The scope of the limiter. Can be ``"user"``, ``"guild"`` or ``"global"``.
+    """
+
+    if number < 1:
+        raise ValueError("Concurrency number must be at least 1.")
+    if per not in {"user", "guild", "global"}:
+        raise ValueError("per must be 'user', 'guild', or 'global'.")
+
+    def decorator(
+        func: Callable[..., Awaitable[None]],
+    ) -> Callable[..., Awaitable[None]]:
+        setattr(func, "__max_concurrency__", (number, per))
+        return func
+
+    return decorator
+
+
 def cooldown(
     rate: int, per: float
 ) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:

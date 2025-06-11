@@ -16,6 +16,7 @@ from .decorators import (
     check,
     check_any,
     cooldown,
+    max_concurrency,
     requires_permissions,
 )
 from .errors import (
@@ -28,6 +29,7 @@ from .errors import (
     CheckAnyFailure,
     CommandOnCooldown,
     CommandInvokeError,
+    MaxConcurrencyReached,
 )
 
 __all__ = [
@@ -43,6 +45,7 @@ __all__ = [
     "check",
     "check_any",
     "cooldown",
+    "max_concurrency",
     "requires_permissions",
     # Errors
     "CommandError",
@@ -54,4 +57,5 @@ __all__ = [
     "CheckAnyFailure",
     "CommandOnCooldown",
     "CommandInvokeError",
+    "MaxConcurrencyReached",
 ]
