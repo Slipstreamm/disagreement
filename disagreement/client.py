@@ -1430,6 +1430,24 @@ class Client:
 
         await self._http.delete_guild_template(guild_id, template_code)
 
+    async def fetch_widget(self, guild_id: Snowflake) -> Dict[str, Any]:
+        """|coro| Fetch a guild's widget settings."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        return await self._http.get_guild_widget(guild_id)
+
+    async def edit_widget(
+        self, guild_id: Snowflake, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """|coro| Edit a guild's widget settings."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        return await self._http.edit_guild_widget(guild_id, payload)
+
     async def fetch_scheduled_events(
         self, guild_id: Snowflake
     ) -> List["ScheduledEvent"]:

@@ -1131,6 +1131,16 @@ class Guild:
     def __repr__(self) -> str:
         return f"<Guild id='{self.id}' name='{self.name}'>"
 
+    async def fetch_widget(self) -> Dict[str, Any]:
+        """|coro| Fetch this guild's widget settings."""
+
+        return await self._client.fetch_widget(self.id)
+
+    async def edit_widget(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """|coro| Edit this guild's widget settings."""
+
+        return await self._client.edit_widget(self.id, payload)
+
     async def fetch_members(self, *, limit: Optional[int] = None) -> List["Member"]:
         """|coro|
 
