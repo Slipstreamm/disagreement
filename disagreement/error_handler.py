@@ -14,7 +14,11 @@ def setup_global_error_handler(
     The handler logs unhandled exceptions so they don't crash the bot.
     """
     if loop is None:
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
     if not logging.getLogger().hasHandlers():
         setup_logging(logging.ERROR)

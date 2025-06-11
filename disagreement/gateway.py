@@ -65,7 +65,11 @@ class GatewayClient:
         self._max_backoff: float = max_backoff
 
         self._ws: Optional[aiohttp.ClientWebSocketResponse] = None
-        self._loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+        try:
+            self._loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
         self._heartbeat_interval: Optional[float] = None
         self._last_sequence: Optional[int] = None
         self._session_id: Optional[str] = None

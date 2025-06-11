@@ -76,7 +76,11 @@ class Client:
         intents (Optional[int]): The Gateway Intents to use. Defaults to `GatewayIntent.default()`.
                                  You might need to enable privileged intents in your bot's application page.
         loop (Optional[asyncio.AbstractEventLoop]): The event loop to use for asynchronous operations.
-                                                    Defaults to `asyncio.get_event_loop()`.
+                                                    Defaults to the running loop
+                                                    via `asyncio.get_running_loop()`,
+                                                    or a new loop from
+                                                    `asyncio.new_event_loop()` if
+                                                    none is running.
         command_prefix (Union[str, List[str], Callable[['Client', Message], Union[str, List[str]]]]):
             The prefix(es) for commands. Defaults to '!'.
         verbose (bool): If True, print raw HTTP and Gateway traffic for debugging.
