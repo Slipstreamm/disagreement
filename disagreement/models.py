@@ -1087,6 +1087,7 @@ class TextChannel(Channel):
         )
         self.last_pin_timestamp: Optional[str] = data.get("last_pin_timestamp")
 
+
     def history(
         self,
         *,
@@ -1142,35 +1143,6 @@ class TextChannel(Channel):
             self._client._messages.pop(mid, None)
         return ids
 
-    async def history(
-        self,
-        *,
-        limit: Optional[int] = 100,
-        before: "Snowflake | None" = None,
-    ):
-        """An async iterator over messages in the channel."""
-
-        params: Dict[str, Union[int, str]] = {}
-        if before is not None:
-            params["before"] = before
-
-        fetched = 0
-        while True:
-            to_fetch = 100 if limit is None else min(100, limit - fetched)
-            if to_fetch <= 0:
-                break
-            params["limit"] = to_fetch
-            messages = await self._client._http.request(
-                "GET", f"/channels/{self.id}/messages", params=params.copy()
-            )
-            if not messages:
-                break
-            params["before"] = messages[-1]["id"]
-            for msg in messages:
-                yield Message(msg, self._client)
-                fetched += 1
-                if limit is not None and fetched >= limit:
-                    return
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
