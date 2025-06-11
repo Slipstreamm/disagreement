@@ -5,6 +5,7 @@ Manages the WebSocket connection to the Discord Gateway.
 """
 
 import asyncio
+import logging
 import traceback
 import aiohttp
 import json
@@ -26,6 +27,9 @@ if TYPE_CHECKING:
 # ZLIB Decompression constants
 ZLIB_SUFFIX = b"\x00\x00\xff\xff"
 MAX_DECOMPRESSION_SIZE = 10 * 1024 * 1024  # 10 MiB, adjust as needed
+
+
+logger = logging.getLogger(__name__)
 
 
 class GatewayClient:
@@ -84,13 +88,17 @@ class GatewayClient:
                 return
             except Exception as e:  # noqa: BLE001
                 if attempt >= self._max_retries - 1:
-                    print(f"Reconnect failed after {attempt + 1} attempts: {e}")
+                    logger.error(
+                        "Reconnect failed after %s attempts: %s", attempt + 1, e
+                    )
                     raise
                 jitter = random.uniform(0, delay)
                 wait_time = min(delay + jitter, self._max_backoff)
-                print(
-                    f"Reconnect attempt {attempt + 1} failed: {e}. "
-                    f"Retrying in {wait_time:.2f} seconds..."
+                logger.warning(
+                    "Reconnect attempt %s failed: %s. Retrying in %.2f seconds...",
+                    attempt + 1,
+                    e,
+                    wait_time,
                 )
                 await asyncio.sleep(wait_time)
                 delay = min(delay * 2, self._max_backoff)
@@ -112,21 +120,23 @@ class GatewayClient:
             self._buffer.clear()  # Reset buffer after successful decompression
             return json.loads(decompressed.decode("utf-8"))
         except zlib.error as e:
-            print(f"Zlib decompression error: {e}")
+            logger.error("Zlib decompression error: %s", e)
             self._buffer.clear()  # Clear buffer on error
             self._inflator = zlib.decompressobj()  # Reset inflator
             return None
         except json.JSONDecodeError as e:
-            print(f"JSON decode error after decompression: {e}")
+            logger.error("JSON decode error after decompression: %s", e)
             return None
 
     async def _send_json(self, payload: Dict[str, Any]):
         if self._ws and not self._ws.closed:
             if self.verbose:
-                print(f"GATEWAY SEND: {payload}")
+                logger.debug("GATEWAY SEND: %s", payload)
             await self._ws.send_json(payload)
         else:
-            print("Gateway send attempted but WebSocket is closed or not available.")
+            logger.warning(
+                "Gateway send attempted but WebSocket is closed or not available."
+            )
             # raise GatewayException("WebSocket is not connected.")
 
     async def _heartbeat(self):
@@ -140,7 +150,7 @@ class GatewayClient:
         """Manages the heartbeating loop."""
         if self._heartbeat_interval is None:
             # This should not happen if HELLO was processed correctly
-            print("Error: Heartbeat interval not set. Cannot start keep_alive.")
+            logger.error("Heartbeat interval not set. Cannot start keep_alive.")
             return
 
         try:
@@ -150,9 +160,9 @@ class GatewayClient:
                     self._heartbeat_interval / 1000
                 )  # Interval is in ms
         except asyncio.CancelledError:
-            print("Keep_alive task cancelled.")
+            logger.debug("Keep_alive task cancelled.")
         except Exception as e:
-            print(f"Error in keep_alive loop: {e}")
+            logger.error("Error in keep_alive loop: %s", e)
             # Potentially trigger a reconnect here or notify client
             await self._client_instance.close_gateway(code=1000)  # Generic close
 
@@ -174,12 +184,12 @@ class GatewayClient:
         if self._shard_id is not None and self._shard_count is not None:
             payload["d"]["shard"] = [self._shard_id, self._shard_count]
         await self._send_json(payload)
-        print("Sent IDENTIFY.")
+        logger.info("Sent IDENTIFY.")
 
     async def _resume(self):
         """Sends the RESUME payload to the Gateway."""
         if not self._session_id or self._last_sequence is None:
-            print("Cannot RESUME: session_id or last_sequence is missing.")
+            logger.warning("Cannot RESUME: session_id or last_sequence is missing.")
             await self._identify()  # Fallback to identify
             return
 
@@ -192,8 +202,10 @@ class GatewayClient:
             },
         }
         await self._send_json(payload)
-        print(
-            f"Sent RESUME for session {self._session_id} at sequence {self._last_sequence}."
+        logger.info(
+            "Sent RESUME for session %s at sequence %s.",
+            self._session_id,
+            self._last_sequence,
         )
 
     async def update_presence(
@@ -238,8 +250,9 @@ class GatewayClient:
 
         if event_name == "READY":  # Special handling for READY
             if not isinstance(raw_event_d_payload, dict):
-                print(
-                    f"Error: READY event 'd' payload is not a dict or is missing: {raw_event_d_payload}"
+                logger.error(
+                    "READY event 'd' payload is not a dict or is missing: %s",
+                    raw_event_d_payload,
                 )
                 # Consider raising an error or attempting a reconnect
                 return
@@ -259,8 +272,8 @@ class GatewayClient:
                 )
                 app_id_str = str(app_id_value)
             else:
-                print(
-                    f"Warning: Could not find application ID in READY payload. App commands may not work."
+                logger.warning(
+                    "Could not find application ID in READY payload. App commands may not work."
                 )
 
             # Parse and store the bot's own user object
@@ -274,20 +287,29 @@ class GatewayClient:
                         raw_event_d_payload["user"]
                     )
                     self._client_instance.user = bot_user_obj
-                    print(
-                        f"Gateway READY. Bot User: {bot_user_obj.username}#{bot_user_obj.discriminator}. Session ID: {self._session_id}. App ID: {app_id_str}. Resume URL: {self._resume_gateway_url}"
+                    logger.info(
+                        "Gateway READY. Bot User: %s#%s. Session ID: %s. App ID: %s. Resume URL: %s",
+                        bot_user_obj.username,
+                        bot_user_obj.discriminator,
+                        self._session_id,
+                        app_id_str,
+                        self._resume_gateway_url,
                     )
                 except Exception as e:
-                    print(f"Error parsing bot user from READY payload: {e}")
-                    print(
-                        f"Gateway READY (user parse failed). Session ID: {self._session_id}. App ID: {app_id_str}. Resume URL: {self._resume_gateway_url}"
+                    logger.error("Error parsing bot user from READY payload: %s", e)
+                    logger.info(
+                        "Gateway READY (user parse failed). Session ID: %s. App ID: %s. Resume URL: %s",
+                        self._session_id,
+                        app_id_str,
+                        self._resume_gateway_url,
                     )
             else:
-                print(
-                    f"Warning: Bot user object not found or invalid in READY payload."
-                )
-                print(
-                    f"Gateway READY (no user). Session ID: {self._session_id}. App ID: {app_id_str}. Resume URL: {self._resume_gateway_url}"
+                logger.warning("Bot user object not found or invalid in READY payload.")
+                logger.info(
+                    "Gateway READY (no user). Session ID: %s. App ID: %s. Resume URL: %s",
+                    self._session_id,
+                    app_id_str,
+                    self._resume_gateway_url,
                 )
 
             await self._dispatcher.dispatch(event_name, raw_event_d_payload)
@@ -306,15 +328,16 @@ class GatewayClient:
                         self._client_instance.process_interaction(interaction)
                     )  # type: ignore
                 else:
-                    print(
-                        "Warning: Client instance does not have process_interaction method for INTERACTION_CREATE."
+                    logger.warning(
+                        "Client instance does not have process_interaction method for INTERACTION_CREATE."
                     )
             else:
-                print(
-                    f"Error: INTERACTION_CREATE event 'd' payload is not a dict: {raw_event_d_payload}"
+                logger.error(
+                    "INTERACTION_CREATE event 'd' payload is not a dict: %s",
+                    raw_event_d_payload,
                 )
         elif event_name == "RESUMED":
-            print("Gateway RESUMED successfully.")
+            logger.info("Gateway RESUMED successfully.")
             # RESUMED 'd' payload is often an empty object or debug info.
             # Ensure it's a dict for the dispatcher.
             event_data_to_dispatch = (
@@ -330,7 +353,7 @@ class GatewayClient:
             # print(f"GATEWAY RECV EVENT: {event_name} | DATA: {event_data_to_dispatch}")
             await self._dispatcher.dispatch(event_name, event_data_to_dispatch)
         else:
-            print(f"Received dispatch with no event name: {data}")
+            logger.warning("Received dispatch with no event name: %s", data)
 
     async def _process_message(self, msg: aiohttp.WSMessage):
         """Processes a single message from the WebSocket."""
@@ -338,19 +361,20 @@ class GatewayClient:
             try:
                 data = json.loads(msg.data)
             except json.JSONDecodeError:
-                print(
-                    f"Failed to decode JSON from Gateway: {msg.data[:200]}"
-                )  # Log snippet
+                logger.error("Failed to decode JSON from Gateway: %s", msg.data[:200])
                 return
         elif msg.type == aiohttp.WSMsgType.BINARY:
             decompressed_data = await self._decompress_message(msg.data)
             if decompressed_data is None:
-                print("Failed to decompress or decode binary message from Gateway.")
+                logger.error(
+                    "Failed to decompress or decode binary message from Gateway."
+                )
                 return
             data = decompressed_data
         elif msg.type == aiohttp.WSMsgType.ERROR:
-            print(
-                f"WebSocket error: {self._ws.exception() if self._ws else 'Unknown WSError'}"
+            logger.error(
+                "WebSocket error: %s",
+                self._ws.exception() if self._ws else "Unknown WSError",
             )
             raise GatewayException(
                 f"WebSocket error: {self._ws.exception() if self._ws else 'Unknown WSError'}"
@@ -361,15 +385,17 @@ class GatewayClient:
                 if self._ws and hasattr(self._ws, "close_code")
                 else "N/A"
             )
-            print(f"WebSocket connection closed by server. Code: {close_code}")
+            logger.warning(
+                "WebSocket connection closed by server. Code: %s", close_code
+            )
             # Raise an exception to signal the closure to the client's main run loop
             raise GatewayException(f"WebSocket closed by server. Code: {close_code}")
         else:
-            print(f"Received unhandled WebSocket message type: {msg.type}")
+            logger.warning("Received unhandled WebSocket message type: %s", msg.type)
             return
 
         if self.verbose:
-            print(f"GATEWAY RECV: {data}")
+            logger.debug("GATEWAY RECV: %s", data)
         op = data.get("op")
         # 'd' payload (event_data) is handled specifically by each opcode handler below
 
@@ -378,12 +404,16 @@ class GatewayClient:
         elif op == GatewayOpcode.HEARTBEAT:  # Server requests a heartbeat
             await self._heartbeat()
         elif op == GatewayOpcode.RECONNECT:  # Server requests a reconnect
-            print("Gateway requested RECONNECT. Closing and will attempt to reconnect.")
+            logger.info(
+                "Gateway requested RECONNECT. Closing and will attempt to reconnect."
+            )
             await self.close(code=4000, reconnect=True)
         elif op == GatewayOpcode.INVALID_SESSION:
             # The 'd' payload for INVALID_SESSION is a boolean indicating resumability
             can_resume = data.get("d") is True
-            print(f"Gateway indicated INVALID_SESSION. Resumable: {can_resume}")
+            logger.warning(
+                "Gateway indicated INVALID_SESSION. Resumable: %s", can_resume
+            )
             if not can_resume:
                 self._session_id = None  # Clear session_id to force re-identify
                 self._last_sequence = None
@@ -395,13 +425,16 @@ class GatewayClient:
                 not isinstance(hello_d_payload, dict)
                 or "heartbeat_interval" not in hello_d_payload
             ):
-                print(
-                    f"Error: HELLO event 'd' payload is invalid or missing heartbeat_interval: {hello_d_payload}"
+                logger.error(
+                    "HELLO event 'd' payload is invalid or missing heartbeat_interval: %s",
+                    hello_d_payload,
                 )
                 await self.close(code=1011)  # Internal error, malformed HELLO
                 return
             self._heartbeat_interval = hello_d_payload["heartbeat_interval"]
-            print(f"Gateway HELLO. Heartbeat interval: {self._heartbeat_interval}ms.")
+            logger.info(
+                "Gateway HELLO. Heartbeat interval: %sms.", self._heartbeat_interval
+            )
             # Start heartbeating
             if self._keep_alive_task:
                 self._keep_alive_task.cancel()
@@ -409,45 +442,51 @@ class GatewayClient:
 
             # Identify or Resume
             if self._session_id and self._resume_gateway_url:  # Check if we can resume
-                print("Attempting to RESUME session.")
+                logger.info("Attempting to RESUME session.")
                 await self._resume()
             else:
-                print("Performing initial IDENTIFY.")
+                logger.info("Performing initial IDENTIFY.")
                 await self._identify()
         elif op == GatewayOpcode.HEARTBEAT_ACK:
             self._last_heartbeat_ack = time.monotonic()
             # print("Received heartbeat ACK.")
             pass  # Good, connection is alive
         else:
-            print(f"Received unhandled Gateway Opcode: {op} with data: {data}")
+            logger.warning(
+                "Received unhandled Gateway Opcode: %s with data: %s", op, data
+            )
 
     async def _receive_loop(self):
         """Continuously receives and processes messages from the WebSocket."""
         if not self._ws or self._ws.closed:
-            print("Receive loop cannot start: WebSocket is not connected or closed.")
+            logger.warning(
+                "Receive loop cannot start: WebSocket is not connected or closed."
+            )
             return
 
         try:
             async for msg in self._ws:
                 await self._process_message(msg)
         except asyncio.CancelledError:
-            print("Receive_loop task cancelled.")
+            logger.debug("Receive_loop task cancelled.")
         except aiohttp.ClientConnectionError as e:
-            print(f"ClientConnectionError in receive_loop: {e}. Attempting reconnect.")
+            logger.warning(
+                "ClientConnectionError in receive_loop: %s. Attempting reconnect.", e
+            )
             await self.close(code=1006, reconnect=True)  # Abnormal closure
         except Exception as e:
-            print(f"Unexpected error in receive_loop: {e}")
+            logger.error("Unexpected error in receive_loop: %s", e)
             traceback.print_exc()
             await self.close(code=1011, reconnect=True)
         finally:
-            print("Receive_loop ended.")
+            logger.info("Receive_loop ended.")
             # If the loop ends unexpectedly (not due to explicit close),
             # the main client might want to try reconnecting.
 
     async def connect(self):
         """Connects to the Discord Gateway."""
         if self._ws and not self._ws.closed:
-            print("Gateway already connected or connecting.")
+            logger.warning("Gateway already connected or connecting.")
             return
 
         gateway_url = (
@@ -456,14 +495,14 @@ class GatewayClient:
         if not gateway_url.endswith("?v=10&encoding=json&compress=zlib-stream"):
             gateway_url += "?v=10&encoding=json&compress=zlib-stream"
 
-        print(f"Connecting to Gateway: {gateway_url}")
+        logger.info("Connecting to Gateway: %s", gateway_url)
         try:
             await self._http._ensure_session()  # Ensure the HTTP client's session is active
             assert (
                 self._http._session is not None
             ), "HTTPClient session not initialized after ensure_session"
             self._ws = await self._http._session.ws_connect(gateway_url, max_msg_size=0)
-            print("Gateway WebSocket connection established.")
+            logger.info("Gateway WebSocket connection established.")
 
             if self._receive_task:
                 self._receive_task.cancel()
@@ -488,7 +527,7 @@ class GatewayClient:
 
     async def close(self, code: int = 1000, *, reconnect: bool = False):
         """Closes the Gateway connection."""
-        print(f"Closing Gateway connection with code {code}...")
+        logger.info("Closing Gateway connection with code %s...", code)
         if self._keep_alive_task and not self._keep_alive_task.done():
             self._keep_alive_task.cancel()
             try:
@@ -507,7 +546,7 @@ class GatewayClient:
 
         if self._ws and not self._ws.closed:
             await self._ws.close(code=code)
-            print("Gateway WebSocket closed.")
+            logger.info("Gateway WebSocket closed.")
 
         self._ws = None
         # Do not reset session_id, last_sequence, or resume_gateway_url here
@@ -515,7 +554,7 @@ class GatewayClient:
         # The connect logic will decide whether to resume or re-identify.
         # However, if it's a non-resumable close (e.g. Invalid Session non-resumable), clear them.
         if code == 4009:  # Invalid session, not resumable
-            print("Clearing session state due to non-resumable invalid session.")
+            logger.info("Clearing session state due to non-resumable invalid session.")
             self._session_id = None
             self._last_sequence = None
             self._resume_gateway_url = None  # This might be re-fetched anyway

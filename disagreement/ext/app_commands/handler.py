@@ -1,6 +1,7 @@
 # disagreement/ext/app_commands/handler.py
 
 import inspect
+import logging
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -62,6 +63,9 @@ if not TYPE_CHECKING:
     Attachment = Any
     Channel = Any
     Message = Any
+
+
+logger = logging.getLogger(__name__)
 
 
 class AppCommandHandler:
@@ -544,7 +548,7 @@ class AppCommandHandler:
                 await command.invoke(ctx, *parsed_args, **parsed_kwargs)
 
         except Exception as e:
-            print(f"Error invoking app command '{command.name}': {e}")
+            logger.error("Error invoking app command '%s': %s", command.name, e)
             await self.dispatch_app_command_error(ctx, e)
             # else:
             #     # Default error reply if no handler on client
@@ -594,34 +598,43 @@ class AppCommandHandler:
                 payload = cmd_or_group.to_dict()
                 commands_to_sync.append(payload)
             except AttributeError:
-                print(
-                    f"Warning: Command or group '{cmd_or_group.name}' does not have a to_dict() method. Skipping."
+                logger.warning(
+                    "Command or group '%s' does not have a to_dict() method. Skipping.",
+                    cmd_or_group.name,
                 )
             except Exception as e:
-                print(
-                    f"Error converting command/group '{cmd_or_group.name}' to dict: {e}. Skipping."
+                logger.error(
+                    "Error converting command/group '%s' to dict: %s. Skipping.",
+                    cmd_or_group.name,
+                    e,
                 )
 
         if not commands_to_sync:
-            print(
-                f"No commands to sync for {'guild ' + str(guild_id) if guild_id else 'global'} scope."
+            logger.info(
+                "No commands to sync for %s scope.",
+                f"guild {guild_id}" if guild_id else "global",
             )
             return
 
         try:
             if guild_id:
-                print(
-                    f"Syncing {len(commands_to_sync)} commands for guild {guild_id}..."
+                logger.info(
+                    "Syncing %s commands for guild %s...",
+                    len(commands_to_sync),
+                    guild_id,
                 )
                 await self.client._http.bulk_overwrite_guild_application_commands(
                     application_id, guild_id, commands_to_sync
                 )
             else:
-                print(f"Syncing {len(commands_to_sync)} global commands...")
+                logger.info(
+                    "Syncing %s global commands...",
+                    len(commands_to_sync),
+                )
                 await self.client._http.bulk_overwrite_global_application_commands(
                     application_id, commands_to_sync
                 )
-            print("Command sync successful.")
+            logger.info("Command sync successful.")
         except Exception as e:
-            print(f"Error syncing application commands: {e}")
+            logger.error("Error syncing application commands: %s", e)
             # Consider re-raising or specific error handling

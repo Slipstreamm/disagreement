@@ -1,6 +1,7 @@
 # disagreement/ext/commands/cog.py
 
 import inspect
+import logging
 from typing import TYPE_CHECKING, List, Tuple, Callable, Awaitable, Any, Dict, Union
 
 if TYPE_CHECKING:
@@ -15,6 +16,8 @@ else:  # pragma: no cover - runtime imports for isinstance checks
 
     # EventDispatcher might be needed if cogs register listeners directly
     # from disagreement.event_dispatcher import EventDispatcher
+
+logger = logging.getLogger(__name__)
 
 
 class Cog:
@@ -59,8 +62,10 @@ class Cog:
                 cmd.cog = self  # Assign the cog instance to the command
                 if cmd.name in self._commands:
                     # This should ideally be caught earlier or handled by CommandHandler
-                    print(
-                        f"Warning: Duplicate command name '{cmd.name}' in cog '{self.cog_name}'. Overwriting."
+                    logger.warning(
+                        "Duplicate command name '%s' in cog '%s'. Overwriting.",
+                        cmd.name,
+                        self.cog_name,
                     )
                 self._commands[cmd.name.lower()] = cmd
                 # Also register aliases
@@ -79,8 +84,10 @@ class Cog:
                     # For AppCommandGroup, its commands will have cog set individually if they are AppCommands
                     self._app_commands_and_groups.append(app_cmd_obj)
                 else:
-                    print(
-                        f"Warning: Member '{member_name}' in cog '{self.cog_name}' has '__app_command_object__' but it's not an AppCommand or AppCommandGroup."
+                    logger.warning(
+                        "Member '%s' in cog '%s' has '__app_command_object__' but it's not an AppCommand or AppCommandGroup.",
+                        member_name,
+                        self.cog_name,
                     )
 
             elif isinstance(member, (AppCommand, AppCommandGroup)):
@@ -92,8 +99,10 @@ class Cog:
                 # This is a method decorated with @commands.Cog.listener or @commands.listener
                 if not inspect.iscoroutinefunction(member):
                     # Decorator should have caught this, but double check
-                    print(
-                        f"Warning: Listener '{member_name}' in cog '{self.cog_name}' is not a coroutine. Skipping."
+                    logger.warning(
+                        "Listener '%s' in cog '%s' is not a coroutine. Skipping.",
+                        member_name,
+                        self.cog_name,
                     )
                     continue
 

@@ -5,6 +5,7 @@ HTTP client for interacting with the Discord REST API.
 """
 
 import asyncio
+import logging
 import aiohttp  # pylint: disable=import-error
 import json
 from urllib.parse import quote
@@ -27,6 +28,8 @@ if TYPE_CHECKING:
 
 # Discord API constants
 API_BASE_URL = "https://discord.com/api/v10"  # Using API v10
+
+logger = logging.getLogger(__name__)
 
 
 class HTTPClient:
@@ -86,7 +89,13 @@ class HTTPClient:
             final_headers.update(custom_headers)
 
         if self.verbose:
-            print(f"HTTP REQUEST: {method} {url} | payload={payload} params={params}")
+            logger.debug(
+                "HTTP REQUEST: %s %s | payload=%s params=%s",
+                method,
+                url,
+                payload,
+                params,
+            )
 
         route = f"{method.upper()}:{endpoint}"
 
@@ -119,7 +128,9 @@ class HTTPClient:
                     )  # Fallback to text if JSON parsing fails
 
                 if self.verbose:
-                    print(f"HTTP RESPONSE: {response.status} {url} | {data}")
+                    logger.debug(
+                        "HTTP RESPONSE: %s %s | %s", response.status, url, data
+                    )
 
                 self._rate_limiter.release(route, response.headers)
 
@@ -150,8 +161,12 @@ class HTTPClient:
                     )
 
                     if attempt < 4:  # Don't log on the last attempt before raising
-                        print(
-                            f"{error_message} Retrying after {retry_after}s (Attempt {attempt + 1}/5). Global: {is_global}"
+                        logger.warning(
+                            "%s Retrying after %ss (Attempt %s/5). Global: %s",
+                            error_message,
+                            retry_after,
+                            attempt + 1,
+                            is_global,
                         )
                         continue  # Retry the request
                     else:  # Last attempt failed
