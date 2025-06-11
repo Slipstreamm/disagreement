@@ -165,4 +165,5 @@ A container can itself contain layout and content components, letting you build 
 - [Slash Commands](slash_commands.md)
 - [Caching](caching.md)
 - [Voice Features](voice_features.md)
+- [HTTP Client Options](http_client.md)
 
