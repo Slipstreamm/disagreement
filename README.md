@@ -86,6 +86,22 @@ setup_logging(logging.INFO)
 setup_logging(logging.DEBUG, file="bot.log")
 ```
 
+### HTTP Session Options
+
+Pass additional keyword arguments to ``aiohttp.ClientSession`` using the
+``http_options`` parameter when constructing :class:`disagreement.Client`:
+
+```python
+client = disagreement.Client(
+    token=token,
+    http_options={"proxy": "http://localhost:8080"},
+)
+```
+
+These options are forwarded to ``HTTPClient`` when it creates the underlying
+``aiohttp.ClientSession``. You can specify a custom ``connector`` or any other
+session parameter supported by ``aiohttp``.
+
 ### Defining Subcommands with `AppCommandGroup`
 
 ```python

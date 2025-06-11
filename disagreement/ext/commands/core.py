@@ -70,6 +70,10 @@ class Command:
         if hasattr(callback, "__command_checks__"):
             self.checks.extend(getattr(callback, "__command_checks__"))
 
+        self.max_concurrency: Optional[Tuple[int, str]] = None
+        if hasattr(callback, "__max_concurrency__"):
+            self.max_concurrency = getattr(callback, "__max_concurrency__")
+
     def add_check(
         self, predicate: Callable[["CommandContext"], Awaitable[bool] | bool]
     ) -> None:
@@ -215,6 +219,7 @@ class CommandHandler:
         ] = prefix
         self.commands: Dict[str, Command] = {}
         self.cogs: Dict[str, "Cog"] = {}
+        self._concurrency: Dict[str, Dict[str, int]] = {}
 
         from .help import HelpCommand
 
@@ -299,6 +304,47 @@ class CommandHandler:
             cog_to_remove._eject()
             logger.info("Cog '%s' removed.", cog_name)
         return cog_to_remove
+
+    def _acquire_concurrency(self, ctx: CommandContext) -> None:
+        mc = getattr(ctx.command, "max_concurrency", None)
+        if not mc:
+            return
+        limit, scope = mc
+        if scope == "user":
+            key = ctx.author.id
+        elif scope == "guild":
+            key = ctx.message.guild_id or ctx.author.id
+        else:
+            key = "global"
+        buckets = self._concurrency.setdefault(ctx.command.name, {})
+        current = buckets.get(key, 0)
+        if current >= limit:
+            from .errors import MaxConcurrencyReached
+
+            raise MaxConcurrencyReached(limit)
+        buckets[key] = current + 1
+
+    def _release_concurrency(self, ctx: CommandContext) -> None:
+        mc = getattr(ctx.command, "max_concurrency", None)
+        if not mc:
+            return
+        _, scope = mc
+        if scope == "user":
+            key = ctx.author.id
+        elif scope == "guild":
+            key = ctx.message.guild_id or ctx.author.id
+        else:
+            key = "global"
+        buckets = self._concurrency.get(ctx.command.name)
+        if not buckets:
+            return
+        current = buckets.get(key, 0)
+        if current <= 1:
+            buckets.pop(key, None)
+        else:
+            buckets[key] = current - 1
+        if not buckets:
+            self._concurrency.pop(ctx.command.name, None)
 
     async def get_prefix(self, message: "Message") -> Union[str, List[str], None]:
         if callable(self.prefix):
@@ -501,7 +547,11 @@ class CommandHandler:
             parsed_args, parsed_kwargs = await self._parse_arguments(command, ctx, view)
             ctx.args = parsed_args
             ctx.kwargs = parsed_kwargs
-            await command.invoke(ctx, *parsed_args, **parsed_kwargs)
+            self._acquire_concurrency(ctx)
+            try:
+                await command.invoke(ctx, *parsed_args, **parsed_kwargs)
+            finally:
+                self._release_concurrency(ctx)
         except CommandError as e:
             logger.error("Command error for '%s': %s", command.name, e)
             if hasattr(self.client, "on_command_error"):
