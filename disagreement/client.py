@@ -1112,6 +1112,7 @@ class Client:
         session_id = state["session_id"]
 
         voice = VoiceClient(
+            self,
             endpoint,
             session_id,
             token,
