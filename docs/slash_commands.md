@@ -20,3 +20,14 @@ Use `AppCommandGroup` to group related commands. See the [components guide](usin
 - [Caching](caching.md)
 - [Voice Features](voice_features.md)
 
+## Command Persistence
+
+`AppCommandHandler.sync_commands` can persist registered command IDs in
+`.disagreement_commands.json`. When enabled, subsequent syncs compare the
+stored IDs to the commands defined in code and only create, edit or delete
+commands when changes are detected.
+
+Call `AppCommandHandler.clear_stored_registrations()` if you need to wipe the
+stored IDs or migrate them elsewhere with
+`AppCommandHandler.migrate_stored_registrations()`.
+

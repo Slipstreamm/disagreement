@@ -72,5 +72,13 @@ class CommandInvokeError(CommandError):
         super().__init__(f"Error during command invocation: {original}")
 
 
+class MaxConcurrencyReached(CommandError):
+    """Raised when a command exceeds its concurrency limit."""
+
+    def __init__(self, limit: int):
+        self.limit = limit
+        super().__init__(f"Max concurrency of {limit} reached")
+
+
 # Add more specific errors as needed, e.g., UserNotFound, ChannelNotFound, etc.
 # These might inherit from BadArgument.
