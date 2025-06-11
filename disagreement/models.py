@@ -6,6 +6,7 @@ Data models for Discord objects.
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union, cast
 
@@ -115,6 +116,14 @@ class Message:
         # self.mentions: List[User] = [User(u) for u in data.get("mentions", [])]
         # self.mention_roles: List[str] = data.get("mention_roles", [])
         # self.mention_everyone: bool = data.get("mention_everyone", False)
+
+    @property
+    def clean_content(self) -> str:
+        """Returns message content without user, role, or channel mentions."""
+
+        pattern = re.compile(r"<@!?\d+>|<#\d+>|<@&\d+>")
+        cleaned = pattern.sub("", self.content)
+        return " ".join(cleaned.split())
 
     async def pin(self) -> None:
         """|coro|
