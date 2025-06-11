@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from .enums import OverwriteType  # For PermissionOverwrite model
     from .ui.view import View
     from .interactions import Snowflake
+    from .typing import Typing
 
     # Forward reference Message if it were used in type hints before its definition
     # from .models import Message # Not needed as Message is defined before its use in TextChannel.send etc.
@@ -1291,7 +1292,45 @@ class Channel:
         return base
 
 
-class TextChannel(Channel):
+class Messageable:
+    """Mixin for channels that can send messages and show typing."""
+
+    _client: "Client"
+    id: str
+
+    async def send(
+        self,
+        content: Optional[str] = None,
+        *,
+        embed: Optional["Embed"] = None,
+        embeds: Optional[List["Embed"]] = None,
+        components: Optional[List["ActionRow"]] = None,
+    ) -> "Message":
+        if not hasattr(self._client, "send_message"):
+            raise NotImplementedError(
+                "Client.send_message is required for Messageable.send"
+            )
+
+        return await self._client.send_message(
+            channel_id=self.id,
+            content=content,
+            embed=embed,
+            embeds=embeds,
+            components=components,
+        )
+
+    async def trigger_typing(self) -> None:
+        await self._client._http.trigger_typing(self.id)
+
+    def typing(self) -> "Typing":
+        if not hasattr(self._client, "typing"):
+            raise NotImplementedError(
+                "Client.typing is required for Messageable.typing"
+            )
+        return self._client.typing(self.id)
+
+
+class TextChannel(Channel, Messageable):
     """Represents a guild text channel or announcement channel."""
 
     def __init__(self, data: Dict[str, Any], client_instance: "Client"):
@@ -1316,27 +1355,6 @@ class TextChannel(Channel):
         from .utils import message_pager
 
         return message_pager(self, limit=limit, before=before, after=after)
-
-    async def send(
-        self,
-        content: Optional[str] = None,
-        *,
-        embed: Optional[Embed] = None,
-        embeds: Optional[List[Embed]] = None,
-        components: Optional[List["ActionRow"]] = None,  # Added components
-    ) -> "Message":  # Forward reference Message
-        if not hasattr(self._client, "send_message"):
-            raise NotImplementedError(
-                "Client.send_message is required for TextChannel.send"
-            )
-
-        return await self._client.send_message(
-            channel_id=self.id,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            components=components,
-        )
 
     async def purge(
         self, limit: int, *, before: "Snowflake | None" = None
@@ -1646,7 +1664,7 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         return cast("Thread", self._client.parse_channel(data))
 
 
-class DMChannel(Channel):
+class DMChannel(Channel, Messageable):
     """Represents a Direct Message channel."""
 
     def __init__(self, data: Dict[str, Any], client_instance: "Client"):
@@ -1659,27 +1677,6 @@ class DMChannel(Channel):
     @property
     def recipient(self) -> Optional[User]:
         return self.recipients[0] if self.recipients else None
-
-    async def send(
-        self,
-        content: Optional[str] = None,
-        *,
-        embed: Optional[Embed] = None,
-        embeds: Optional[List[Embed]] = None,
-        components: Optional[List["ActionRow"]] = None,  # Added components
-    ) -> "Message":
-        if not hasattr(self._client, "send_message"):
-            raise NotImplementedError(
-                "Client.send_message is required for DMChannel.send"
-            )
-
-        return await self._client.send_message(
-            channel_id=self.id,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            components=components,
-        )
 
     async def history(
         self,
