@@ -1,0 +1,63 @@
+site_name: Disagreement Docs
+site_description: 'Documentation for the Disagreement library.'
+repo_url: https://github.com/Slipstreamm/disagreement # Replace with your repo URL
+edit_uri: "" # Optional: link to edit page in repo
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - 'Home': 'index.md'
+  - 'User Guide':
+    - 'Introduction': 'introduction.md'
+    - 'Getting Started':
+      - 'Slash Commands': 'slash_commands.md'
+      - 'Events': 'events.md'
+      - 'Components': 'using_components.md'
+      - 'Embeds': 'embeds.md'
+      - 'Context Menus': 'context_menus.md'
+      - 'Message History': 'message_history.md'
+      - 'Reactions': 'reactions.md'
+      - 'Threads': 'threads.md'
+      - 'Typing Indicator': 'typing_indicator.md'
+      - 'Webhooks': 'webhooks.md'
+    - 'Advanced Topics':
+      - 'Caching': 'caching.md'
+      - 'Sharding': 'sharding.md'
+      - 'Internationalization': 'i18n.md'
+      - 'Voice': 'voice_features.md'
+      - 'Task Loop': 'task_loop.md'
+      - 'Extension Loader': 'extension_loader.md'
+      - 'Scheduled Events': 'scheduled_events.md'
+  - 'API Reference':
+    - 'HTTP Client': 'http_client.md'
+    - 'Gateway': 'gateway.md'
+    - 'Permissions': 'permissions.md'
+    - 'Audit Logs': 'audit_logs.md'
+    - 'Commands': 'commands.md'
+    - 'Converters': 'converters.md'
+    - 'Invites': 'invites.md'
+    - 'Mentions': 'mentions.md'
+    - 'OAuth2': 'oauth2.md'
+    - 'Presence': 'presence.md'
+    - 'Voice Client': 'voice_client.md'
