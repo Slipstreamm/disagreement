@@ -22,4 +22,7 @@ async def kick(ctx: CommandContext, target: Member):
     await ctx.send(f"Kicked {target.display_name}")
 ```
 
+`Member.display_name` returns the member's nickname if one is set, otherwise it
+falls back to the username.
+
 The framework will automatically convert the first argument to a `Member` using the mention or ID provided by the user.

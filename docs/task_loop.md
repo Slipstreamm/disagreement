@@ -35,6 +35,22 @@ async def worker():
     ...
 ```
 
+Run setup and teardown code using `before_loop` and `after_loop`:
+
+```python
+@tasks.loop(seconds=5.0)
+async def worker():
+    ...
+
+@worker.before_loop
+async def before_worker():
+    print("starting")
+
+@worker.after_loop
+async def after_worker():
+    print("stopped")
+```
+
 You can also schedule a task at a specific time of day:
 
 ```python
