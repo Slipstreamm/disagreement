@@ -506,6 +506,7 @@ class InteractionCallbackData:
         self.content: Optional[str] = data.get("content")
         self.embeds: Optional[List[Embed]] = (
             [Embed(e) for e in data.get("embeds", [])] if data.get("embeds") else None
+            [Embed(e) for e in data.get("embeds", [])] if data.get("embeds") else None
         )
         self.allowed_mentions: Optional[AllowedMentions] = (
             AllowedMentions(data["allowed_mentions"])
@@ -573,5 +574,5 @@ class InteractionResponsePayload:
     def __repr__(self) -> str:
         return f"<InteractionResponsePayload type={self.type!r}>"
 
-    def __getitem__(self, item: str) -> Any:
-        return self.to_dict()[item]
+    def __getitem__(self, key: str) -> Any:
+        return self.to_dict()[key]

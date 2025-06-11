@@ -149,3 +149,46 @@ def test_webhook_from_url_parses_id_and_token():
     assert webhook.id == "123"
     assert webhook.token == "token"
     assert webhook.url == url
+
+
+@pytest.mark.asyncio
+async def test_execute_webhook_calls_request():
+    http = HTTPClient(token="t")
+    http.request = AsyncMock(return_value={"id": "1"})
+    await http.execute_webhook("1", "tok", content="hi")
+    http.request.assert_called_once_with(
+        "POST",
+        "/webhooks/1/tok",
+        payload={"content": "hi"},
+        use_auth_header=False,
+    )
+
+
+@pytest.mark.asyncio
+async def test_webhook_send_uses_http():
+    from types import SimpleNamespace
+    from disagreement.client import Client
+    from disagreement.models import Webhook, Message
+
+    http = SimpleNamespace(
+        execute_webhook=AsyncMock(
+            return_value={
+                "id": "2",
+                "channel_id": "c",
+                "author": {"id": "1", "username": "u", "discriminator": "0001"},
+                "content": "hi",
+                "timestamp": "t",
+            }
+        )
+    )
+    client = Client.__new__(Client)
+    client._http = http
+    client._messages = {}
+    client._webhooks = {}
+
+    webhook = Webhook({"id": "1", "token": "tok"}, client_instance=client)
+
+    msg = await webhook.send(content="hi")
+
+    http.execute_webhook.assert_awaited_once()
+    assert isinstance(msg, Message)
