@@ -8,7 +8,7 @@ import json
 import asyncio
 import aiohttp  # pylint: disable=import-error
 import asyncio
-from typing import Optional, TYPE_CHECKING, List, Dict, Any, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union
 
 from .errors import DisagreementException, HTTPException
 from .enums import (  # These enums will need to be defined in disagreement/enums.py
@@ -1086,6 +1086,19 @@ class TextChannel(Channel):
             "default_auto_archive_duration"
         )
         self.last_pin_timestamp: Optional[str] = data.get("last_pin_timestamp")
+
+    def history(
+        self,
+        *,
+        limit: Optional[int] = None,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+    ) -> AsyncIterator["Message"]:
+        """Return an async iterator over this channel's messages."""
+
+        from .utils import message_pager
+
+        return message_pager(self, limit=limit, before=before, after=after)
 
     async def send(
         self,
