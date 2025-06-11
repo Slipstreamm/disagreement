@@ -14,7 +14,7 @@ __title__ = "disagreement"
 __author__ = "Slipstream"
 __license__ = "BSD 3-Clause License"
 __copyright__ = "Copyright 2025 Slipstream"
-__version__ = "0.3.0rc1"
+__version__ = "0.3.0b1"
 
 from .client import Client, AutoShardedClient
 from .models import Message, User, Reaction, AuditLogEntry
