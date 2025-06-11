@@ -305,6 +305,13 @@ class ChannelType(IntEnum):
     GUILD_MEDIA = 16  # (Still in development) a channel that can only contain media
 
 
+class StageInstancePrivacyLevel(IntEnum):
+    """Privacy level of a stage instance."""
+
+    PUBLIC = 1
+    GUILD_ONLY = 2
+
+
 class OverwriteType(IntEnum):
     """Type of target for a permission overwrite."""
 
