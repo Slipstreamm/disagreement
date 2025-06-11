@@ -42,3 +42,14 @@ await vc.play(FFmpegAudioSource("other.mp3"))
 ```
 
 Call `await vc.close()` when finished.
+
+## Fetching Available Voice Regions
+
+Use :meth:`Client.fetch_voice_regions` to list the voice regions that Discord
+currently offers. The method returns a list of :class:`VoiceRegion` values.
+
+```python
+regions = await client.fetch_voice_regions()
+for region in regions:
+    print(region.value)
+```
