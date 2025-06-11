@@ -7,9 +7,26 @@ import asyncio
 import contextlib
 import socket
 import threading
+from array import array
+
+
+def _apply_volume(data: bytes, volume: float) -> bytes:
+    samples = array("h")
+    samples.frombytes(data)
+    for i, sample in enumerate(samples):
+        scaled = int(sample * volume)
+        if scaled > 32767:
+            scaled = 32767
+        elif scaled < -32768:
+            scaled = -32768
+        samples[i] = scaled
+    return samples.tobytes()
+
+
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import aiohttp
+
 # The following import is correct, but may be flagged by Pylance if the virtual
 # environment is not configured correctly.
 from nacl.secret import SecretBox
@@ -180,6 +197,9 @@ class VoiceClient:
                 data = await self._current_source.read()
                 if not data:
                     break
+                volume = getattr(self._current_source, "volume", 1.0)
+                if volume != 1.0:
+                    data = _apply_volume(data, volume)
                 await self.send_audio_frame(data)
         finally:
             await self._current_source.close()
