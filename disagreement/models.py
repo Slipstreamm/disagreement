@@ -105,10 +105,37 @@ class Message:
         self.attachments: List[Attachment] = [
             Attachment(a) for a in data.get("attachments", [])
         ]
+        self.pinned: bool = data.get("pinned", False)
         # Add other fields as needed, e.g., attachments, embeds, reactions, etc.
         # self.mentions: List[User] = [User(u) for u in data.get("mentions", [])]
         # self.mention_roles: List[str] = data.get("mention_roles", [])
         # self.mention_everyone: bool = data.get("mention_everyone", False)
+
+    async def pin(self) -> None:
+       """|coro|
+
+       Pins this message to its channel.
+
+       Raises
+       ------
+       HTTPException
+           Pinning the message failed.
+       """
+       await self._client._http.pin_message(self.channel_id, self.id)
+       self.pinned = True
+
+    async def unpin(self) -> None:
+       """|coro|
+
+       Unpins this message from its channel.
+
+       Raises
+       ------
+       HTTPException
+           Unpinning the message failed.
+       """
+       await self._client._http.unpin_message(self.channel_id, self.id)
+       self.pinned = False
 
     async def reply(
         self,
@@ -210,10 +237,17 @@ class Message:
 
         await self._client.add_reaction(self.channel_id, self.id, emoji)
 
-    async def remove_reaction(self, emoji: str) -> None:
-        """|coro| Remove the bot's reaction from this message."""
-
-        await self._client.remove_reaction(self.channel_id, self.id, emoji)
+    async def remove_reaction(self, emoji: str, member: Optional[User] = None) -> None:
+       """|coro|
+       Removes a reaction from this message.
+       If no ``member`` is provided, removes the bot's own reaction.
+       """
+       if member:
+           await self._client._http.delete_user_reaction(
+               self.channel_id, self.id, emoji, member.id
+           )
+       else:
+           await self._client.remove_reaction(self.channel_id, self.id, emoji)
 
     async def clear_reactions(self) -> None:
         """|coro| Remove all reactions from this message."""
@@ -238,6 +272,125 @@ class Message:
 
     def __repr__(self) -> str:
         return f"<Message id='{self.id}' channel_id='{self.channel_id}' author='{self.author!r}'>"
+
+    async def create_thread(
+        self,
+        name: str,
+        *,
+        auto_archive_duration: Optional[int] = None,
+        rate_limit_per_user: Optional[int] = None,
+        reason: Optional[str] = None,
+    ) -> "Thread":
+        """|coro|
+
+        Creates a new thread from this message.
+
+        Parameters
+        ----------
+        name: str
+            The name of the thread.
+        auto_archive_duration: Optional[int]
+            The duration in minutes to automatically archive the thread after recent activity.
+            Can be one of 60, 1440, 4320, 10080.
+        rate_limit_per_user: Optional[int]
+            The number of seconds a user has to wait before sending another message.
+        reason: Optional[str]
+            The reason for creating the thread.
+
+        Returns
+        -------
+        Thread
+            The created thread.
+        """
+        payload: Dict[str, Any] = {"name": name}
+        if auto_archive_duration is not None:
+            payload["auto_archive_duration"] = auto_archive_duration
+        if rate_limit_per_user is not None:
+            payload["rate_limit_per_user"] = rate_limit_per_user
+
+        data = await self._client._http.start_thread_from_message(
+            self.channel_id, self.id, payload
+        )
+        return cast("Thread", self._client.parse_channel(data))
+
+
+class PartialMessage:
+    """Represents a partial message, identified by its ID and channel.
+
+    This model is used to perform actions on a message without having the
+    full message object in the cache.
+
+    Attributes:
+        id (str): The message's unique ID.
+        channel (TextChannel): The text channel this message belongs to.
+    """
+
+    def __init__(self, *, id: str, channel: "TextChannel"):
+        self.id = id
+        self.channel = channel
+        self._client = channel._client
+
+    async def fetch(self) -> "Message":
+        """|coro|
+
+        Fetches the full message data from Discord.
+
+        Returns
+        -------
+        Message
+            The complete message object.
+        """
+        data = await self._client._http.get_message(self.channel.id, self.id)
+        return self._client.parse_message(data)
+
+    async def delete(self, *, delay: Optional[float] = None) -> None:
+        """|coro|
+
+        Deletes this message.
+
+        Parameters
+        ----------
+        delay: Optional[float]
+            If provided, wait this many seconds before deleting.
+        """
+        if delay is not None:
+            await asyncio.sleep(delay)
+        await self._client._http.delete_message(self.channel.id, self.id)
+
+    async def pin(self) -> None:
+        """|coro|
+
+        Pins this message to its channel.
+        """
+        await self._client._http.pin_message(self.channel.id, self.id)
+
+    async def unpin(self) -> None:
+        """|coro|
+
+        Unpins this message from its channel.
+        """
+        await self._client._http.unpin_message(self.channel.id, self.id)
+
+    async def add_reaction(self, emoji: str) -> None:
+        """|coro|
+
+        Adds a reaction to this message.
+        """
+        await self._client._http.create_reaction(self.channel.id, self.id, emoji)
+
+    async def remove_reaction(self, emoji: str, member: Optional[User] = None) -> None:
+        """|coro|
+
+        Removes a reaction from this message.
+
+        If no ``member`` is provided, removes the bot's own reaction.
+        """
+        if member:
+            await self._client._http.delete_user_reaction(
+                self.channel.id, self.id, emoji, member.id
+            )
+        else:
+            await self._client._http.delete_reaction(self.channel.id, self.id, emoji)
 
 
 class EmbedFooter:
@@ -1304,6 +1457,44 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         return (
             f"<Thread id='{self.id}' name='{self.name}' parent_id='{self.parent_id}'>"
         )
+
+    async def join(self) -> None:
+        """|coro|
+
+        Joins this thread.
+        """
+        await self._client._http.join_thread(self.id)
+
+    async def leave(self) -> None:
+        """|coro|
+
+        Leaves this thread.
+        """
+        await self._client._http.leave_thread(self.id)
+
+    async def archive(self, locked: bool = False, *, reason: Optional[str] = None) -> "Thread":
+        """|coro|
+
+        Archives this thread.
+
+        Parameters
+        ----------
+        locked: bool
+            Whether to lock the thread.
+        reason: Optional[str]
+            The reason for archiving the thread.
+
+        Returns
+        -------
+        Thread
+            The updated thread.
+        """
+        payload = {
+            "archived": True,
+            "locked": locked,
+        }
+        data = await self._client._http.edit_channel(self.id, payload, reason=reason)
+        return cast("Thread", self._client.parse_channel(data))
 
 
 class DMChannel(Channel):

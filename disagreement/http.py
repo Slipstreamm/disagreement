@@ -368,6 +368,20 @@ class HTTPClient:
             f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}/@me",
         )
 
+    async def delete_user_reaction(
+       self,
+       channel_id: "Snowflake",
+       message_id: "Snowflake",
+       emoji: str,
+       user_id: "Snowflake",
+   ) -> None:
+       """Removes another user's reaction from a message."""
+       encoded = quote(emoji)
+       await self.request(
+           "DELETE",
+           f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}/{user_id}",
+       )
+
     async def get_reactions(
         self, channel_id: "Snowflake", message_id: "Snowflake", emoji: str
     ) -> List[Dict[str, Any]]:
@@ -400,6 +414,27 @@ class HTTPClient:
         )
         return messages
 
+    async def get_pinned_messages(
+        self, channel_id: "Snowflake"
+    ) -> List[Dict[str, Any]]:
+        """Fetches all pinned messages in a channel."""
+
+        return await self.request("GET", f"/channels/{channel_id}/pins")
+
+    async def pin_message(
+        self, channel_id: "Snowflake", message_id: "Snowflake"
+    ) -> None:
+        """Pins a message in a channel."""
+
+        await self.request("PUT", f"/channels/{channel_id}/pins/{message_id}")
+
+    async def unpin_message(
+        self, channel_id: "Snowflake", message_id: "Snowflake"
+    ) -> None:
+        """Unpins a message from a channel."""
+
+        await self.request("DELETE", f"/channels/{channel_id}/pins/{message_id}")
+
     async def delete_channel(
         self, channel_id: str, reason: Optional[str] = None
     ) -> None:
@@ -418,6 +453,21 @@ class HTTPClient:
             "DELETE",
             f"/channels/{channel_id}",
             custom_headers=custom_headers if custom_headers else None,
+        )
+
+    async def edit_channel(
+        self,
+        channel_id: "Snowflake",
+        payload: Dict[str, Any],
+        reason: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Edits a channel."""
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        return await self.request(
+            "PATCH",
+            f"/channels/{channel_id}",
+            payload=payload,
+            custom_headers=headers,
         )
 
     async def get_channel(self, channel_id: str) -> Dict[str, Any]:
@@ -1039,3 +1089,32 @@ class HTTPClient:
     async def get_voice_regions(self) -> List[Dict[str, Any]]:
         """Returns available voice regions."""
         return await self.request("GET", "/voice/regions")
+
+    async def start_thread_from_message(
+        self,
+        channel_id: "Snowflake",
+        message_id: "Snowflake",
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Starts a new thread from an existing message."""
+        return await self.request(
+            "POST",
+            f"/channels/{channel_id}/messages/{message_id}/threads",
+            payload=payload,
+        )
+
+    async def start_thread_without_message(
+        self, channel_id: "Snowflake", payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Starts a new thread that is not attached to a message."""
+        return await self.request(
+            "POST", f"/channels/{channel_id}/threads", payload=payload
+        )
+
+    async def join_thread(self, channel_id: "Snowflake") -> None:
+        """Joins the current user to a thread."""
+        await self.request("PUT", f"/channels/{channel_id}/thread-members/@me")
+
+    async def leave_thread(self, channel_id: "Snowflake") -> None:
+        """Removes the current user from a thread."""
+        await self.request("DELETE", f"/channels/{channel_id}/thread-members/@me")
