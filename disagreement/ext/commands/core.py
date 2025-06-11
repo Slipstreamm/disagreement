@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -30,6 +31,8 @@ from .errors import (
 )
 from .converters import run_converters, DEFAULT_CONVERTERS, Converter
 from disagreement.typing import Typing
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .cog import Cog
@@ -224,8 +227,10 @@ class CommandHandler:
         self.commands[command.name.lower()] = command
         for alias in command.aliases:
             if alias in self.commands:
-                print(
-                    f"Warning: Alias '{alias}' for command '{command.name}' conflicts with an existing command or alias."
+                logger.warning(
+                    "Alias '%s' for command '%s' conflicts with an existing command or alias.",
+                    alias,
+                    command.name,
                 )
             self.commands[alias.lower()] = command
 
@@ -241,6 +246,7 @@ class CommandHandler:
 
     def add_cog(self, cog_to_add: "Cog") -> None:
         from .cog import Cog
+
         if not isinstance(cog_to_add, Cog):
             raise TypeError("Argument must be a subclass of Cog.")
 
@@ -258,8 +264,9 @@ class CommandHandler:
             for event_name, callback in cog_to_add.get_listeners():
                 self.client._event_dispatcher.register(event_name.upper(), callback)
         else:
-            print(
-                f"Warning: Client does not have '_event_dispatcher'. Listeners for cog '{cog_to_add.cog_name}' not registered."
+            logger.warning(
+                "Client does not have '_event_dispatcher'. Listeners for cog '%s' not registered.",
+                cog_to_add.cog_name,
             )
 
         if hasattr(cog_to_add, "cog_load") and inspect.iscoroutinefunction(
@@ -267,7 +274,7 @@ class CommandHandler:
         ):
             asyncio.create_task(cog_to_add.cog_load())
 
-        print(f"Cog '{cog_to_add.cog_name}' added.")
+        logger.info("Cog '%s' added.", cog_to_add.cog_name)
 
     def remove_cog(self, cog_name: str) -> Optional["Cog"]:
         cog_to_remove = self.cogs.pop(cog_name, None)
@@ -277,8 +284,11 @@ class CommandHandler:
 
             if hasattr(self.client, "_event_dispatcher"):
                 for event_name, callback in cog_to_remove.get_listeners():
-                    print(
-                        f"Note: Listener '{callback.__name__}' for event '{event_name}' from cog '{cog_name}' needs manual unregistration logic in EventDispatcher."
+                    logger.debug(
+                        "Listener '%s' for event '%s' from cog '%s' needs manual unregistration logic in EventDispatcher.",
+                        callback.__name__,
+                        event_name,
+                        cog_name,
                     )
 
             if hasattr(cog_to_remove, "cog_unload") and inspect.iscoroutinefunction(
@@ -287,7 +297,7 @@ class CommandHandler:
                 asyncio.create_task(cog_to_remove.cog_unload())
 
             cog_to_remove._eject()
-            print(f"Cog '{cog_name}' removed.")
+            logger.info("Cog '%s' removed.", cog_name)
         return cog_to_remove
 
     async def get_prefix(self, message: "Message") -> Union[str, List[str], None]:
@@ -493,11 +503,11 @@ class CommandHandler:
             ctx.kwargs = parsed_kwargs
             await command.invoke(ctx, *parsed_args, **parsed_kwargs)
         except CommandError as e:
-            print(f"Command error for '{command.name}': {e}")
+            logger.error("Command error for '%s': %s", command.name, e)
             if hasattr(self.client, "on_command_error"):
                 await self.client.on_command_error(ctx, e)
         except Exception as e:
-            print(f"Unexpected error invoking command '{command.name}': {e}")
+            logger.error("Unexpected error invoking command '%s': %s", command.name, e)
             exc = CommandInvokeError(e)
             if hasattr(self.client, "on_command_error"):
                 await self.client.on_command_error(ctx, exc)

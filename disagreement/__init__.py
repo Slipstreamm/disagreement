@@ -35,7 +35,11 @@ from .enums import GatewayIntent, GatewayOpcode  # Export enums
 from .error_handler import setup_global_error_handler
 from .hybrid_context import HybridContext
 from .ext import tasks
+from .logging_config import setup_logging
 
-# Set up logging if desired
-# import logging
-# logging.getLogger(__name__).addHandler(logging.NullHandler())
+import logging
+
+
+# Configure a default logger if none has been configured yet
+if not logging.getLogger().hasHandlers():
+    setup_logging(logging.INFO)
