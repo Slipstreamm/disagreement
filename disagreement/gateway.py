@@ -79,6 +79,8 @@ class GatewayClient:
         self._buffer = bytearray()
         self._inflator = zlib.decompressobj()
 
+        self._member_chunk_requests: Dict[str, asyncio.Future] = {}
+
     async def _reconnect(self) -> None:
         """Attempts to reconnect using exponential backoff with jitter."""
         delay = 1.0
@@ -237,6 +239,32 @@ class GatewayClient:
         }
         await self._send_json(payload)
 
+    async def request_guild_members(
+        self,
+        guild_id: str,
+        query: str = "",
+        limit: int = 0,
+        presences: bool = False,
+        user_ids: Optional[list[str]] = None,
+        nonce: Optional[str] = None,
+    ):
+        """Sends the request guild members payload to the Gateway."""
+        payload = {
+            "op": GatewayOpcode.REQUEST_GUILD_MEMBERS,
+            "d": {
+                "guild_id": guild_id,
+                "query": query,
+                "limit": limit,
+                "presences": presences,
+            },
+        }
+        if user_ids:
+            payload["d"]["user_ids"] = user_ids
+        if nonce:
+            payload["d"]["nonce"] = nonce
+
+        await self._send_json(payload)
+
     async def _handle_dispatch(self, data: Dict[str, Any]):
         """Handles DISPATCH events (actual Discord events)."""
         event_name = data.get("t")
@@ -313,6 +341,22 @@ class GatewayClient:
                 )
 
             await self._dispatcher.dispatch(event_name, raw_event_d_payload)
+        elif event_name == "GUILD_MEMBERS_CHUNK":
+            if isinstance(raw_event_d_payload, dict):
+                nonce = raw_event_d_payload.get("nonce")
+                if nonce and nonce in self._member_chunk_requests:
+                    future = self._member_chunk_requests[nonce]
+                    if not future.done():
+                        # Append members to a temporary list stored on the future object
+                        if not hasattr(future, "_members"):
+                            future._members = []  # type: ignore
+                        future._members.extend(raw_event_d_payload.get("members", []))  # type: ignore
+
+                        # If this is the last chunk, resolve the future
+                        if raw_event_d_payload.get("chunk_index") == raw_event_d_payload.get("chunk_count", 1) - 1:
+                            future.set_result(future._members)  # type: ignore
+                            del self._member_chunk_requests[nonce]
+
         elif event_name == "INTERACTION_CREATE":
             # print(f"GATEWAY RECV INTERACTION_CREATE: {raw_event_d_payload}")
             if isinstance(raw_event_d_payload, dict):

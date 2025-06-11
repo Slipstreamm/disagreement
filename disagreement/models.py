@@ -1123,6 +1123,49 @@ class Guild:
     def __repr__(self) -> str:
         return f"<Guild id='{self.id}' name='{self.name}'>"
 
+    async def fetch_members(self, *, limit: Optional[int] = None) -> List["Member"]:
+        """|coro|
+
+        Fetches all members for this guild.
+
+        This requires the ``GUILD_MEMBERS`` intent.
+
+        Parameters
+        ----------
+        limit: Optional[int]
+            The maximum number of members to fetch. If ``None``, all members
+            are fetched.
+
+        Returns
+        -------
+        List[Member]
+            A list of all members in the guild.
+
+        Raises
+        ------
+        DisagreementException
+            The gateway is not available to make the request.
+        asyncio.TimeoutError
+            The request timed out.
+        """
+        if not self._client._gateway:
+            raise DisagreementException("Gateway not available for member fetching.")
+
+        nonce = str(asyncio.get_running_loop().time())
+        future = self._client._gateway._loop.create_future()
+        self._client._gateway._member_chunk_requests[nonce] = future
+
+        try:
+            await self._client._gateway.request_guild_members(
+                self.id, limit=limit or 0, nonce=nonce
+            )
+            member_data = await asyncio.wait_for(future, timeout=60.0)
+            return [Member(m, self._client) for m in member_data]
+        except asyncio.TimeoutError:
+            if nonce in self._client._gateway._member_chunk_requests:
+                del self._client._gateway._member_chunk_requests[nonce]
+            raise
+
 
 class Channel:
     """Base class for Discord channels."""
