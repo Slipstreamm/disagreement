@@ -589,6 +589,49 @@ class HTTPClient:
         """Fetches a guild object for a given guild ID."""
         return await self.request("GET", f"/guilds/{guild_id}")
 
+    async def get_guild_scheduled_events(
+        self, guild_id: "Snowflake"
+    ) -> List[Dict[str, Any]]:
+        """Returns a list of scheduled events for the guild."""
+
+        return await self.request("GET", f"/guilds/{guild_id}/scheduled-events")
+
+    async def get_guild_scheduled_event(
+        self, guild_id: "Snowflake", event_id: "Snowflake"
+    ) -> Dict[str, Any]:
+        """Returns a guild scheduled event."""
+
+        return await self.request(
+            "GET", f"/guilds/{guild_id}/scheduled-events/{event_id}"
+        )
+
+    async def create_guild_scheduled_event(
+        self, guild_id: "Snowflake", payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Creates a guild scheduled event."""
+
+        return await self.request(
+            "POST", f"/guilds/{guild_id}/scheduled-events", payload=payload
+        )
+
+    async def edit_guild_scheduled_event(
+        self, guild_id: "Snowflake", event_id: "Snowflake", payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Edits a guild scheduled event."""
+
+        return await self.request(
+            "PATCH",
+            f"/guilds/{guild_id}/scheduled-events/{event_id}",
+            payload=payload,
+        )
+
+    async def delete_guild_scheduled_event(
+        self, guild_id: "Snowflake", event_id: "Snowflake"
+    ) -> None:
+        """Deletes a guild scheduled event."""
+
+        await self.request("DELETE", f"/guilds/{guild_id}/scheduled-events/{event_id}")
+
     # Add other methods like:
     # async def get_guild(self, guild_id: str) -> Dict[str, Any]: ...
     # async def create_reaction(self, channel_id: str, message_id: str, emoji: str) -> None: ...

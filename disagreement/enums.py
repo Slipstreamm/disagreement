@@ -278,6 +278,32 @@ class GuildFeature(str, Enum):  # Changed from IntEnum to Enum
         return str(value)
 
 
+# --- Guild Scheduled Event Enums ---
+
+
+class GuildScheduledEventPrivacyLevel(IntEnum):
+    """Privacy level for a scheduled event."""
+
+    GUILD_ONLY = 2
+
+
+class GuildScheduledEventStatus(IntEnum):
+    """Status of a scheduled event."""
+
+    SCHEDULED = 1
+    ACTIVE = 2
+    COMPLETED = 3
+    CANCELED = 4
+
+
+class GuildScheduledEventEntityType(IntEnum):
+    """Entity type for a scheduled event."""
+
+    STAGE_INSTANCE = 1
+    VOICE = 2
+    EXTERNAL = 3
+
+
 # --- Channel Enums ---
 
 

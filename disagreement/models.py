@@ -22,6 +22,9 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     ChannelType,
     ComponentType,
     ButtonStyle,  # Added for Button
+    GuildScheduledEventPrivacyLevel,
+    GuildScheduledEventStatus,
+    GuildScheduledEventEntityType,
     # SelectMenuType will be part of ComponentType or a new enum if needed
 )
 from .permissions import Permissions
@@ -1976,6 +1979,42 @@ class Reaction:
     def __repr__(self) -> str:
         emoji_value = self.emoji.get("name") or self.emoji.get("id")
         return f"<Reaction message_id='{self.message_id}' user_id='{self.user_id}' emoji='{emoji_value}'>"
+
+
+class ScheduledEvent:
+    """Represents a guild scheduled event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.id: str = data["id"]
+        self.guild_id: str = data["guild_id"]
+        self.channel_id: Optional[str] = data.get("channel_id")
+        self.creator_id: Optional[str] = data.get("creator_id")
+        self.name: str = data["name"]
+        self.description: Optional[str] = data.get("description")
+        self.scheduled_start_time: str = data["scheduled_start_time"]
+        self.scheduled_end_time: Optional[str] = data.get("scheduled_end_time")
+        self.privacy_level: GuildScheduledEventPrivacyLevel = (
+            GuildScheduledEventPrivacyLevel(data["privacy_level"])
+        )
+        self.status: GuildScheduledEventStatus = GuildScheduledEventStatus(
+            data["status"]
+        )
+        self.entity_type: GuildScheduledEventEntityType = GuildScheduledEventEntityType(
+            data["entity_type"]
+        )
+        self.entity_id: Optional[str] = data.get("entity_id")
+        self.entity_metadata: Optional[Dict[str, Any]] = data.get("entity_metadata")
+        self.creator: Optional[User] = (
+            User(data["creator"]) if data.get("creator") else None
+        )
+        self.user_count: Optional[int] = data.get("user_count")
+        self.image: Optional[str] = data.get("image")
+
+    def __repr__(self) -> str:
+        return f"<ScheduledEvent id='{self.id}' name='{self.name}'>"
 
 
 class GuildMemberRemove:
