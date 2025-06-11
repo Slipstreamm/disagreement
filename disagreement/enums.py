@@ -375,6 +375,15 @@ class OverwriteType(IntEnum):
     MEMBER = 1
 
 
+class AutoArchiveDuration(IntEnum):
+    """Thread auto-archive duration in minutes."""
+
+    HOUR = 60
+    DAY = 1440
+    THREE_DAYS = 4320
+    WEEK = 10080
+
+
 # --- Component Enums ---
 
 

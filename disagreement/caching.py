@@ -8,10 +8,10 @@ class _MemberCacheFlagValue:
     flag: int
 
     def __init__(self, func: Callable[[Any], bool]):
-        self.flag = getattr(func, 'flag', 0)
+        self.flag = getattr(func, "flag", 0)
         self.__doc__ = func.__doc__
 
-    def __get__(self, instance: 'MemberCacheFlags', owner: type) -> Any:
+    def __get__(self, instance: "MemberCacheFlags", owner: type) -> Any:
         if instance is None:
             return self
         return instance.value & self.flag != 0
@@ -23,23 +23,24 @@ class _MemberCacheFlagValue:
             instance.value &= ~self.flag
 
     def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} flag={self.flag}>'
+        return f"<{self.__class__.__name__} flag={self.flag}>"
 
 
 def flag_value(flag: int) -> Callable[[Callable[[Any], bool]], _MemberCacheFlagValue]:
     def decorator(func: Callable[[Any], bool]) -> _MemberCacheFlagValue:
-        setattr(func, 'flag', flag)
+        setattr(func, "flag", flag)
         return _MemberCacheFlagValue(func)
+
     return decorator
 
 
 class MemberCacheFlags:
-    __slots__ = ('value',)
+    __slots__ = ("value",)
 
     VALID_FLAGS: ClassVar[Dict[str, int]] = {
-        'joined': 1 << 0,
-        'voice': 1 << 1,
-        'online': 1 << 2,
+        "joined": 1 << 0,
+        "voice": 1 << 1,
+        "online": 1 << 2,
     }
     DEFAULT_FLAGS: ClassVar[int] = 1 | 2 | 4
     ALL_FLAGS: ClassVar[int] = sum(VALID_FLAGS.values())
@@ -48,7 +49,7 @@ class MemberCacheFlags:
         self.value = self.DEFAULT_FLAGS
         for key, value in kwargs.items():
             if key not in self.VALID_FLAGS:
-                raise TypeError(f'{key!r} is not a valid member cache flag.')
+                raise TypeError(f"{key!r} is not a valid member cache flag.")
             setattr(self, key, value)
 
     @classmethod
@@ -67,7 +68,7 @@ class MemberCacheFlags:
         return hash(self.value)
 
     def __repr__(self) -> str:
-        return f'<MemberCacheFlags value={self.value}>'
+        return f"<MemberCacheFlags value={self.value}>"
 
     def __iter__(self) -> Iterator[Tuple[str, bool]]:
         for name in self.VALID_FLAGS:
@@ -92,17 +93,17 @@ class MemberCacheFlags:
     @classmethod
     def only_joined(cls) -> MemberCacheFlags:
         """A factory method that creates a :class:`MemberCacheFlags` with only the `joined` flag enabled."""
-        return cls._from_value(cls.VALID_FLAGS['joined'])
+        return cls._from_value(cls.VALID_FLAGS["joined"])
 
     @classmethod
     def only_voice(cls) -> MemberCacheFlags:
         """A factory method that creates a :class:`MemberCacheFlags` with only the `voice` flag enabled."""
-        return cls._from_value(cls.VALID_FLAGS['voice'])
+        return cls._from_value(cls.VALID_FLAGS["voice"])
 
     @classmethod
     def only_online(cls) -> MemberCacheFlags:
         """A factory method that creates a :class:`MemberCacheFlags` with only the `online` flag enabled."""
-        return cls._from_value(cls.VALID_FLAGS['online'])
+        return cls._from_value(cls.VALID_FLAGS["online"])
 
     @flag_value(1 << 0)
     def joined(self) -> bool:

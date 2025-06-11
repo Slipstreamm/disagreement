@@ -36,6 +36,7 @@ from .ext import loader as ext_loader
 from .interactions import Interaction, Snowflake
 from .error_handler import setup_global_error_handler
 from .voice_client import VoiceClient
+from .models import Activity
 
 if TYPE_CHECKING:
     from .models import (
@@ -75,13 +76,21 @@ class Client:
         intents (Optional[int]): The Gateway Intents to use. Defaults to `GatewayIntent.default()`.
                                  You might need to enable privileged intents in your bot's application page.
         loop (Optional[asyncio.AbstractEventLoop]): The event loop to use for asynchronous operations.
-                                                    Defaults to `asyncio.get_event_loop()`.
+                                                    Defaults to the running loop
+                                                    via `asyncio.get_running_loop()`,
+                                                    or a new loop from
+                                                    `asyncio.new_event_loop()` if
+                                                    none is running.
         command_prefix (Union[str, List[str], Callable[['Client', Message], Union[str, List[str]]]]):
             The prefix(es) for commands. Defaults to '!'.
         verbose (bool): If True, print raw HTTP and Gateway traffic for debugging.
+        mention_replies (bool): Whether replies mention the author by default.
+        allowed_mentions (Optional[Dict[str, Any]]): Default allowed mentions for messages.
         http_options (Optional[Dict[str, Any]]): Extra options passed to
             :class:`HTTPClient` for creating the internal
             :class:`aiohttp.ClientSession`.
+        message_cache_maxlen (Optional[int]): Maximum number of messages to keep
+            in the cache. When ``None``, the cache size is unlimited.
     """
 
     def __init__(
@@ -95,10 +104,12 @@ class Client:
         application_id: Optional[Union[str, int]] = None,
         verbose: bool = False,
         mention_replies: bool = False,
+        allowed_mentions: Optional[Dict[str, Any]] = None,
         shard_count: Optional[int] = None,
         gateway_max_retries: int = 5,
         gateway_max_backoff: float = 60.0,
         member_cache_flags: Optional[MemberCacheFlags] = None,
+        message_cache_maxlen: Optional[int] = None,
         http_options: Optional[Dict[str, Any]] = None,
     ):
         if not token:
@@ -108,6 +119,7 @@ class Client:
         self.member_cache_flags: MemberCacheFlags = (
             member_cache_flags if member_cache_flags is not None else MemberCacheFlags()
         )
+        self.message_cache_maxlen: Optional[int] = message_cache_maxlen
         self.intents: int = intents if intents is not None else GatewayIntent.default()
         if loop:
             self.loop: asyncio.AbstractEventLoop = loop
@@ -157,7 +169,7 @@ class Client:
         self._guilds: GuildCache = GuildCache()
         self._channels: ChannelCache = ChannelCache()
         self._users: Cache["User"] = Cache()
-        self._messages: Cache["Message"] = Cache(ttl=3600)  # Cache messages for an hour
+        self._messages: Cache["Message"] = Cache(ttl=3600, maxlen=message_cache_maxlen)
         self._views: Dict[Snowflake, "View"] = {}
         self._persistent_views: Dict[str, "View"] = {}
         self._voice_clients: Dict[Snowflake, VoiceClient] = {}
@@ -165,6 +177,7 @@ class Client:
 
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
+        self.allowed_mentions: Optional[Dict[str, Any]] = allowed_mentions
 
         # Basic signal handling for graceful shutdown
         # This might be better handled by the user's application code, but can be a nice default.
@@ -435,8 +448,7 @@ class Client:
     async def change_presence(
         self,
         status: str,
-        activity_name: Optional[str] = None,
-        activity_type: int = 0,
+        activity: Optional[Activity] = None,
         since: int = 0,
         afk: bool = False,
     ):
@@ -445,8 +457,7 @@ class Client:
 
         Args:
             status (str): The new status for the client (e.g., "online", "idle", "dnd", "invisible").
-            activity_name (Optional[str]): The name of the activity.
-            activity_type (int): The type of the activity.
+            activity (Optional[Activity]): Activity instance describing what the bot is doing.
             since (int): The timestamp (in milliseconds) of when the client went idle.
             afk (bool): Whether the client is AFK.
         """
@@ -456,8 +467,7 @@ class Client:
         if self._gateway:
             await self._gateway.update_presence(
                 status=status,
-                activity_name=activity_name,
-                activity_type=activity_type,
+                activity=activity,
                 since=since,
                 afk=afk,
             )
@@ -693,7 +703,7 @@ class Client:
             )
             # import traceback
             # traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
- 
+
     async def on_command_completion(self, ctx: "CommandContext") -> None:
         """
         Default command completion handler. Called when a command has successfully completed.
@@ -1010,7 +1020,7 @@ class Client:
             embeds (Optional[List[Embed]]): A list of embeds to send. Cannot be used with `embed`.
                                             Discord supports up to 10 embeds per message.
             components (Optional[List[ActionRow]]): A list of ActionRow components to include.
-            allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
+            allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message. Defaults to :attr:`Client.allowed_mentions`.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
             attachments (Optional[List[Any]]): Attachments to include with the message.
             files (Optional[List[Any]]): Files to upload with the message.
@@ -1056,6 +1066,9 @@ class Client:
                 for comp in components
                 if isinstance(comp, ComponentModel)
             ]
+
+        if allowed_mentions is None:
+            allowed_mentions = self.allowed_mentions
 
         message_data = await self._http.send_message(
             channel_id=channel_id,
@@ -1428,6 +1441,24 @@ class Client:
 
         await self._http.delete_guild_template(guild_id, template_code)
 
+    async def fetch_widget(self, guild_id: Snowflake) -> Dict[str, Any]:
+        """|coro| Fetch a guild's widget settings."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        return await self._http.get_guild_widget(guild_id)
+
+    async def edit_widget(
+        self, guild_id: Snowflake, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """|coro| Edit a guild's widget settings."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        return await self._http.edit_guild_widget(guild_id, payload)
+
     async def fetch_scheduled_events(
         self, guild_id: Snowflake
     ) -> List["ScheduledEvent"]:
@@ -1514,35 +1545,35 @@ class Client:
         return [self.parse_invite(inv) for inv in data]
 
     def add_persistent_view(self, view: "View") -> None:
-       """
-       Registers a persistent view with the client.
+        """
+        Registers a persistent view with the client.
 
-       Persistent views have a timeout of `None` and their components must have a `custom_id`.
-       This allows the view to be re-instantiated across bot restarts.
+        Persistent views have a timeout of `None` and their components must have a `custom_id`.
+        This allows the view to be re-instantiated across bot restarts.
 
-       Args:
-           view (View): The view instance to register.
+        Args:
+            view (View): The view instance to register.
 
-       Raises:
-           ValueError: If the view is not persistent (timeout is not None) or if a component's
-                       custom_id is already registered.
-       """
-       if self.is_ready():
-           print(
-               "Warning: Adding a persistent view after the client is ready. "
-               "This view will only be available for interactions on this session."
-           )
+        Raises:
+            ValueError: If the view is not persistent (timeout is not None) or if a component's
+                        custom_id is already registered.
+        """
+        if self.is_ready():
+            print(
+                "Warning: Adding a persistent view after the client is ready. "
+                "This view will only be available for interactions on this session."
+            )
 
-       if view.timeout is not None:
-           raise ValueError("Persistent views must have a timeout of None.")
+        if view.timeout is not None:
+            raise ValueError("Persistent views must have a timeout of None.")
 
-       for item in view.children:
-           if item.custom_id:  # Ensure custom_id is not None
-               if item.custom_id in self._persistent_views:
-                   raise ValueError(
-                       f"A component with custom_id '{item.custom_id}' is already registered."
-                   )
-               self._persistent_views[item.custom_id] = view
+        for item in view.children:
+            if item.custom_id:  # Ensure custom_id is not None
+                if item.custom_id in self._persistent_views:
+                    raise ValueError(
+                        f"A component with custom_id '{item.custom_id}' is already registered."
+                    )
+                self._persistent_views[item.custom_id] = view
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:

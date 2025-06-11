@@ -3,7 +3,11 @@
 import os
 import sys
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - example helper
+    load_dotenv = None
+    print("python-dotenv is not installed. Environment variables will not be loaded")
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -11,7 +15,8 @@ from disagreement import Client, GatewayIntent, ui  # type: ignore
 from disagreement.ext.app_commands.decorators import slash_command
 from disagreement.ext.app_commands.context import AppCommandContext
 
-load_dotenv()
+if load_dotenv:
+    load_dotenv()
 TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
 APP_ID = os.getenv("DISCORD_APPLICATION_ID", "")
 

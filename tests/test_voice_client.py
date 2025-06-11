@@ -1,8 +1,11 @@
 import asyncio
+import io
+from array import array
 import pytest
 
+from disagreement.audio import AudioSource, FFmpegAudioSource
+
 from disagreement.voice_client import VoiceClient
-from disagreement.audio import AudioSource
 from disagreement.client import Client
 
 
@@ -137,3 +140,68 @@ async def test_play_and_switch_sources():
     await vc.play(DummySource([b"c"]))
 
     assert udp.sent == [b"a", b"b", b"c"]
+
+
+@pytest.mark.asyncio
+async def test_ffmpeg_source_custom_options(monkeypatch):
+    captured = {}
+
+    class DummyProcess:
+        def __init__(self):
+            self.stdout = io.BytesIO(b"")
+
+        async def wait(self):
+            return 0
+
+    async def fake_exec(*args, **kwargs):
+        captured["args"] = args
+        return DummyProcess()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", fake_exec)
+    src = FFmpegAudioSource(
+        "file.mp3", before_options="-reconnect 1", options="-vn", volume=0.5
+    )
+
+    await src._spawn()
+
+    cmd = captured["args"]
+    assert "-reconnect" in cmd
+    assert "-vn" in cmd
+    assert src.volume == 0.5
+
+
+@pytest.mark.asyncio
+async def test_voice_client_volume_scaling(monkeypatch):
+    ws = DummyWebSocket(
+        [
+            {"d": {"heartbeat_interval": 50}},
+            {"d": {"ssrc": 1, "ip": "127.0.0.1", "port": 4000}},
+            {"d": {"secret_key": []}},
+        ]
+    )
+    udp = DummyUDP()
+    vc = VoiceClient(
+        client=DummyVoiceClient(),
+        endpoint="ws://localhost",
+        session_id="sess",
+        token="tok",
+        guild_id=1,
+        user_id=2,
+        ws=ws,
+        udp=udp,
+    )
+    await vc.connect()
+    vc._heartbeat_task.cancel()
+
+    chunk = b"\x10\x00\x10\x00"
+    src = DummySource([chunk])
+    src.volume = 0.5
+
+    await vc.play(src)
+
+    samples = array("h")
+    samples.frombytes(chunk)
+    samples[0] = int(samples[0] * 0.5)
+    samples[1] = int(samples[1] * 0.5)
+    expected = samples.tobytes()
+    assert udp.sent == [expected]

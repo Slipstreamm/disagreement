@@ -23,6 +23,13 @@ pip install -e .
 
 Requires Python 3.10 or newer.
 
+To run the example scripts, you'll need the `python-dotenv` package to load
+environment variables. Install the development extras with:
+
+```bash
+pip install "disagreement[dev]"
+```
+
 ## Basic Usage
 
 ```python
@@ -102,6 +109,20 @@ These options are forwarded to ``HTTPClient`` when it creates the underlying
 ``aiohttp.ClientSession``. You can specify a custom ``connector`` or any other
 session parameter supported by ``aiohttp``.
 
+### Default Allowed Mentions
+
+Specify default mention behaviour for all outgoing messages when constructing the client:
+
+```python
+client = disagreement.Client(
+    token=token,
+    allowed_mentions={"parse": [], "replied_user": False},
+)
+```
+
+This dictionary is used whenever ``send_message`` is called without an explicit
+``allowed_mentions`` argument.
+
 ### Defining Subcommands with `AppCommandGroup`
 
 ```python
@@ -120,6 +141,7 @@ async def show(ctx: AppCommandContext, key: str):
 @slash_command(name="set", description="Update a setting.", parent=admin_group)
 async def set_setting(ctx: AppCommandContext, key: str, value: str):
     ...
+```
 ## Fetching Guilds
 
 Use `Client.fetch_guild` to retrieve a guild from the Discord API if it

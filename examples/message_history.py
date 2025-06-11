@@ -10,9 +10,15 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
 
 from disagreement.client import Client
 from disagreement.models import TextChannel
-from dotenv import load_dotenv
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - example helper
+    load_dotenv = None
+    print("python-dotenv is not installed. Environment variables will not be loaded")
+
+if load_dotenv:
+    load_dotenv()
 
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "")
 CHANNEL_ID = os.environ.get("DISCORD_CHANNEL_ID", "")

@@ -6,6 +6,7 @@ Data models for Discord objects.
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union, cast
 
@@ -24,6 +25,7 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     PremiumTier,
     GuildFeature,
     ChannelType,
+    AutoArchiveDuration,
     ComponentType,
     ButtonStyle,  # Added for Button
     GuildScheduledEventPrivacyLevel,
@@ -39,6 +41,7 @@ if TYPE_CHECKING:
     from .enums import OverwriteType  # For PermissionOverwrite model
     from .ui.view import View
     from .interactions import Snowflake
+    from .typing import Typing
 
     # Forward reference Message if it were used in type hints before its definition
     # from .models import Message # Not needed as Message is defined before its use in TextChannel.send etc.
@@ -114,31 +117,39 @@ class Message:
         # self.mention_roles: List[str] = data.get("mention_roles", [])
         # self.mention_everyone: bool = data.get("mention_everyone", False)
 
+    @property
+    def clean_content(self) -> str:
+        """Returns message content without user, role, or channel mentions."""
+
+        pattern = re.compile(r"<@!?\d+>|<#\d+>|<@&\d+>")
+        cleaned = pattern.sub("", self.content)
+        return " ".join(cleaned.split())
+
     async def pin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Pins this message to its channel.
+        Pins this message to its channel.
 
-       Raises
-       ------
-       HTTPException
-           Pinning the message failed.
-       """
-       await self._client._http.pin_message(self.channel_id, self.id)
-       self.pinned = True
+        Raises
+        ------
+        HTTPException
+            Pinning the message failed.
+        """
+        await self._client._http.pin_message(self.channel_id, self.id)
+        self.pinned = True
 
     async def unpin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Unpins this message from its channel.
+        Unpins this message from its channel.
 
-       Raises
-       ------
-       HTTPException
-           Unpinning the message failed.
-       """
-       await self._client._http.unpin_message(self.channel_id, self.id)
-       self.pinned = False
+        Raises
+        ------
+        HTTPException
+            Unpinning the message failed.
+        """
+        await self._client._http.unpin_message(self.channel_id, self.id)
+        self.pinned = False
 
     async def reply(
         self,
@@ -241,16 +252,16 @@ class Message:
         await self._client.add_reaction(self.channel_id, self.id, emoji)
 
     async def remove_reaction(self, emoji: str, member: Optional[User] = None) -> None:
-       """|coro|
-       Removes a reaction from this message.
-       If no ``member`` is provided, removes the bot's own reaction.
-       """
-       if member:
-           await self._client._http.delete_user_reaction(
-               self.channel_id, self.id, emoji, member.id
-           )
-       else:
-           await self._client.remove_reaction(self.channel_id, self.id, emoji)
+        """|coro|
+        Removes a reaction from this message.
+        If no ``member`` is provided, removes the bot's own reaction.
+        """
+        if member:
+            await self._client._http.delete_user_reaction(
+                self.channel_id, self.id, emoji, member.id
+            )
+        else:
+            await self._client.remove_reaction(self.channel_id, self.id, emoji)
 
     async def clear_reactions(self) -> None:
         """|coro| Remove all reactions from this message."""
@@ -280,7 +291,7 @@ class Message:
         self,
         name: str,
         *,
-        auto_archive_duration: Optional[int] = None,
+        auto_archive_duration: Optional[AutoArchiveDuration] = None,
         rate_limit_per_user: Optional[int] = None,
         reason: Optional[str] = None,
     ) -> "Thread":
@@ -292,9 +303,9 @@ class Message:
         ----------
         name: str
             The name of the thread.
-        auto_archive_duration: Optional[int]
-            The duration in minutes to automatically archive the thread after recent activity.
-            Can be one of 60, 1440, 4320, 10080.
+        auto_archive_duration: Optional[AutoArchiveDuration]
+            How long before the thread is automatically archived after recent activity.
+            See :class:`AutoArchiveDuration` for allowed values.
         rate_limit_per_user: Optional[int]
             The number of seconds a user has to wait before sending another message.
         reason: Optional[str]
@@ -307,7 +318,7 @@ class Message:
         """
         payload: Dict[str, Any] = {"name": name}
         if auto_archive_duration is not None:
-            payload["auto_archive_duration"] = auto_archive_duration
+            payload["auto_archive_duration"] = int(auto_archive_duration)
         if rate_limit_per_user is not None:
             payload["rate_limit_per_user"] = rate_limit_per_user
 
@@ -530,8 +541,42 @@ class Embed:
             payload["fields"] = [f.to_dict() for f in self.fields]
         return payload
 
-    # Convenience methods for building embeds can be added here
-    # e.g., set_author, add_field, set_footer, set_image, etc.
+    # Convenience methods mirroring ``discord.py``'s ``Embed`` API
+
+    def set_author(
+        self, *, name: str, url: Optional[str] = None, icon_url: Optional[str] = None
+    ) -> "Embed":
+        """Set the embed author and return ``self`` for chaining."""
+
+        data: Dict[str, Any] = {"name": name}
+        if url:
+            data["url"] = url
+        if icon_url:
+            data["icon_url"] = icon_url
+        self.author = EmbedAuthor(data)
+        return self
+
+    def add_field(self, *, name: str, value: str, inline: bool = False) -> "Embed":
+        """Add a field to the embed."""
+
+        field = EmbedField({"name": name, "value": value, "inline": inline})
+        self.fields.append(field)
+        return self
+
+    def set_footer(self, *, text: str, icon_url: Optional[str] = None) -> "Embed":
+        """Set the embed footer."""
+
+        data: Dict[str, Any] = {"text": text}
+        if icon_url:
+            data["icon_url"] = icon_url
+        self.footer = EmbedFooter(data)
+        return self
+
+    def set_image(self, url: str) -> "Embed":
+        """Set the embed image."""
+
+        self.image = EmbedImage({"url": url})
+        return self
 
 
 class Attachment:
@@ -1088,7 +1133,9 @@ class Guild:
 
         # Internal caches, populated by events or specific fetches
         self._channels: ChannelCache = ChannelCache()
-        self._members: MemberCache = MemberCache(getattr(client_instance, "member_cache_flags", MemberCacheFlags()))
+        self._members: MemberCache = MemberCache(
+            getattr(client_instance, "member_cache_flags", MemberCacheFlags())
+        )
         self._threads: Dict[str, "Thread"] = {}
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:
@@ -1127,6 +1174,16 @@ class Guild:
 
     def __repr__(self) -> str:
         return f"<Guild id='{self.id}' name='{self.name}'>"
+
+    async def fetch_widget(self) -> Dict[str, Any]:
+        """|coro| Fetch this guild's widget settings."""
+
+        return await self._client.fetch_widget(self.id)
+
+    async def edit_widget(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """|coro| Edit this guild's widget settings."""
+
+        return await self._client.edit_widget(self.id, payload)
 
     async def fetch_members(self, *, limit: Optional[int] = None) -> List["Member"]:
         """|coro|
@@ -1278,7 +1335,45 @@ class Channel:
         return base
 
 
-class TextChannel(Channel):
+class Messageable:
+    """Mixin for channels that can send messages and show typing."""
+
+    _client: "Client"
+    id: str
+
+    async def send(
+        self,
+        content: Optional[str] = None,
+        *,
+        embed: Optional["Embed"] = None,
+        embeds: Optional[List["Embed"]] = None,
+        components: Optional[List["ActionRow"]] = None,
+    ) -> "Message":
+        if not hasattr(self._client, "send_message"):
+            raise NotImplementedError(
+                "Client.send_message is required for Messageable.send"
+            )
+
+        return await self._client.send_message(
+            channel_id=self.id,
+            content=content,
+            embed=embed,
+            embeds=embeds,
+            components=components,
+        )
+
+    async def trigger_typing(self) -> None:
+        await self._client._http.trigger_typing(self.id)
+
+    def typing(self) -> "Typing":
+        if not hasattr(self._client, "typing"):
+            raise NotImplementedError(
+                "Client.typing is required for Messageable.typing"
+            )
+        return self._client.typing(self.id)
+
+
+class TextChannel(Channel, Messageable):
     """Represents a guild text channel or announcement channel."""
 
     def __init__(self, data: Dict[str, Any], client_instance: "Client"):
@@ -1304,27 +1399,6 @@ class TextChannel(Channel):
 
         return message_pager(self, limit=limit, before=before, after=after)
 
-    async def send(
-        self,
-        content: Optional[str] = None,
-        *,
-        embed: Optional[Embed] = None,
-        embeds: Optional[List[Embed]] = None,
-        components: Optional[List["ActionRow"]] = None,  # Added components
-    ) -> "Message":  # Forward reference Message
-        if not hasattr(self._client, "send_message"):
-            raise NotImplementedError(
-                "Client.send_message is required for TextChannel.send"
-            )
-
-        return await self._client.send_message(
-            channel_id=self.id,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            components=components,
-        )
-
     async def purge(
         self, limit: int, *, before: "Snowflake | None" = None
     ) -> List["Snowflake"]:
@@ -1347,41 +1421,41 @@ class TextChannel(Channel):
         return ids
 
     def get_partial_message(self, id: int) -> "PartialMessage":
-       """Returns a :class:`PartialMessage` for the given ID.
+        """Returns a :class:`PartialMessage` for the given ID.
 
-       This allows performing actions on a message without fetching it first.
+        This allows performing actions on a message without fetching it first.
 
-       Parameters
-       ----------
-       id: int
-           The ID of the message to get a partial instance of.
+        Parameters
+        ----------
+        id: int
+            The ID of the message to get a partial instance of.
 
-       Returns
-       -------
-       PartialMessage
-           The partial message instance.
-       """
-       return PartialMessage(id=str(id), channel=self)
+        Returns
+        -------
+        PartialMessage
+            The partial message instance.
+        """
+        return PartialMessage(id=str(id), channel=self)
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
 
     async def pins(self) -> List["Message"]:
         """|coro|
-        
+
         Fetches all pinned messages in this channel.
-        
+
         Returns
         -------
         List[Message]
             The pinned messages.
-            
+
         Raises
         ------
         HTTPException
             Fetching the pinned messages failed.
         """
-        
+
         messages_data = await self._client._http.get_pinned_messages(self.id)
         return [self._client.parse_message(m) for m in messages_data]
 
@@ -1390,7 +1464,7 @@ class TextChannel(Channel):
         name: str,
         *,
         type: ChannelType = ChannelType.PUBLIC_THREAD,
-        auto_archive_duration: Optional[int] = None,
+        auto_archive_duration: Optional[AutoArchiveDuration] = None,
         invitable: Optional[bool] = None,
         rate_limit_per_user: Optional[int] = None,
         reason: Optional[str] = None,
@@ -1406,8 +1480,8 @@ class TextChannel(Channel):
         type: ChannelType
             The type of thread to create. Defaults to PUBLIC_THREAD.
             Can be PUBLIC_THREAD, PRIVATE_THREAD, or ANNOUNCEMENT_THREAD.
-        auto_archive_duration: Optional[int]
-            The duration in minutes to automatically archive the thread after recent activity.
+        auto_archive_duration: Optional[AutoArchiveDuration]
+            How long before the thread is automatically archived after recent activity.
         invitable: Optional[bool]
             Whether non-moderators can invite other non-moderators to a private thread.
             Only applicable to private threads.
@@ -1426,7 +1500,7 @@ class TextChannel(Channel):
             "type": type.value,
         }
         if auto_archive_duration is not None:
-            payload["auto_archive_duration"] = auto_archive_duration
+            payload["auto_archive_duration"] = int(auto_archive_duration)
         if invitable is not None and type == ChannelType.PRIVATE_THREAD:
             payload["invitable"] = invitable
         if rate_limit_per_user is not None:
@@ -1606,7 +1680,9 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         """
         await self._client._http.leave_thread(self.id)
 
-    async def archive(self, locked: bool = False, *, reason: Optional[str] = None) -> "Thread":
+    async def archive(
+        self, locked: bool = False, *, reason: Optional[str] = None
+    ) -> "Thread":
         """|coro|
 
         Archives this thread.
@@ -1631,7 +1707,7 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         return cast("Thread", self._client.parse_channel(data))
 
 
-class DMChannel(Channel):
+class DMChannel(Channel, Messageable):
     """Represents a Direct Message channel."""
 
     def __init__(self, data: Dict[str, Any], client_instance: "Client"):
@@ -1644,27 +1720,6 @@ class DMChannel(Channel):
     @property
     def recipient(self) -> Optional[User]:
         return self.recipients[0] if self.recipients else None
-
-    async def send(
-        self,
-        content: Optional[str] = None,
-        *,
-        embed: Optional[Embed] = None,
-        embeds: Optional[List[Embed]] = None,
-        components: Optional[List["ActionRow"]] = None,  # Added components
-    ) -> "Message":
-        if not hasattr(self._client, "send_message"):
-            raise NotImplementedError(
-                "Client.send_message is required for DMChannel.send"
-            )
-
-        return await self._client.send_message(
-            channel_id=self.id,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            components=components,
-        )
 
     async def history(
         self,
@@ -2356,6 +2411,37 @@ class ThreadMember:
         return f"<ThreadMember user_id='{self.user_id}' thread_id='{self.id}'>"
 
 
+class Activity:
+    """Represents a user's presence activity."""
+
+    def __init__(self, name: str, type: int) -> None:
+        self.name = name
+        self.type = type
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"name": self.name, "type": self.type}
+
+
+class Game(Activity):
+    """Represents a playing activity."""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name, 0)
+
+
+class Streaming(Activity):
+    """Represents a streaming activity."""
+
+    def __init__(self, name: str, url: str) -> None:
+        super().__init__(name, 1)
+        self.url = url
+
+    def to_dict(self) -> Dict[str, Any]:
+        payload = super().to_dict()
+        payload["url"] = self.url
+        return payload
+
+
 class PresenceUpdate:
     """Represents a PRESENCE_UPDATE event."""
 
@@ -2366,7 +2452,17 @@ class PresenceUpdate:
         self.user = User(data["user"])
         self.guild_id: Optional[str] = data.get("guild_id")
         self.status: Optional[str] = data.get("status")
-        self.activities: List[Dict[str, Any]] = data.get("activities", [])
+        self.activities: List[Activity] = []
+        for activity in data.get("activities", []):
+            act_type = activity.get("type", 0)
+            name = activity.get("name", "")
+            if act_type == 0:
+                obj = Game(name)
+            elif act_type == 1:
+                obj = Streaming(name, activity.get("url", ""))
+            else:
+                obj = Activity(name, act_type)
+            self.activities.append(obj)
         self.client_status: Dict[str, Any] = data.get("client_status", {})
 
     def __repr__(self) -> str:

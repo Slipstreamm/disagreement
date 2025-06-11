@@ -37,9 +37,15 @@ from disagreement.interactions import (
     InteractionResponsePayload,
     InteractionCallbackData,
 )
-from dotenv import load_dotenv
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - example helper
+    load_dotenv = None
+    print("python-dotenv is not installed. Environment variables will not be loaded")
+
+if load_dotenv:
+    load_dotenv()
 
 # Get the bot token and application ID from the environment variables
 token = os.getenv("DISCORD_BOT_TOKEN")

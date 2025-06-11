@@ -2,14 +2,20 @@
 
 import os
 import asyncio
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - example helper
+    load_dotenv = None
+    print("python-dotenv is not installed. Environment variables will not be loaded")
 
 from disagreement import Client, ui
 from disagreement.enums import GatewayIntent, TextInputStyle
 from disagreement.ext.app_commands.decorators import slash_command
 from disagreement.ext.app_commands.context import AppCommandContext
 
-load_dotenv()
+if load_dotenv:
+    load_dotenv()
 
 token = os.getenv("DISCORD_BOT_TOKEN", "")
 application_id = os.getenv("DISCORD_APPLICATION_ID", "")

@@ -1,6 +1,7 @@
 # Updating Presence
 
 The `Client.change_presence` method allows you to update the bot's status and displayed activity.
+Pass an :class:`~disagreement.models.Activity` (such as :class:`~disagreement.models.Game` or :class:`~disagreement.models.Streaming`) to describe what your bot is doing.
 
 ## Status Strings
 
@@ -22,8 +23,18 @@ An activity dictionary must include a `name` and a `type` field. The type value 
 | `4`  | Custom       |
 | `5`  | Competing    |
 
-Example:
+Example using the provided activity classes:
 
 ```python
-await client.change_presence(status="idle", activity={"name": "with Discord", "type": 0})
+from disagreement.models import Game
+
+await client.change_presence(status="idle", activity=Game("with Discord"))
+```
+
+You can also specify a streaming URL:
+
+```python
+from disagreement.models import Streaming
+
+await client.change_presence(status="online", activity=Streaming("My Stream", "https://twitch.tv/someone"))
 ```
