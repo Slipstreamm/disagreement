@@ -693,7 +693,7 @@ class Client:
             )
             # import traceback
             # traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
- 
+
     async def on_command_completion(self, ctx: "CommandContext") -> None:
         """
         Default command completion handler. Called when a command has successfully completed.
@@ -1428,6 +1428,24 @@ class Client:
 
         await self._http.delete_guild_template(guild_id, template_code)
 
+    async def fetch_widget(self, guild_id: Snowflake) -> Dict[str, Any]:
+        """|coro| Fetch a guild's widget settings."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        return await self._http.get_guild_widget(guild_id)
+
+    async def edit_widget(
+        self, guild_id: Snowflake, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """|coro| Edit a guild's widget settings."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        return await self._http.edit_guild_widget(guild_id, payload)
+
     async def fetch_scheduled_events(
         self, guild_id: Snowflake
     ) -> List["ScheduledEvent"]:
@@ -1514,35 +1532,35 @@ class Client:
         return [self.parse_invite(inv) for inv in data]
 
     def add_persistent_view(self, view: "View") -> None:
-       """
-       Registers a persistent view with the client.
+        """
+        Registers a persistent view with the client.
 
-       Persistent views have a timeout of `None` and their components must have a `custom_id`.
-       This allows the view to be re-instantiated across bot restarts.
+        Persistent views have a timeout of `None` and their components must have a `custom_id`.
+        This allows the view to be re-instantiated across bot restarts.
 
-       Args:
-           view (View): The view instance to register.
+        Args:
+            view (View): The view instance to register.
 
-       Raises:
-           ValueError: If the view is not persistent (timeout is not None) or if a component's
-                       custom_id is already registered.
-       """
-       if self.is_ready():
-           print(
-               "Warning: Adding a persistent view after the client is ready. "
-               "This view will only be available for interactions on this session."
-           )
+        Raises:
+            ValueError: If the view is not persistent (timeout is not None) or if a component's
+                        custom_id is already registered.
+        """
+        if self.is_ready():
+            print(
+                "Warning: Adding a persistent view after the client is ready. "
+                "This view will only be available for interactions on this session."
+            )
 
-       if view.timeout is not None:
-           raise ValueError("Persistent views must have a timeout of None.")
+        if view.timeout is not None:
+            raise ValueError("Persistent views must have a timeout of None.")
 
-       for item in view.children:
-           if item.custom_id:  # Ensure custom_id is not None
-               if item.custom_id in self._persistent_views:
-                   raise ValueError(
-                       f"A component with custom_id '{item.custom_id}' is already registered."
-                   )
-               self._persistent_views[item.custom_id] = view
+        for item in view.children:
+            if item.custom_id:  # Ensure custom_id is not None
+                if item.custom_id in self._persistent_views:
+                    raise ValueError(
+                        f"A component with custom_id '{item.custom_id}' is already registered."
+                    )
+                self._persistent_views[item.custom_id] = view
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:

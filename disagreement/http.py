@@ -369,18 +369,18 @@ class HTTPClient:
         )
 
     async def delete_user_reaction(
-       self,
-       channel_id: "Snowflake",
-       message_id: "Snowflake",
-       emoji: str,
-       user_id: "Snowflake",
-   ) -> None:
-       """Removes another user's reaction from a message."""
-       encoded = quote(emoji)
-       await self.request(
-           "DELETE",
-           f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}/{user_id}",
-       )
+        self,
+        channel_id: "Snowflake",
+        message_id: "Snowflake",
+        emoji: str,
+        user_id: "Snowflake",
+    ) -> None:
+        """Removes another user's reaction from a message."""
+        encoded = quote(emoji)
+        await self.request(
+            "DELETE",
+            f"/channels/{channel_id}/messages/{message_id}/reactions/{encoded}/{user_id}",
+        )
 
     async def get_reactions(
         self, channel_id: "Snowflake", message_id: "Snowflake", emoji: str
@@ -677,6 +677,20 @@ class HTTPClient:
     async def get_guild(self, guild_id: "Snowflake") -> Dict[str, Any]:
         """Fetches a guild object for a given guild ID."""
         return await self.request("GET", f"/guilds/{guild_id}")
+
+    async def get_guild_widget(self, guild_id: "Snowflake") -> Dict[str, Any]:
+        """Fetches the guild widget settings."""
+
+        return await self.request("GET", f"/guilds/{guild_id}/widget")
+
+    async def edit_guild_widget(
+        self, guild_id: "Snowflake", payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Edits the guild widget settings."""
+
+        return await self.request(
+            "PATCH", f"/guilds/{guild_id}/widget", payload=payload
+        )
 
     async def get_guild_templates(self, guild_id: "Snowflake") -> List[Dict[str, Any]]:
         """Fetches all templates for the given guild."""
