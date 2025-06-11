@@ -1,8 +1,10 @@
 # disagreement/ext/commands/converters.py
+# pyright: reportIncompatibleMethodOverride=false
 
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar, Generic
 from abc import ABC, abstractmethod
 import re
+import inspect
 
 from .errors import BadArgument
 from disagreement.models import Member, Guild, Role
@@ -34,6 +36,20 @@ class Converter(ABC, Generic[T]):
             BadArgument: If the conversion fails.
         """
         raise NotImplementedError("Converter subclass must implement convert method.")
+
+
+class Greedy(list):
+    """Type hint helper to greedily consume arguments."""
+
+    converter: Any = None
+
+    def __class_getitem__(cls, param: Any) -> type:  # pyright: ignore[override]
+        if isinstance(param, tuple):
+            if len(param) != 1:
+                raise TypeError("Greedy[...] expects a single parameter")
+            param = param[0]
+        name = f"Greedy[{getattr(param, '__name__', str(param))}]"
+        return type(name, (Greedy,), {"converter": param})
 
 
 # --- Built-in Type Converters ---
@@ -169,7 +185,3 @@ async def run_converters(ctx: "CommandContext", annotation: Any, argument: str) 
         raise BadArgument(f"No converter found for type annotation '{annotation}'.")
 
     return argument  # Default to string if no annotation or annotation is str
-
-
-# Need to import inspect for the run_converters function
-import inspect
