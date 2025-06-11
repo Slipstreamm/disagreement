@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 class GroupMixin:
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.commands: Dict[str, "Command"] = {}
         self.name: str = ""
 

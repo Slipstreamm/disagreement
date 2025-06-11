@@ -14,23 +14,28 @@ from disagreement.enums import (
 )
 
 
-class DummyBot:
-    def __init__(self, guild: Guild):
-        self._guilds = {guild.id: guild}
+from disagreement.client import Client
+from disagreement.cache import GuildCache
 
-    def get_guild(self, gid):
-        return self._guilds.get(gid)
 
-    async def fetch_member(self, gid, mid):
-        guild = self._guilds.get(gid)
-        return guild.get_member(mid) if guild else None
+class DummyBot(Client):
+    def __init__(self):
+        super().__init__(token="test")
+        self._guilds = GuildCache()
 
-    async def fetch_role(self, gid, rid):
-        guild = self._guilds.get(gid)
-        return guild.get_role(rid) if guild else None
+    def get_guild(self, guild_id):
+        return self._guilds.get(guild_id)
 
-    async def fetch_guild(self, gid):
-        return self._guilds.get(gid)
+    async def fetch_member(self, guild_id, member_id):
+        guild = self._guilds.get(guild_id)
+        return guild.get_member(member_id) if guild else None
+
+    async def fetch_role(self, guild_id, role_id):
+        guild = self._guilds.get(guild_id)
+        return guild.get_role(role_id) if guild else None
+
+    async def fetch_guild(self, guild_id):
+        return self._guilds.get(guild_id)
 
 
 @pytest.fixture()
@@ -51,7 +56,9 @@ def guild_objects():
         "premium_tier": PremiumTier.NONE.value,
         "nsfw_level": GuildNSFWLevel.DEFAULT.value,
     }
-    guild = Guild(guild_data, client_instance=None)
+    bot = DummyBot()
+    guild = Guild(guild_data, client_instance=bot)
+    bot._guilds.set(guild.id, guild)
 
     member = Member(
         {
@@ -76,7 +83,7 @@ def guild_objects():
         }
     )
 
-    guild._members[member.id] = member
+    guild._members.set(member.id, member)
     guild.roles.append(role)
 
     return guild, member, role
@@ -85,7 +92,7 @@ def guild_objects():
 @pytest.fixture()
 def command_context(guild_objects):
     guild, member, role = guild_objects
-    bot = DummyBot(guild)
+    bot = guild._client
     message_data = {
         "id": "10",
         "channel_id": "20",
@@ -150,8 +157,9 @@ async def test_member_converter_no_guild():
         "premium_tier": PremiumTier.NONE.value,
         "nsfw_level": GuildNSFWLevel.DEFAULT.value,
     }
-    guild = Guild(guild_data, client_instance=None)
-    bot = DummyBot(guild)
+    bot = DummyBot()
+    guild = Guild(guild_data, client_instance=bot)
+    bot._guilds.set(guild.id, guild)
     message_data = {
         "id": "11",
         "channel_id": "20",

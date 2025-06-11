@@ -94,16 +94,14 @@ async def test_client_create_webhook_returns_model():
     from disagreement.models import Webhook
 
     http = SimpleNamespace(create_webhook=AsyncMock(return_value={"id": "1"}))
-    client = Client.__new__(Client)
+    client = Client(token="test")
     client._http = http
-    client._closed = False
-    client._webhooks = {}
 
     webhook = await client.create_webhook("123", {"name": "wh"})
 
     http.create_webhook.assert_awaited_once_with("123", {"name": "wh"})
     assert isinstance(webhook, Webhook)
-    assert client._webhooks["1"] is webhook
+    assert client._webhooks.get("1") is webhook
 
 
 @pytest.mark.asyncio
@@ -113,16 +111,14 @@ async def test_client_edit_webhook_returns_model():
     from disagreement.models import Webhook
 
     http = SimpleNamespace(edit_webhook=AsyncMock(return_value={"id": "1"}))
-    client = Client.__new__(Client)
+    client = Client(token="test")
     client._http = http
-    client._closed = False
-    client._webhooks = {}
 
     webhook = await client.edit_webhook("1", {"name": "rename"})
 
     http.edit_webhook.assert_awaited_once_with("1", {"name": "rename"})
     assert isinstance(webhook, Webhook)
-    assert client._webhooks["1"] is webhook
+    assert client._webhooks.get("1") is webhook
 
 
 @pytest.mark.asyncio
@@ -131,9 +127,8 @@ async def test_client_delete_webhook_calls_http():
     from disagreement.client import Client
 
     http = SimpleNamespace(delete_webhook=AsyncMock())
-    client = Client.__new__(Client)
+    client = Client(token="test")
     client._http = http
-    client._closed = False
 
     await client.delete_webhook("1")
 
@@ -181,10 +176,8 @@ async def test_webhook_send_uses_http():
             }
         )
     )
-    client = Client.__new__(Client)
+    client = Client(token="test")
     client._http = http
-    client._messages = {}
-    client._webhooks = {}
 
     webhook = Webhook({"id": "1", "token": "tok"}, client_instance=client)
 

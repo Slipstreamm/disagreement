@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union, cast
 
 from .cache import ChannelCache, MemberCache
+from .caching import MemberCacheFlags
 
 import aiohttp  # pylint: disable=import-error
 from .color import Color
@@ -1087,7 +1088,7 @@ class Guild:
 
         # Internal caches, populated by events or specific fetches
         self._channels: ChannelCache = ChannelCache()
-        self._members: MemberCache = MemberCache(client_instance.member_cache_flags)
+        self._members: MemberCache = MemberCache(getattr(client_instance, "member_cache_flags", MemberCacheFlags()))
         self._threads: Dict[str, "Thread"] = {}
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:

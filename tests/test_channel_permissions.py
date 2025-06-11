@@ -14,12 +14,12 @@ from disagreement.enums import (
 from disagreement.permissions import Permissions
 
 
-class DummyClient:
-    def __init__(self):
-        self._guilds = {}
+from disagreement.client import Client
 
-    def get_guild(self, gid):
-        return self._guilds.get(gid)
+
+class DummyClient(Client):
+    def __init__(self):
+        super().__init__(token="test")
 
 
 def _base_guild(client):
@@ -40,7 +40,7 @@ def _base_guild(client):
         "nsfw_level": GuildNSFWLevel.DEFAULT.value,
     }
     guild = Guild(data, client_instance=client)
-    client._guilds[guild.id] = guild
+    client._guilds.set(guild.id, guild)
     return guild
 
 
@@ -52,7 +52,7 @@ def _member(guild, *roles):
     }
     member = Member(data, client_instance=None)
     member.guild_id = guild.id
-    guild._members[member.id] = member
+    guild._members.set(member.id, member)
     return member
 
 
@@ -81,7 +81,7 @@ def _channel(guild, client):
         "permission_overwrites": [],
     }
     channel = TextChannel(data, client_instance=client)
-    guild._channels[channel.id] = channel
+    guild._channels.set(channel.id, channel)
     return channel
 
 

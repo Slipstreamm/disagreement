@@ -12,9 +12,8 @@ async def test_textchannel_purge_calls_bulk_delete():
         request=AsyncMock(return_value=[{"id": "1"}, {"id": "2"}]),
         bulk_delete_messages=AsyncMock(),
     )
-    client = Client.__new__(Client)
+    client = Client(token="test")
     client._http = http
-    client._messages = {}
 
     channel = TextChannel({"id": "c", "type": 0}, client)
 
@@ -33,9 +32,8 @@ async def test_textchannel_purge_before_param():
         request=AsyncMock(return_value=[]),
         bulk_delete_messages=AsyncMock(),
     )
-    client = Client.__new__(Client)
+    client = Client(token="test")
     client._http = http
-    client._messages = {}
 
     channel = TextChannel({"id": "c", "type": 0}, client)
 

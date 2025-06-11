@@ -109,7 +109,14 @@ class Client:
             member_cache_flags if member_cache_flags is not None else MemberCacheFlags()
         )
         self.intents: int = intents if intents is not None else GatewayIntent.default()
-        self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
+        if loop:
+            self.loop: asyncio.AbstractEventLoop = loop
+        else:
+            try:
+                self.loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self.loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self.loop)
         self.application_id: Optional[Snowflake] = (
             str(application_id) if application_id else None
         )

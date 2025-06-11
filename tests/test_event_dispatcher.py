@@ -5,10 +5,14 @@ import pytest
 from disagreement.event_dispatcher import EventDispatcher
 
 
+from disagreement.cache import Cache
+
+
 class DummyClient:
     def __init__(self):
         self.parsed = {}
-        self._messages = {"1": "cached"}
+        self._messages = Cache()
+        self._messages.set("1", "cached")
 
     def parse_message(self, data):
         self.parsed["message"] = True
@@ -21,6 +25,11 @@ class DummyClient:
     def parse_channel(self, data):
         self.parsed["channel"] = True
         return data
+
+    def parse_message_delete(self, data):
+        message = self._messages.get(data["id"])
+        self._messages.invalidate(data["id"])
+        return message
 
 
 @pytest.mark.asyncio

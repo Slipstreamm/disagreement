@@ -3,6 +3,12 @@ import pytest
 
 from disagreement.voice_client import VoiceClient
 from disagreement.audio import AudioSource
+from disagreement.client import Client
+
+
+class DummyVoiceClient(Client):
+    def __init__(self):
+        super().__init__(token="test")
 
 
 class DummyWebSocket:
@@ -58,7 +64,16 @@ async def test_voice_client_handshake():
     ws = DummyWebSocket([hello, ready, session_desc])
     udp = DummyUDP()
 
-    vc = VoiceClient("ws://localhost", "sess", "tok", 1, 2, ws=ws, udp=udp)
+    vc = VoiceClient(
+        client=DummyVoiceClient(),
+        endpoint="ws://localhost",
+        session_id="sess",
+        token="tok",
+        guild_id=1,
+        user_id=2,
+        ws=ws,
+        udp=udp,
+    )
     await vc.connect()
     vc._heartbeat_task.cancel()
 
@@ -78,7 +93,16 @@ async def test_send_audio_frame():
         ]
     )
     udp = DummyUDP()
-    vc = VoiceClient("ws://localhost", "sess", "tok", 1, 2, ws=ws, udp=udp)
+    vc = VoiceClient(
+        client=DummyVoiceClient(),
+        endpoint="ws://localhost",
+        session_id="sess",
+        token="tok",
+        guild_id=1,
+        user_id=2,
+        ws=ws,
+        udp=udp,
+    )
     await vc.connect()
     vc._heartbeat_task.cancel()
 
@@ -96,7 +120,16 @@ async def test_play_and_switch_sources():
         ]
     )
     udp = DummyUDP()
-    vc = VoiceClient("ws://localhost", "sess", "tok", 1, 2, ws=ws, udp=udp)
+    vc = VoiceClient(
+        client=DummyVoiceClient(),
+        endpoint="ws://localhost",
+        session_id="sess",
+        token="tok",
+        guild_id=1,
+        user_id=2,
+        ws=ws,
+        udp=udp,
+    )
     await vc.connect()
     vc._heartbeat_task.cancel()
 

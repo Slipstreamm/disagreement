@@ -73,10 +73,8 @@ async def test_delete_reaction_calls_http():
 async def test_get_reactions_parses_users():
     users_payload = [{"id": "1", "username": "u", "discriminator": "0001"}]
     http = SimpleNamespace(get_reactions=AsyncMock(return_value=users_payload))
-    client = Client.__new__(Client)
+    client = Client(token="test")
     client._http = http
-    client._closed = False
-    client._users = {}
 
     users = await client.get_reactions("1", "2", "😀")
 
