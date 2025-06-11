@@ -7,7 +7,9 @@ Data models for Discord objects.
 import asyncio
 import json
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union, cast
+
+from .cache import ChannelCache, MemberCache
 
 import aiohttp  # pylint: disable=import-error
 from .color import Color
@@ -656,6 +658,8 @@ class Member(User):  # Member inherits from User
     ):
         self._client: Optional["Client"] = client_instance
         self.guild_id: Optional[str] = None
+        self.status: Optional[str] = None
+        self.voice_state: Optional[Dict[str, Any]] = None
         # User part is nested under 'user' key in member data from gateway/API
         user_data = data.get("user", {})
         # If 'id' is not in user_data but is top-level (e.g. from interaction resolved member without user object)
@@ -1082,8 +1086,8 @@ class Guild:
         )
 
         # Internal caches, populated by events or specific fetches
-        self._channels: Dict[str, "Channel"] = {}
-        self._members: Dict[str, Member] = {}
+        self._channels: ChannelCache = ChannelCache()
+        self._members: MemberCache = MemberCache(client_instance.member_cache_flags)
         self._threads: Dict[str, "Thread"] = {}
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:
@@ -1338,11 +1342,97 @@ class TextChannel(Channel):
 
         await self._client._http.bulk_delete_messages(self.id, ids)
         for mid in ids:
-            self._client._messages.pop(mid, None)
+            self._client._messages.invalidate(mid)
         return ids
+
+    def get_partial_message(self, id: int) -> "PartialMessage":
+       """Returns a :class:`PartialMessage` for the given ID.
+
+       This allows performing actions on a message without fetching it first.
+
+       Parameters
+       ----------
+       id: int
+           The ID of the message to get a partial instance of.
+
+       Returns
+       -------
+       PartialMessage
+           The partial message instance.
+       """
+       return PartialMessage(id=str(id), channel=self)
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
+
+    async def pins(self) -> List["Message"]:
+        """|coro|
+        
+        Fetches all pinned messages in this channel.
+        
+        Returns
+        -------
+        List[Message]
+            The pinned messages.
+            
+        Raises
+        ------
+        HTTPException
+            Fetching the pinned messages failed.
+        """
+        
+        messages_data = await self._client._http.get_pinned_messages(self.id)
+        return [self._client.parse_message(m) for m in messages_data]
+
+    async def create_thread(
+        self,
+        name: str,
+        *,
+        type: ChannelType = ChannelType.PUBLIC_THREAD,
+        auto_archive_duration: Optional[int] = None,
+        invitable: Optional[bool] = None,
+        rate_limit_per_user: Optional[int] = None,
+        reason: Optional[str] = None,
+    ) -> "Thread":
+        """|coro|
+
+        Creates a new thread in this channel.
+
+        Parameters
+        ----------
+        name: str
+            The name of the thread.
+        type: ChannelType
+            The type of thread to create. Defaults to PUBLIC_THREAD.
+            Can be PUBLIC_THREAD, PRIVATE_THREAD, or ANNOUNCEMENT_THREAD.
+        auto_archive_duration: Optional[int]
+            The duration in minutes to automatically archive the thread after recent activity.
+        invitable: Optional[bool]
+            Whether non-moderators can invite other non-moderators to a private thread.
+            Only applicable to private threads.
+        rate_limit_per_user: Optional[int]
+            The number of seconds a user has to wait before sending another message.
+        reason: Optional[str]
+            The reason for creating the thread.
+
+        Returns
+        -------
+        Thread
+            The created thread.
+        """
+        payload: Dict[str, Any] = {
+            "name": name,
+            "type": type.value,
+        }
+        if auto_archive_duration is not None:
+            payload["auto_archive_duration"] = auto_archive_duration
+        if invitable is not None and type == ChannelType.PRIVATE_THREAD:
+            payload["invitable"] = invitable
+        if rate_limit_per_user is not None:
+            payload["rate_limit_per_user"] = rate_limit_per_user
+
+        data = await self._client._http.start_thread_without_message(self.id, payload)
+        return cast("Thread", self._client.parse_channel(data))
 
 
 class VoiceChannel(Channel):

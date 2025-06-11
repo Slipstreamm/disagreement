@@ -4,7 +4,8 @@ import time
 from typing import TYPE_CHECKING, Dict, Generic, Optional, TypeVar
 
 if TYPE_CHECKING:
-    from .models import Channel, Guild
+    from .models import Channel, Guild, Member
+    from .caching import MemberCacheFlags
 
 T = TypeVar("T")
 
@@ -53,3 +54,32 @@ class GuildCache(Cache["Guild"]):
 
 class ChannelCache(Cache["Channel"]):
     """Cache specifically for :class:`Channel` objects."""
+
+
+class MemberCache(Cache["Member"]):
+    """
+    A cache for :class:`Member` objects that respects :class:`MemberCacheFlags`.
+    """
+
+    def __init__(self, flags: MemberCacheFlags, ttl: Optional[float] = None) -> None:
+        super().__init__(ttl)
+        self.flags = flags
+
+    def _should_cache(self, member: Member) -> bool:
+        """Determines if a member should be cached based on the flags."""
+        if self.flags.all:
+            return True
+        if self.flags.none:
+            return False
+
+        if self.flags.online and member.status != "offline":
+            return True
+        if self.flags.voice and member.voice_state is not None:
+            return True
+        if self.flags.joined and getattr(member, "_just_joined", False):
+            return True
+        return False
+
+    def set(self, key: str, value: Member) -> None:
+        if self._should_cache(value):
+            super().set(key, value)

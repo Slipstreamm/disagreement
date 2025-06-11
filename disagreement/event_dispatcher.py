@@ -76,7 +76,7 @@ class EventDispatcher:
         """Parses MESSAGE_DELETE and updates message cache."""
         message_id = data.get("id")
         if message_id:
-            self._client._messages.pop(message_id, None)
+            self._client._messages.invalidate(message_id)
         return data
 
     def _parse_message_reaction_raw(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -124,7 +124,7 @@ class EventDispatcher:
         """Parses GUILD_MEMBER_ADD into a Member object."""
 
         guild_id = str(data.get("guild_id"))
-        return self._client.parse_member(data, guild_id)
+        return self._client.parse_member(data, guild_id, just_joined=True)
 
     def _parse_guild_member_remove(self, data: Dict[str, Any]):
         """Parses GUILD_MEMBER_REMOVE into a GuildMemberRemove model."""

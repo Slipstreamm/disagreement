@@ -26,7 +26,9 @@ from .event_dispatcher import EventDispatcher
 from .enums import GatewayIntent, InteractionType, GatewayOpcode, VoiceRegion
 from .errors import DisagreementException, AuthenticationError
 from .typing import Typing
-from .ext.commands.core import CommandHandler
+from .caching import MemberCacheFlags
+from .cache import Cache, GuildCache, ChannelCache, MemberCache
+from .ext.commands.core import Command, CommandHandler, Group
 from .ext.commands.cog import Cog
 from .ext.app_commands.handler import AppCommandHandler
 from .ext.app_commands.context import AppCommandContext
@@ -96,12 +98,16 @@ class Client:
         shard_count: Optional[int] = None,
         gateway_max_retries: int = 5,
         gateway_max_backoff: float = 60.0,
+        member_cache_flags: Optional[MemberCacheFlags] = None,
         http_options: Optional[Dict[str, Any]] = None,
     ):
         if not token:
             raise ValueError("A bot token must be provided.")
 
         self.token: str = token
+        self.member_cache_flags: MemberCacheFlags = (
+            member_cache_flags if member_cache_flags is not None else MemberCacheFlags()
+        )
         self.intents: int = intents if intents is not None else GatewayIntent.default()
         self.loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         self.application_id: Optional[Snowflake] = (
@@ -141,15 +147,12 @@ class Client:
         )
 
         # Internal Caches
-        self._guilds: Dict[Snowflake, "Guild"] = {}
-        self._channels: Dict[Snowflake, "Channel"] = (
-            {}
-        )  # Stores all channel types by ID
-        self._users: Dict[Snowflake, Any] = (
-            {}
-        )  # Placeholder for User model cache if needed
-        self._messages: Dict[Snowflake, "Message"] = {}
+        self._guilds: GuildCache = GuildCache()
+        self._channels: ChannelCache = ChannelCache()
+        self._users: Cache["User"] = Cache()
+        self._messages: Cache["Message"] = Cache(ttl=3600)  # Cache messages for an hour
         self._views: Dict[Snowflake, "View"] = {}
+        self._persistent_views: Dict[str, "View"] = {}
         self._voice_clients: Dict[Snowflake, VoiceClient] = {}
         self._webhooks: Dict[Snowflake, "Webhook"] = {}
 
@@ -718,7 +721,7 @@ class Client:
         from .models import User  # Ensure User model is available
 
         user = User(data)
-        self._users[user.id] = user  # Cache the user
+        self._users.set(user.id, user)  # Cache the user
         return user
 
     def parse_channel(self, data: Dict[str, Any]) -> "Channel":
@@ -727,11 +730,11 @@ class Client:
         from .models import channel_factory
 
         channel = channel_factory(data, self)
-        self._channels[channel.id] = channel
+        self._channels.set(channel.id, channel)
         if channel.guild_id:
             guild = self._guilds.get(channel.guild_id)
             if guild:
-                guild._channels[channel.id] = channel
+                guild._channels.set(channel.id, channel)
         return channel
 
     def parse_message(self, data: Dict[str, Any]) -> "Message":
@@ -740,7 +743,7 @@ class Client:
         from .models import Message
 
         message = Message(data, client_instance=self)
-        self._messages[message.id] = message
+        self._messages.set(message.id, message)
         return message
 
     def parse_webhook(self, data: Union[Dict[str, Any], "Webhook"]) -> "Webhook":
@@ -797,7 +800,7 @@ class Client:
 
         cached_user = self._users.get(user_id)
         if cached_user:
-            return cached_user  # Return cached if available, though fetch implies wanting fresh
+            return cached_user
 
         try:
             user_data = await self._http.get_user(user_id)
@@ -827,23 +830,26 @@ class Client:
             )
             return None
 
-    def parse_member(self, data: Dict[str, Any], guild_id: Snowflake) -> "Member":
+    def parse_member(
+        self, data: Dict[str, Any], guild_id: Snowflake, *, just_joined: bool = False
+    ) -> "Member":
         """Parses member data and returns a Member object, updating relevant caches."""
-        from .models import Member  # Ensure Member model is available
+        from .models import Member
 
-        # Member's __init__ should handle the nested 'user' data.
         member = Member(data, client_instance=self)
         member.guild_id = str(guild_id)
 
-        # Cache the member in the guild's member cache
+        if just_joined:
+            setattr(member, "_just_joined", True)
+
         guild = self._guilds.get(guild_id)
         if guild:
-            guild._members[member.id] = member  # Assuming Guild has _members dict
+            guild._members.set(member.id, member)
 
-        # Also cache the user part if not already cached or if this is newer
-        # Since Member inherits from User, the member object itself is the user.
-        self._users[member.id] = member
-        # If 'user' was in data and Member.__init__ used it, it's already part of 'member'.
+        if just_joined and hasattr(member, "_just_joined"):
+            delattr(member, "_just_joined")
+
+        self._users.set(member.id, member)
         return member
 
     async def fetch_member(
@@ -887,20 +893,29 @@ class Client:
 
     def parse_guild(self, data: Dict[str, Any]) -> "Guild":
         """Parses guild data and returns a Guild object, updating cache."""
-
         from .models import Guild
 
         guild = Guild(data, client_instance=self)
-        self._guilds[guild.id] = guild
+        self._guilds.set(guild.id, guild)
 
-        # Populate channel and member caches if provided
-        for ch in data.get("channels", []):
-            channel_obj = self.parse_channel(ch)
-            guild._channels[channel_obj.id] = channel_obj
+        presences = {p["user"]["id"]: p for p in data.get("presences", [])}
+        voice_states = {vs["user_id"]: vs for vs in data.get("voice_states", [])}
 
-        for member in data.get("members", []):
-            member_obj = self.parse_member(member, guild.id)
-            guild._members[member_obj.id] = member_obj
+        for ch_data in data.get("channels", []):
+            self.parse_channel(ch_data)
+
+        for member_data in data.get("members", []):
+            user_id = member_data.get("user", {}).get("id")
+            if user_id:
+                presence = presences.get(user_id)
+                if presence:
+                    member_data["status"] = presence.get("status", "offline")
+
+                voice_state = voice_states.get(user_id)
+                if voice_state:
+                    member_data["voice_state"] = voice_state
+
+            self.parse_member(member_data, guild.id)
 
         return guild
 
@@ -1305,7 +1320,7 @@ class Client:
 
             channel = channel_factory(channel_data, self)
 
-            self._channels[channel.id] = channel
+            self._channels.set(channel.id, channel)
             return channel
 
         except DisagreementException as e:  # Includes HTTPException

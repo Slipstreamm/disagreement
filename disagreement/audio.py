@@ -114,3 +114,20 @@ class FFmpegAudioSource(AudioSource):
         if isinstance(self.source, io.IOBase):
             with contextlib.suppress(Exception):
                 self.source.close()
+
+class AudioSink:
+    """Abstract base class for audio sinks."""
+
+    def write(self, user, data):
+        """Write a chunk of PCM audio.
+
+        Subclasses must implement this. The data is raw PCM at 48kHz
+        stereo.
+        """
+
+        raise NotImplementedError
+
+    def close(self) -> None:
+        """Cleanup the sink when the voice client disconnects."""
+
+        return None
