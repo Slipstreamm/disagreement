@@ -51,6 +51,7 @@ if TYPE_CHECKING:
         Thread,
         DMChannel,
         Webhook,
+        ScheduledEvent,
         AuditLogEntry,
         Invite,
     )
@@ -709,6 +710,20 @@ class Client:
         self._webhooks[webhook.id] = webhook
         return webhook
 
+    def parse_scheduled_event(self, data: Dict[str, Any]) -> "ScheduledEvent":
+        """Parses scheduled event data and updates cache."""
+
+        from .models import ScheduledEvent
+
+        event = ScheduledEvent(data, client_instance=self)
+        # Cache by ID under guild if guild cache exists
+        guild = self._guilds.get(event.guild_id)
+        if guild is not None:
+            events = getattr(guild, "_scheduled_events", {})
+            events[event.id] = event
+            setattr(guild, "_scheduled_events", events)
+        return event
+
     def parse_audit_log_entry(self, data: Dict[str, Any]) -> "AuditLogEntry":
         """Parses audit log entry data."""
         from .models import AuditLogEntry
@@ -1297,6 +1312,64 @@ class Client:
             raise DisagreementException("Client is closed.")
 
         await self._http.delete_webhook(webhook_id)
+
+    async def fetch_scheduled_events(
+        self, guild_id: Snowflake
+    ) -> List["ScheduledEvent"]:
+        """|coro| Fetch all scheduled events for a guild."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.get_guild_scheduled_events(guild_id)
+        return [self.parse_scheduled_event(ev) for ev in data]
+
+    async def fetch_scheduled_event(
+        self, guild_id: Snowflake, event_id: Snowflake
+    ) -> Optional["ScheduledEvent"]:
+        """|coro| Fetch a single scheduled event."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        try:
+            data = await self._http.get_guild_scheduled_event(guild_id, event_id)
+            return self.parse_scheduled_event(data)
+        except DisagreementException as e:
+            print(f"Failed to fetch scheduled event {event_id}: {e}")
+            return None
+
+    async def create_scheduled_event(
+        self, guild_id: Snowflake, payload: Dict[str, Any]
+    ) -> "ScheduledEvent":
+        """|coro| Create a scheduled event in a guild."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.create_guild_scheduled_event(guild_id, payload)
+        return self.parse_scheduled_event(data)
+
+    async def edit_scheduled_event(
+        self, guild_id: Snowflake, event_id: Snowflake, payload: Dict[str, Any]
+    ) -> "ScheduledEvent":
+        """|coro| Edit an existing scheduled event."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.edit_guild_scheduled_event(guild_id, event_id, payload)
+        return self.parse_scheduled_event(data)
+
+    async def delete_scheduled_event(
+        self, guild_id: Snowflake, event_id: Snowflake
+    ) -> None:
+        """|coro| Delete a scheduled event."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        await self._http.delete_guild_scheduled_event(guild_id, event_id)
 
     async def create_invite(
         self, channel_id: Snowflake, payload: Dict[str, Any]
