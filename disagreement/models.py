@@ -541,8 +541,42 @@ class Embed:
             payload["fields"] = [f.to_dict() for f in self.fields]
         return payload
 
-    # Convenience methods for building embeds can be added here
-    # e.g., set_author, add_field, set_footer, set_image, etc.
+    # Convenience methods mirroring ``discord.py``'s ``Embed`` API
+
+    def set_author(
+        self, *, name: str, url: Optional[str] = None, icon_url: Optional[str] = None
+    ) -> "Embed":
+        """Set the embed author and return ``self`` for chaining."""
+
+        data: Dict[str, Any] = {"name": name}
+        if url:
+            data["url"] = url
+        if icon_url:
+            data["icon_url"] = icon_url
+        self.author = EmbedAuthor(data)
+        return self
+
+    def add_field(self, *, name: str, value: str, inline: bool = False) -> "Embed":
+        """Add a field to the embed."""
+
+        field = EmbedField({"name": name, "value": value, "inline": inline})
+        self.fields.append(field)
+        return self
+
+    def set_footer(self, *, text: str, icon_url: Optional[str] = None) -> "Embed":
+        """Set the embed footer."""
+
+        data: Dict[str, Any] = {"text": text}
+        if icon_url:
+            data["icon_url"] = icon_url
+        self.footer = EmbedFooter(data)
+        return self
+
+    def set_image(self, url: str) -> "Embed":
+        """Set the embed image."""
+
+        self.image = EmbedImage({"url": url})
+        return self
 
 
 class Attachment:
