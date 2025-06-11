@@ -45,7 +45,7 @@ class HTTPClient:
         self._session: Optional[aiohttp.ClientSession] = (
             client_session  # Can be externally managed
         )
-        self.user_agent = f"DiscordBot (https://github.com/yourusername/disagreement, {__version__})"  # Customize URL
+        self.user_agent = f"DiscordBot (https://github.com/Slipstreamm/disagreement, {__version__})"  # Customize URL
 
         self.verbose = verbose
 
