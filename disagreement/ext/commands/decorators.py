@@ -217,3 +217,82 @@ def requires_permissions(
         return True
 
     return check(predicate)
+
+def has_role(
+    name_or_id: str | int,
+) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:
+    """Check that the invoking member has a role with the given name or ID."""
+
+    async def predicate(ctx: "CommandContext") -> bool:
+        from .errors import CheckFailure
+        from disagreement.models import Member
+
+        if not ctx.guild:
+            raise CheckFailure("This command cannot be used in DMs.")
+
+        author = ctx.author
+        if not isinstance(author, Member):
+            try:
+                author = await ctx.bot.fetch_member(ctx.guild.id, author.id)
+            except Exception:
+                raise CheckFailure("Could not resolve author to a guild member.")
+
+        if not author:
+            raise CheckFailure("Could not resolve author to a guild member.")
+
+        # Create a list of the member's role objects by looking them up in the guild's roles list
+        member_roles = [
+            role for role in ctx.guild.roles if role.id in author.roles
+        ]
+
+        if any(
+            role.id == str(name_or_id) or role.name == name_or_id
+            for role in member_roles
+        ):
+            return True
+
+        raise CheckFailure(f"You need the '{name_or_id}' role to use this command.")
+
+    return check(predicate)
+
+
+def has_any_role(
+    *names_or_ids: str | int,
+) -> Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]:
+    """Check that the invoking member has any of the roles with the given names or IDs."""
+
+    async def predicate(ctx: "CommandContext") -> bool:
+        from .errors import CheckFailure
+        from disagreement.models import Member
+
+        if not ctx.guild:
+            raise CheckFailure("This command cannot be used in DMs.")
+
+        author = ctx.author
+        if not isinstance(author, Member):
+            try:
+                author = await ctx.bot.fetch_member(ctx.guild.id, author.id)
+            except Exception:
+                raise CheckFailure("Could not resolve author to a guild member.")
+
+        if not author:
+            raise CheckFailure("Could not resolve author to a guild member.")
+
+        member_roles = [
+            role for role in ctx.guild.roles if role.id in author.roles
+        ]
+        # Convert names_or_ids to a set for efficient lookup
+        names_or_ids_set = set(map(str, names_or_ids))
+
+        if any(
+            role.id in names_or_ids_set or role.name in names_or_ids_set
+            for role in member_roles
+        ):
+            return True
+
+        role_list = ", ".join(f"'{r}'" for r in names_or_ids)
+        raise CheckFailure(
+            f"You need one of the following roles to use this command: {role_list}"
+        )
+
+    return check(predicate)

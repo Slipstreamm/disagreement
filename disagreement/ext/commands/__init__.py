@@ -18,6 +18,8 @@ from .decorators import (
     cooldown,
     max_concurrency,
     requires_permissions,
+    has_role,
+    has_any_role,
 )
 from .errors import (
     CommandError,
@@ -47,6 +49,8 @@ __all__ = [
     "cooldown",
     "max_concurrency",
     "requires_permissions",
+    "has_role",
+    "has_any_role",
     # Errors
     "CommandError",
     "CommandNotFound",
