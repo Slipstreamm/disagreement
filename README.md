@@ -4,6 +4,9 @@ A Python library for interacting with the Discord API, with a focus on bot devel
 
 ## Features
 
+- Internationalization helpers
+- Hybrid context for commands
+- Built-in rate limiting
 - Asynchronous design using `aiohttp`
 - Gateway and HTTP API clients
 - Slash command framework

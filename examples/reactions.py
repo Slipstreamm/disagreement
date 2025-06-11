@@ -78,10 +78,13 @@ class ReactionCog(commands.Cog):
             print(f"Reacted to command from {ctx.author.username}")
         except disagreement.HTTPException as e:
             print(f"Failed to add reaction: {e}")
-            await ctx.reply("I couldn't add the reaction. I might be missing permissions.")
+            await ctx.reply(
+                "I couldn't add the reaction. I might be missing permissions."
+            )
 
 
 # --- Event Handlers ---
+
 
 @client.event
 async def on_ready():
@@ -113,6 +116,7 @@ async def on_reaction_add(reaction: Reaction, user: User | Member):
     #         print(f"  Message content: '{message.content}'")
     # except disagreement.errors.NotFound:
     #     print("  Could not fetch message (maybe it was deleted).")
+
 
 @client.on_event("MESSAGE_REACTION_REMOVE")
 async def on_reaction_remove(reaction: Reaction, user: User | Member):
