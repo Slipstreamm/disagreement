@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/handler.py
-
 import inspect
 import json
 import logging

@@ -1,5 +1,3 @@
-# disagreement/gateway.py
-
 """
 Manages the WebSocket connection to the Discord Gateway.
 """

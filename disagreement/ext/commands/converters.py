@@ -1,4 +1,3 @@
-# disagreement/ext/commands/converters.py
 # pyright: reportIncompatibleMethodOverride=false
 
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar, Generic

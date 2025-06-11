@@ -19,7 +19,6 @@ class Item(Component):
         super().__init__(*args, **kwargs)
         self._view: Optional[View] = None
         self._row: Optional[int] = None
-        # This is the callback associated with this item.
         self.callback: Optional[
             Callable[["View", Interaction], Coroutine[Any, Any, Any]]
         ] = None
@@ -33,6 +32,5 @@ class Item(Component):
         return self._row
 
     def _refresh_from_data(self, data: dict[str, Any]) -> None:
-        # This is used to update the item's state from incoming interaction data.
-        # For example, a button's disabled state could be updated here.
+        # Update the item's state from incoming interaction data.
         pass

@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/converters.py
-
 """
 Converters for transforming application command option values.
 """
@@ -17,7 +15,7 @@ from typing import (
 from disagreement.enums import ApplicationCommandOptionType
 from disagreement.errors import (
     AppCommandOptionConversionError,
-)  # To be created in disagreement/errors.py
+)
 
 if TYPE_CHECKING:
     from disagreement.interactions import Interaction  # For context if needed

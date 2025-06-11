@@ -1,12 +1,10 @@
-# disagreement/ext/app_commands/hybrid.py
-
 from typing import Any, Callable, List, Optional
 
 from .commands import SlashCommand
 from disagreement.ext.commands.core import PrefixCommand
 
 
-class HybridCommand(SlashCommand, PrefixCommand):  # Inherit from both
+class HybridCommand(SlashCommand, PrefixCommand):
     """
     Represents a command that can be invoked as both a slash command
     and a traditional prefix-based command.

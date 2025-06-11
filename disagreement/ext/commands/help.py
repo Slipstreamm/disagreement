@@ -1,5 +1,3 @@
-# disagreement/ext/commands/help.py
-
 from typing import List, Optional
 
 from .core import Command, CommandContext, CommandHandler

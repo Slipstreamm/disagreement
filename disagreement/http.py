@@ -1,5 +1,3 @@
-# disagreement/http.py
-
 """
 HTTP client for interacting with the Discord REST API.
 """

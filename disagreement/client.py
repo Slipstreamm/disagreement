@@ -1,5 +1,3 @@
-# disagreement/client.py
-
 """
 The main Client class for interacting with the Discord API.
 """
@@ -244,10 +242,10 @@ class Client:
             return
 
         await self._initialize_gateway()
-        assert self._gateway is not None  # Should be initialized by now
+        assert self._gateway is not None
 
-        retry_delay = 5  # seconds
-        max_retries = 5  # For initial connection attempts by Client.run, Gateway has its own internal retries for some cases.
+        retry_delay = 5
+        max_retries = 5
 
         for attempt in range(max_retries):
             try:
@@ -267,14 +265,11 @@ class Client:
                 if attempt < max_retries - 1:
                     print(f"Retrying in {retry_delay} seconds...")
                     await asyncio.sleep(retry_delay)
-                    retry_delay = min(
-                        retry_delay * 2, 60
-                    )  # Exponential backoff up to 60s
+                    retry_delay = min(retry_delay * 2, 60)
                 else:
                     print("Max connection retries reached. Giving up.")
                     await self.close()  # Ensure cleanup
                     raise
-        # Should not be reached if max_retries is > 0
         if max_retries == 0:  # If max_retries was 0, means no retries attempted
             raise DisagreementException("Connection failed with 0 retries allowed.")
 
@@ -513,7 +508,7 @@ class Client:
             # For now, let's assume direct mapping if no "on_" prefix.
             self._event_dispatcher.register(event_name.upper(), coro)
 
-        return coro  # Return the original coroutine
+        return coro
 
     def on_event(
         self, event_name: str
@@ -684,20 +679,17 @@ class Client:
             ctx (CommandContext): The context of the command that raised the error.
             error (CommandError): The error that was raised.
         """
-        # Default behavior: print to console.
-        # Users might want to send a message to ctx.channel or log to a file.
+        # Default behavior prints to console.
         print(
             f"Error in command '{ctx.command.name if ctx.command else 'unknown'}': {error}"
         )
 
-        # Need to import CommandInvokeError for this check if not already globally available
-        # For now, assuming it's imported via TYPE_CHECKING or directly if needed at runtime
+        # Import lazily to avoid circular dependency
         from .ext.commands.errors import (
             CommandInvokeError as CIE,
-        )  # Local import for isinstance check
+        )
 
         if isinstance(error, CIE):
-            # Now it's safe to access error.original
             print(
                 f"Original exception: {type(error.original).__name__}: {error.original}"
             )

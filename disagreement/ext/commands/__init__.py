@@ -1,5 +1,3 @@
-# disagreement/ext/commands/__init__.py
-
 """
 disagreement.ext.commands - A command framework extension for the Disagreement library.
 """

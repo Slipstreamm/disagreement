@@ -1,5 +1,3 @@
-# disagreement/models.py
-
 """
 Data models for Discord objects.
 """

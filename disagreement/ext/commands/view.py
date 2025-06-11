@@ -1,5 +1,3 @@
-# disagreement/ext/commands/view.py
-
 import re
 
 

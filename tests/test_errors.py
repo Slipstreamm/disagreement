@@ -13,14 +13,11 @@ from disagreement.errors import (
 from disagreement.http import HTTPClient
 
 
-# A fixture to provide an HTTPClient with a mocked session
 @pytest.fixture
 def http_client():
-    # Using a real session and patching the request method is more robust
     client = HTTPClient(token="fake_token")
     yield client
-    # Cleanup: close the session after the test
-    # This requires making the fixture async or running this in an event loop
+
     async def close_session():
         if client._session:
             await client.close()
@@ -34,7 +31,6 @@ def http_client():
         asyncio.run(close_session())
 
 
-# Mock aiohttp response
 class MockAiohttpResponse:
     def __init__(self, status, json_data, headers=None):
         self.status = status
@@ -73,16 +69,13 @@ async def test_error_code_mapping_raises_correct_exception(
         status=400, json_data={"code": error_code, "message": error_message}
     )
 
-    # Patch the session object to control the response
     with patch("aiohttp.ClientSession") as mock_session_class:
         mock_session_instance = mock_session_class.return_value
         mock_session_instance.request.return_value = mock_response
 
-        # Assert that the correct exception is raised
         with pytest.raises(expected_exception) as excinfo:
             await http_client.request("GET", "/test-endpoint")
 
-    # Optionally, check the exception details
     assert excinfo.value.status == 400
     assert excinfo.value.error_code == error_code
     assert error_message in str(excinfo.value)

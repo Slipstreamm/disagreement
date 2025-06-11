@@ -1,5 +1,3 @@
-# disagreement/event_dispatcher.py
-
 """
 Event dispatcher for handling Discord Gateway events.
 """

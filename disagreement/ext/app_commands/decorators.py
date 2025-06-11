@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/decorators.py
-
 import inspect
 import asyncio
 from dataclasses import dataclass
