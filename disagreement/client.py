@@ -579,6 +579,41 @@ class Client:
             # For now, assuming name is sufficient for removal from the handler's flat list.
         return removed_cog
 
+    def check(self, coro: Callable[["CommandContext"], Awaitable[bool]]):
+        """
+        A decorator that adds a global check to the bot.
+        This check will be called for every command before it's executed.
+
+        Example:
+            @bot.check
+            async def block_dms(ctx):
+                return ctx.guild is not None
+        """
+        self.command_handler.add_check(coro)
+        return coro
+
+    def command(
+        self, **attrs: Any
+    ) -> Callable[[Callable[..., Awaitable[None]]], Command]:
+        """A decorator that transforms a function into a Command."""
+
+        def decorator(func: Callable[..., Awaitable[None]]) -> Command:
+            cmd = Command(func, **attrs)
+            self.command_handler.add_command(cmd)
+            return cmd
+
+        return decorator
+
+    def group(self, **attrs: Any) -> Callable[[Callable[..., Awaitable[None]]], Group]:
+        """A decorator that transforms a function into a Group command."""
+
+        def decorator(func: Callable[..., Awaitable[None]]) -> Group:
+            cmd = Group(func, **attrs)
+            self.command_handler.add_command(cmd)
+            return cmd
+
+        return decorator
+
     def add_app_command(self, command: Union["AppCommand", "AppCommandGroup"]) -> None:
         """
         Adds a standalone application command or group to the bot.
@@ -648,6 +683,16 @@ class Client:
             )
             # import traceback
             # traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
+ 
+    async def on_command_completion(self, ctx: "CommandContext") -> None:
+        """
+        Default command completion handler. Called when a command has successfully completed.
+        Users can override this method in a subclass of Client.
+
+        Args:
+            ctx (CommandContext): The context of the command that completed.
+        """
+        pass
 
     # --- Extension Management Methods ---
 
