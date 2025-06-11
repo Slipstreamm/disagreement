@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from .enums import OverwriteType  # For PermissionOverwrite model
     from .ui.view import View
     from .interactions import Snowflake
+    from .typing import Typing
 
     # Forward reference Message if it were used in type hints before its definition
     # from .models import Message # Not needed as Message is defined before its use in TextChannel.send etc.
@@ -115,30 +116,30 @@ class Message:
         # self.mention_everyone: bool = data.get("mention_everyone", False)
 
     async def pin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Pins this message to its channel.
+        Pins this message to its channel.
 
-       Raises
-       ------
-       HTTPException
-           Pinning the message failed.
-       """
-       await self._client._http.pin_message(self.channel_id, self.id)
-       self.pinned = True
+        Raises
+        ------
+        HTTPException
+            Pinning the message failed.
+        """
+        await self._client._http.pin_message(self.channel_id, self.id)
+        self.pinned = True
 
     async def unpin(self) -> None:
-       """|coro|
+        """|coro|
 
-       Unpins this message from its channel.
+        Unpins this message from its channel.
 
-       Raises
-       ------
-       HTTPException
-           Unpinning the message failed.
-       """
-       await self._client._http.unpin_message(self.channel_id, self.id)
-       self.pinned = False
+        Raises
+        ------
+        HTTPException
+            Unpinning the message failed.
+        """
+        await self._client._http.unpin_message(self.channel_id, self.id)
+        self.pinned = False
 
     async def reply(
         self,
@@ -241,16 +242,16 @@ class Message:
         await self._client.add_reaction(self.channel_id, self.id, emoji)
 
     async def remove_reaction(self, emoji: str, member: Optional[User] = None) -> None:
-       """|coro|
-       Removes a reaction from this message.
-       If no ``member`` is provided, removes the bot's own reaction.
-       """
-       if member:
-           await self._client._http.delete_user_reaction(
-               self.channel_id, self.id, emoji, member.id
-           )
-       else:
-           await self._client.remove_reaction(self.channel_id, self.id, emoji)
+        """|coro|
+        Removes a reaction from this message.
+        If no ``member`` is provided, removes the bot's own reaction.
+        """
+        if member:
+            await self._client._http.delete_user_reaction(
+                self.channel_id, self.id, emoji, member.id
+            )
+        else:
+            await self._client.remove_reaction(self.channel_id, self.id, emoji)
 
     async def clear_reactions(self) -> None:
         """|coro| Remove all reactions from this message."""
@@ -1088,7 +1089,9 @@ class Guild:
 
         # Internal caches, populated by events or specific fetches
         self._channels: ChannelCache = ChannelCache()
-        self._members: MemberCache = MemberCache(getattr(client_instance, "member_cache_flags", MemberCacheFlags()))
+        self._members: MemberCache = MemberCache(
+            getattr(client_instance, "member_cache_flags", MemberCacheFlags())
+        )
         self._threads: Dict[str, "Thread"] = {}
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:
@@ -1278,7 +1281,45 @@ class Channel:
         return base
 
 
-class TextChannel(Channel):
+class Messageable:
+    """Mixin for channels that can send messages and show typing."""
+
+    _client: "Client"
+    id: str
+
+    async def send(
+        self,
+        content: Optional[str] = None,
+        *,
+        embed: Optional["Embed"] = None,
+        embeds: Optional[List["Embed"]] = None,
+        components: Optional[List["ActionRow"]] = None,
+    ) -> "Message":
+        if not hasattr(self._client, "send_message"):
+            raise NotImplementedError(
+                "Client.send_message is required for Messageable.send"
+            )
+
+        return await self._client.send_message(
+            channel_id=self.id,
+            content=content,
+            embed=embed,
+            embeds=embeds,
+            components=components,
+        )
+
+    async def trigger_typing(self) -> None:
+        await self._client._http.trigger_typing(self.id)
+
+    def typing(self) -> "Typing":
+        if not hasattr(self._client, "typing"):
+            raise NotImplementedError(
+                "Client.typing is required for Messageable.typing"
+            )
+        return self._client.typing(self.id)
+
+
+class TextChannel(Channel, Messageable):
     """Represents a guild text channel or announcement channel."""
 
     def __init__(self, data: Dict[str, Any], client_instance: "Client"):
@@ -1304,27 +1345,6 @@ class TextChannel(Channel):
 
         return message_pager(self, limit=limit, before=before, after=after)
 
-    async def send(
-        self,
-        content: Optional[str] = None,
-        *,
-        embed: Optional[Embed] = None,
-        embeds: Optional[List[Embed]] = None,
-        components: Optional[List["ActionRow"]] = None,  # Added components
-    ) -> "Message":  # Forward reference Message
-        if not hasattr(self._client, "send_message"):
-            raise NotImplementedError(
-                "Client.send_message is required for TextChannel.send"
-            )
-
-        return await self._client.send_message(
-            channel_id=self.id,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            components=components,
-        )
-
     async def purge(
         self, limit: int, *, before: "Snowflake | None" = None
     ) -> List["Snowflake"]:
@@ -1347,41 +1367,41 @@ class TextChannel(Channel):
         return ids
 
     def get_partial_message(self, id: int) -> "PartialMessage":
-       """Returns a :class:`PartialMessage` for the given ID.
+        """Returns a :class:`PartialMessage` for the given ID.
 
-       This allows performing actions on a message without fetching it first.
+        This allows performing actions on a message without fetching it first.
 
-       Parameters
-       ----------
-       id: int
-           The ID of the message to get a partial instance of.
+        Parameters
+        ----------
+        id: int
+            The ID of the message to get a partial instance of.
 
-       Returns
-       -------
-       PartialMessage
-           The partial message instance.
-       """
-       return PartialMessage(id=str(id), channel=self)
+        Returns
+        -------
+        PartialMessage
+            The partial message instance.
+        """
+        return PartialMessage(id=str(id), channel=self)
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
 
     async def pins(self) -> List["Message"]:
         """|coro|
-        
+
         Fetches all pinned messages in this channel.
-        
+
         Returns
         -------
         List[Message]
             The pinned messages.
-            
+
         Raises
         ------
         HTTPException
             Fetching the pinned messages failed.
         """
-        
+
         messages_data = await self._client._http.get_pinned_messages(self.id)
         return [self._client.parse_message(m) for m in messages_data]
 
@@ -1606,7 +1626,9 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         """
         await self._client._http.leave_thread(self.id)
 
-    async def archive(self, locked: bool = False, *, reason: Optional[str] = None) -> "Thread":
+    async def archive(
+        self, locked: bool = False, *, reason: Optional[str] = None
+    ) -> "Thread":
         """|coro|
 
         Archives this thread.
@@ -1631,7 +1653,7 @@ class Thread(TextChannel):  # Threads are a specialized TextChannel
         return cast("Thread", self._client.parse_channel(data))
 
 
-class DMChannel(Channel):
+class DMChannel(Channel, Messageable):
     """Represents a Direct Message channel."""
 
     def __init__(self, data: Dict[str, Any], client_instance: "Client"):
@@ -1644,27 +1666,6 @@ class DMChannel(Channel):
     @property
     def recipient(self) -> Optional[User]:
         return self.recipients[0] if self.recipients else None
-
-    async def send(
-        self,
-        content: Optional[str] = None,
-        *,
-        embed: Optional[Embed] = None,
-        embeds: Optional[List[Embed]] = None,
-        components: Optional[List["ActionRow"]] = None,  # Added components
-    ) -> "Message":
-        if not hasattr(self._client, "send_message"):
-            raise NotImplementedError(
-                "Client.send_message is required for DMChannel.send"
-            )
-
-        return await self._client.send_message(
-            channel_id=self.id,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            components=components,
-        )
 
     async def history(
         self,
