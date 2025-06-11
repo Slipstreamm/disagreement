@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import io
+import shlex
 from typing import Optional, Union
 
 
@@ -35,15 +36,27 @@ class FFmpegAudioSource(AudioSource):
         A filename, URL, or file-like object to read from.
     """
 
-    def __init__(self, source: Union[str, io.BufferedIOBase]):
+    def __init__(
+        self,
+        source: Union[str, io.BufferedIOBase],
+        *,
+        before_options: Optional[str] = None,
+        options: Optional[str] = None,
+        volume: float = 1.0,
+    ):
         self.source = source
+        self.before_options = before_options
+        self.options = options
+        self.volume = volume
         self.process: Optional[asyncio.subprocess.Process] = None
         self._feeder: Optional[asyncio.Task] = None
 
     async def _spawn(self) -> None:
         if isinstance(self.source, str):
-            args = [
-                "ffmpeg",
+            args = ["ffmpeg"]
+            if self.before_options:
+                args += shlex.split(self.before_options)
+            args += [
                 "-i",
                 self.source,
                 "-f",
@@ -54,14 +67,18 @@ class FFmpegAudioSource(AudioSource):
                 "2",
                 "pipe:1",
             ]
+            if self.options:
+                args += shlex.split(self.options)
             self.process = await asyncio.create_subprocess_exec(
                 *args,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.DEVNULL,
             )
         else:
-            args = [
-                "ffmpeg",
+            args = ["ffmpeg"]
+            if self.before_options:
+                args += shlex.split(self.before_options)
+            args += [
                 "-i",
                 "pipe:0",
                 "-f",
@@ -72,6 +89,8 @@ class FFmpegAudioSource(AudioSource):
                 "2",
                 "pipe:1",
             ]
+            if self.options:
+                args += shlex.split(self.options)
             self.process = await asyncio.create_subprocess_exec(
                 *args,
                 stdin=asyncio.subprocess.PIPE,
@@ -114,6 +133,7 @@ class FFmpegAudioSource(AudioSource):
         if isinstance(self.source, io.IOBase):
             with contextlib.suppress(Exception):
                 self.source.close()
+
 
 class AudioSink:
     """Abstract base class for audio sinks."""
