@@ -23,6 +23,13 @@ pip install -e .
 
 Requires Python 3.10 or newer.
 
+To run the example scripts, you'll need the `python-dotenv` package to load
+environment variables. Install the development extras with:
+
+```bash
+pip install "disagreement[dev]"
+```
+
 ## Basic Usage
 
 ```python

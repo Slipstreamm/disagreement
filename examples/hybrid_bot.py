@@ -36,9 +36,14 @@ from disagreement.enums import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - example helper
+    load_dotenv = None
+    print("python-dotenv is not installed. Environment variables will not be loaded")
 
-load_dotenv()
+if load_dotenv:
+    load_dotenv()
 
 
 # --- Define a Test Cog ---
