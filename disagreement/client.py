@@ -123,13 +123,9 @@ class Client:
 
         self._closed: bool = False
         self._ready_event: asyncio.Event = asyncio.Event()
-        self.application_id: Optional[Snowflake] = None  # For Application Commands
         self.user: Optional["User"] = (
             None  # The bot's own user object, populated on READY
         )
-
-        # Initialize AppCommandHandler
-        self.app_command_handler: AppCommandHandler = AppCommandHandler(client=self)
 
         # Internal Caches
         self._guilds: Dict[Snowflake, "Guild"] = {}
