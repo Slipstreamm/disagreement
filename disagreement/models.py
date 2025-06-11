@@ -4,12 +4,12 @@
 Data models for Discord objects.
 """
 
+import asyncio
 import json
-import asyncio
-import aiohttp  # pylint: disable=import-error
-import asyncio
 from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union
 
+import aiohttp  # pylint: disable=import-error
+from .color import Color
 from .errors import DisagreementException, HTTPException
 from .enums import (  # These enums will need to be defined in disagreement/enums.py
     VerificationLevel,
@@ -25,7 +25,6 @@ from .enums import (  # These enums will need to be defined in disagreement/enum
     # SelectMenuType will be part of ComponentType or a new enum if needed
 )
 from .permissions import Permissions
-from .color import Color
 
 
 if TYPE_CHECKING:
@@ -1087,7 +1086,6 @@ class TextChannel(Channel):
         )
         self.last_pin_timestamp: Optional[str] = data.get("last_pin_timestamp")
 
-
     def history(
         self,
         *,
@@ -1142,7 +1140,6 @@ class TextChannel(Channel):
         for mid in ids:
             self._client._messages.pop(mid, None)
         return ids
-
 
     def __repr__(self) -> str:
         return f"<TextChannel id='{self.id}' name='{self.name}' guild_id='{self.guild_id}'>"
