@@ -6,6 +6,7 @@ Data models for Discord objects.
 
 import asyncio
 import json
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union
 
 import aiohttp  # pylint: disable=import-error
@@ -2057,6 +2058,41 @@ class Reaction:
         return f"<Reaction message_id='{self.message_id}' user_id='{self.user_id}' emoji='{emoji_value}'>"
 
 
+@dataclass
+class Invite:
+    """Represents a Discord invite."""
+
+    code: str
+    channel_id: Optional[str]
+    guild_id: Optional[str]
+    inviter_id: Optional[str]
+    uses: Optional[int]
+    max_uses: Optional[int]
+    max_age: Optional[int]
+    temporary: Optional[bool]
+    created_at: Optional[str]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Invite":
+        channel = data.get("channel")
+        guild = data.get("guild")
+        inviter = data.get("inviter")
+        return cls(
+            code=data["code"],
+            channel_id=(channel or {}).get("id") if channel else data.get("channel_id"),
+            guild_id=(guild or {}).get("id") if guild else data.get("guild_id"),
+            inviter_id=(inviter or {}).get("id"),
+            uses=data.get("uses"),
+            max_uses=data.get("max_uses"),
+            max_age=data.get("max_age"),
+            temporary=data.get("temporary"),
+            created_at=data.get("created_at"),
+        )
+
+    def __repr__(self) -> str:
+        return f"<Invite code='{self.code}' guild_id='{self.guild_id}' channel_id='{self.channel_id}'>"
+
+
 class GuildMemberRemove:
     """Represents a GUILD_MEMBER_REMOVE event."""
 
@@ -2113,6 +2149,25 @@ class GuildRoleUpdate:
 
     def __repr__(self) -> str:
         return f"<GuildRoleUpdate guild_id='{self.guild_id}' role_id='{self.role.id}'>"
+
+
+class AuditLogEntry:
+    """Represents a single entry in a guild's audit log."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ) -> None:
+        self._client = client_instance
+        self.id: str = data["id"]
+        self.user_id: Optional[str] = data.get("user_id")
+        self.target_id: Optional[str] = data.get("target_id")
+        self.action_type: int = data["action_type"]
+        self.reason: Optional[str] = data.get("reason")
+        self.changes: List[Dict[str, Any]] = data.get("changes", [])
+        self.options: Optional[Dict[str, Any]] = data.get("options")
+
+    def __repr__(self) -> str:
+        return f"<AuditLogEntry id='{self.id}' action_type={self.action_type} user_id='{self.user_id}'>"
 
 
 def channel_factory(data: Dict[str, Any], client: "Client") -> Channel:

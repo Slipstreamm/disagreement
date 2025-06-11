@@ -98,3 +98,36 @@ Emitted when a guild role is updated. The callback receives a
 async def on_guild_role_update(event: disagreement.GuildRoleUpdate):
     ...
 ```
+
+## SHARD_CONNECT
+
+Fired when a shard establishes its gateway connection. The callback receives a
+dictionary with the shard ID.
+
+```python
+@client.event
+async def on_shard_connect(info: dict):
+    print("shard connected", info["shard_id"])
+```
+
+## SHARD_DISCONNECT
+
+Emitted when a shard's gateway connection is closed. The callback receives a
+dictionary with the shard ID.
+
+```python
+@client.event
+async def on_shard_disconnect(info: dict):
+    ...
+```
+
+## SHARD_RESUME
+
+Sent when a shard successfully resumes after a reconnect. The callback receives
+a dictionary with the shard ID.
+
+```python
+@client.event
+async def on_shard_resume(info: dict):
+    ...
+```
