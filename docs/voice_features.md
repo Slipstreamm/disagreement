@@ -16,4 +16,5 @@ Voice support is optional and may require additional system dependencies such as
 - [Components](using_components.md)
 - [Slash Commands](slash_commands.md)
 - [Caching](caching.md)
+- [HTTP Client Options](http_client.md)
 

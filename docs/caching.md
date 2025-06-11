@@ -24,4 +24,5 @@ client.cache.clear()
 - [Components](using_components.md)
 - [Slash Commands](slash_commands.md)
 - [Voice Features](voice_features.md)
+- [HTTP Client Options](http_client.md)
 

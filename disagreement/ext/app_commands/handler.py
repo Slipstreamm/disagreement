@@ -1,7 +1,9 @@
 # disagreement/ext/app_commands/handler.py
 
 import inspect
+import json
 import logging
+import os
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -67,6 +69,8 @@ if not TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+COMMANDS_CACHE_FILE = ".disagreement_commands.json"
+
 
 class AppCommandHandler:
     """
@@ -83,6 +87,33 @@ class AppCommandHandler:
         self._message_commands: Dict[str, MessageCommand] = {}
         self._app_command_groups: Dict[str, AppCommandGroup] = {}
         self._converter_registry: Dict[type, type] = {}
+
+    def _load_cached_ids(self) -> Dict[str, Dict[str, str]]:
+        try:
+            with open(COMMANDS_CACHE_FILE, "r", encoding="utf-8") as fp:
+                return json.load(fp)
+        except FileNotFoundError:
+            return {}
+        except json.JSONDecodeError:
+            logger.warning("Invalid command cache file. Ignoring.")
+            return {}
+
+    def _save_cached_ids(self, data: Dict[str, Dict[str, str]]) -> None:
+        try:
+            with open(COMMANDS_CACHE_FILE, "w", encoding="utf-8") as fp:
+                json.dump(data, fp, indent=2)
+        except Exception as e:  # pragma: no cover - logging only
+            logger.error("Failed to write command cache: %s", e)
+
+    def clear_stored_registrations(self) -> None:
+        """Remove persisted command registration data."""
+        if os.path.exists(COMMANDS_CACHE_FILE):
+            os.remove(COMMANDS_CACHE_FILE)
+
+    def migrate_stored_registrations(self, new_path: str) -> None:
+        """Move stored registrations to ``new_path``."""
+        if os.path.exists(COMMANDS_CACHE_FILE):
+            os.replace(COMMANDS_CACHE_FILE, new_path)
 
     def add_command(self, command: Union["AppCommand", "AppCommandGroup"]) -> None:
         """Adds an application command or a command group to the handler."""
@@ -564,11 +595,13 @@ class AppCommandHandler:
         Synchronizes (registers/updates) all application commands with Discord.
         If guild_id is provided, syncs commands for that guild. Otherwise, syncs global commands.
         """
-        commands_to_sync: List[Dict[str, Any]] = []
+        cache = self._load_cached_ids()
+        scope_key = str(guild_id) if guild_id else "global"
+        stored = cache.get(scope_key, {})
+
+        current_payloads: Dict[str, Dict[str, Any]] = {}
 
         # Collect commands based on scope (global or specific guild)
-        # This needs to be more sophisticated to handle guild_ids on commands/groups
-
         source_commands = (
             list(self._slash_commands.values())
             + list(self._user_commands.values())
@@ -577,26 +610,22 @@ class AppCommandHandler:
         )
 
         for cmd_or_group in source_commands:
-            # Determine if this command/group should be synced for the current scope
             is_guild_specific_command = (
                 cmd_or_group.guild_ids is not None and len(cmd_or_group.guild_ids) > 0
             )
 
-            if guild_id:  # Syncing for a specific guild
-                # Skip if not a guild-specific command OR if it's for a different guild
+            if guild_id:
                 if not is_guild_specific_command or (
                     cmd_or_group.guild_ids is not None
                     and guild_id not in cmd_or_group.guild_ids
                 ):
                     continue
-            else:  # Syncing global commands
+            else:
                 if is_guild_specific_command:
-                    continue  # Skip guild-specific commands when syncing global
+                    continue
 
-            # Use the to_dict() method from AppCommand or AppCommandGroup
             try:
-                payload = cmd_or_group.to_dict()
-                commands_to_sync.append(payload)
+                current_payloads[cmd_or_group.name] = cmd_or_group.to_dict()
             except AttributeError:
                 logger.warning(
                     "Command or group '%s' does not have a to_dict() method. Skipping.",
@@ -609,32 +638,74 @@ class AppCommandHandler:
                     e,
                 )
 
-        if not commands_to_sync:
+        if not current_payloads:
             logger.info(
                 "No commands to sync for %s scope.",
                 f"guild {guild_id}" if guild_id else "global",
             )
             return
 
+        names_current = set(current_payloads)
+        names_stored = set(stored)
+
+        to_delete = names_stored - names_current
+        to_create = names_current - names_stored
+        to_update = names_current & names_stored
+
+        if not to_delete and not to_create and not to_update:
+            logger.info(
+                "Application commands already up to date for %s scope.", scope_key
+            )
+            return
+
         try:
-            if guild_id:
-                logger.info(
-                    "Syncing %s commands for guild %s...",
-                    len(commands_to_sync),
-                    guild_id,
-                )
-                await self.client._http.bulk_overwrite_guild_application_commands(
-                    application_id, guild_id, commands_to_sync
-                )
-            else:
-                logger.info(
-                    "Syncing %s global commands...",
-                    len(commands_to_sync),
-                )
-                await self.client._http.bulk_overwrite_global_application_commands(
-                    application_id, commands_to_sync
-                )
+            for name in to_delete:
+                cmd_id = stored[name]
+                if guild_id:
+                    await self.client._http.delete_guild_application_command(
+                        application_id, guild_id, cmd_id
+                    )
+                else:
+                    await self.client._http.delete_global_application_command(
+                        application_id, cmd_id
+                    )
+
+            new_ids: Dict[str, str] = {}
+            for name in to_create:
+                payload = current_payloads[name]
+                if guild_id:
+                    result = await self.client._http.create_guild_application_command(
+                        application_id, guild_id, payload
+                    )
+                else:
+                    result = await self.client._http.create_global_application_command(
+                        application_id, payload
+                    )
+                if result.id:
+                    new_ids[name] = str(result.id)
+
+            for name in to_update:
+                payload = current_payloads[name]
+                cmd_id = stored[name]
+                if guild_id:
+                    await self.client._http.edit_guild_application_command(
+                        application_id, guild_id, cmd_id, payload
+                    )
+                else:
+                    await self.client._http.edit_global_application_command(
+                        application_id, cmd_id, payload
+                    )
+                new_ids[name] = cmd_id
+
+            final_ids: Dict[str, str] = {}
+            for name in names_current:
+                if name in new_ids:
+                    final_ids[name] = new_ids[name]
+                else:
+                    final_ids[name] = stored[name]
+
+            cache[scope_key] = final_ids
+            self._save_cached_ids(cache)
             logger.info("Command sync successful.")
         except Exception as e:
             logger.error("Error syncing application commands: %s", e)
-            # Consider re-raising or specific error handling

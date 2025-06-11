@@ -15,3 +15,4 @@ Pass `before` or `after` to control the range of messages returned. The paginato
 - [Caching](caching.md)
 - [Typing Indicator](typing_indicator.md)
 - [Audit Logs](audit_logs.md)
+- [HTTP Client Options](http_client.md)

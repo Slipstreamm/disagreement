@@ -23,7 +23,7 @@ from .http import HTTPClient
 from .gateway import GatewayClient
 from .shard_manager import ShardManager
 from .event_dispatcher import EventDispatcher
-from .enums import GatewayIntent, InteractionType, GatewayOpcode
+from .enums import GatewayIntent, InteractionType, GatewayOpcode, VoiceRegion
 from .errors import DisagreementException, AuthenticationError
 from .typing import Typing
 from .ext.commands.core import CommandHandler
@@ -52,6 +52,7 @@ if TYPE_CHECKING:
         DMChannel,
         Webhook,
         AuditLogEntry,
+        Invite,
     )
     from .ui.view import View
     from .enums import ChannelType as EnumChannelType
@@ -74,6 +75,9 @@ class Client:
         command_prefix (Union[str, List[str], Callable[['Client', Message], Union[str, List[str]]]]):
             The prefix(es) for commands. Defaults to '!'.
         verbose (bool): If True, print raw HTTP and Gateway traffic for debugging.
+        http_options (Optional[Dict[str, Any]]): Extra options passed to
+            :class:`HTTPClient` for creating the internal
+            :class:`aiohttp.ClientSession`.
     """
 
     def __init__(
@@ -90,6 +94,7 @@ class Client:
         shard_count: Optional[int] = None,
         gateway_max_retries: int = 5,
         gateway_max_backoff: float = 60.0,
+        http_options: Optional[Dict[str, Any]] = None,
     ):
         if not token:
             raise ValueError("A bot token must be provided.")
@@ -103,7 +108,11 @@ class Client:
         setup_global_error_handler(self.loop)
 
         self.verbose: bool = verbose
-        self._http: HTTPClient = HTTPClient(token=self.token, verbose=verbose)
+        self._http: HTTPClient = HTTPClient(
+            token=self.token,
+            verbose=verbose,
+            **(http_options or {}),
+        )
         self._event_dispatcher: EventDispatcher = EventDispatcher(client_instance=self)
         self._gateway: Optional[GatewayClient] = (
             None  # Initialized in run() or connect()
@@ -706,6 +715,13 @@ class Client:
 
         return AuditLogEntry(data, client_instance=self)
 
+    def parse_invite(self, data: Dict[str, Any]) -> "Invite":
+        """Parses invite data into an :class:`Invite`."""
+
+        from .models import Invite
+
+        return Invite.from_dict(data)
+
     async def fetch_user(self, user_id: Snowflake) -> Optional["User"]:
         """Fetches a user by ID from Discord."""
         if self._closed:
@@ -1238,6 +1254,20 @@ class Client:
         for entry in data.get("audit_log_entries", []):
             yield self.parse_audit_log_entry(entry)
 
+    async def fetch_voice_regions(self) -> List[VoiceRegion]:
+        """Fetches available voice regions."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.get_voice_regions()
+        regions = []
+        for region in data:
+            region_id = region.get("id")
+            if region_id:
+                regions.append(VoiceRegion(region_id))
+        return regions
+
     async def create_webhook(
         self, channel_id: Snowflake, payload: Dict[str, Any]
     ) -> "Webhook":
@@ -1267,6 +1297,33 @@ class Client:
             raise DisagreementException("Client is closed.")
 
         await self._http.delete_webhook(webhook_id)
+
+    async def create_invite(
+        self, channel_id: Snowflake, payload: Dict[str, Any]
+    ) -> "Invite":
+        """|coro| Create an invite for the given channel."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        return await self._http.create_invite(channel_id, payload)
+
+    async def delete_invite(self, code: str) -> None:
+        """|coro| Delete an invite by code."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        await self._http.delete_invite(code)
+
+    async def fetch_invites(self, channel_id: Snowflake) -> List["Invite"]:
+        """|coro| Fetch all invites for a channel."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.get_channel_invites(channel_id)
+        return [self.parse_invite(inv) for inv in data]
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:
