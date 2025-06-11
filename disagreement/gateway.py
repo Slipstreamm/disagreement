@@ -344,6 +344,9 @@ class GatewayClient:
                 raw_event_d_payload if isinstance(raw_event_d_payload, dict) else {}
             )
             await self._dispatcher.dispatch(event_name, event_data_to_dispatch)
+            await self._dispatcher.dispatch(
+                "SHARD_RESUME", {"shard_id": self._shard_id}
+            )
         elif event_name:
             # For other events, ensure 'd' is a dict, or pass {} if 'd' is null/missing.
             # Models/parsers in EventDispatcher will need to handle potentially empty dicts.
@@ -508,6 +511,10 @@ class GatewayClient:
                 self._receive_task.cancel()
             self._receive_task = self._loop.create_task(self._receive_loop())
 
+            await self._dispatcher.dispatch(
+                "SHARD_CONNECT", {"shard_id": self._shard_id}
+            )
+
         except aiohttp.ClientConnectorError as e:
             raise GatewayException(
                 f"Failed to connect to Gateway (Connector Error): {e}"
@@ -558,6 +565,10 @@ class GatewayClient:
             self._session_id = None
             self._last_sequence = None
             self._resume_gateway_url = None  # This might be re-fetched anyway
+
+        await self._dispatcher.dispatch(
+            "SHARD_DISCONNECT", {"shard_id": self._shard_id}
+        )
 
     @property
     def latency(self) -> Optional[float]:
