@@ -64,7 +64,7 @@ class TypingCog(commands.Cog):
     def __init__(self, bot_client):
         super().__init__(bot_client)
 
-    @commands.command(name="typing_test")
+    @commands.command(name="typing")
     async def typing_test_command(self, ctx: commands.CommandContext):
         """Shows a typing indicator for 5 seconds."""
         await ctx.reply("Okay, I will pretend to be typing for 5 seconds.")
