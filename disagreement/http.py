@@ -628,6 +628,33 @@ class HTTPClient:
         """Fetches a guild object for a given guild ID."""
         return await self.request("GET", f"/guilds/{guild_id}")
 
+    async def get_guild_templates(self, guild_id: "Snowflake") -> List[Dict[str, Any]]:
+        """Fetches all templates for the given guild."""
+        return await self.request("GET", f"/guilds/{guild_id}/templates")
+
+    async def create_guild_template(
+        self, guild_id: "Snowflake", payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Creates a guild template."""
+        return await self.request(
+            "POST", f"/guilds/{guild_id}/templates", payload=payload
+        )
+
+    async def sync_guild_template(
+        self, guild_id: "Snowflake", template_code: str
+    ) -> Dict[str, Any]:
+        """Syncs a guild template to the guild's current state."""
+        return await self.request(
+            "PUT",
+            f"/guilds/{guild_id}/templates/{template_code}",
+        )
+
+    async def delete_guild_template(
+        self, guild_id: "Snowflake", template_code: str
+    ) -> None:
+        """Deletes a guild template."""
+        await self.request("DELETE", f"/guilds/{guild_id}/templates/{template_code}")
+
     async def get_guild_scheduled_events(
         self, guild_id: "Snowflake"
     ) -> List[Dict[str, Any]]:

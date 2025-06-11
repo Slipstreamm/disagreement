@@ -51,6 +51,7 @@ if TYPE_CHECKING:
         Thread,
         DMChannel,
         Webhook,
+        GuildTemplate,
         ScheduledEvent,
         AuditLogEntry,
         Invite,
@@ -710,6 +711,13 @@ class Client:
         self._webhooks[webhook.id] = webhook
         return webhook
 
+    def parse_template(self, data: Dict[str, Any]) -> "GuildTemplate":
+        """Parses template data into a GuildTemplate object."""
+
+        from .models import GuildTemplate
+
+        return GuildTemplate(data, client_instance=self)
+
     def parse_scheduled_event(self, data: Dict[str, Any]) -> "ScheduledEvent":
         """Parses scheduled event data and updates cache."""
 
@@ -1312,6 +1320,45 @@ class Client:
             raise DisagreementException("Client is closed.")
 
         await self._http.delete_webhook(webhook_id)
+
+    async def fetch_templates(self, guild_id: Snowflake) -> List["GuildTemplate"]:
+        """|coro| Fetch all templates for a guild."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.get_guild_templates(guild_id)
+        return [self.parse_template(t) for t in data]
+
+    async def create_template(
+        self, guild_id: Snowflake, payload: Dict[str, Any]
+    ) -> "GuildTemplate":
+        """|coro| Create a template for a guild."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.create_guild_template(guild_id, payload)
+        return self.parse_template(data)
+
+    async def sync_template(
+        self, guild_id: Snowflake, template_code: str
+    ) -> "GuildTemplate":
+        """|coro| Sync a template to the guild's current state."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.sync_guild_template(guild_id, template_code)
+        return self.parse_template(data)
+
+    async def delete_template(self, guild_id: Snowflake, template_code: str) -> None:
+        """|coro| Delete a guild template."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        await self._http.delete_guild_template(guild_id, template_code)
 
     async def fetch_scheduled_events(
         self, guild_id: Snowflake
