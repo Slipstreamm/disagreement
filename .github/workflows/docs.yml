@@ -5,12 +5,25 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
     branches:
       - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+      debug:
+        description: 'Enable debug mode'
+        required: false
+        default: 'false'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout source
@@ -23,9 +36,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install mkdocs
+          pip install mkdocs mkdocs-material
+
+      - name: Configure Git author from GitHub Actions metadata
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Deploy docs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mkdocs gh-deploy --force --clean
+
