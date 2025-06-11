@@ -79,6 +79,8 @@ class Client:
         command_prefix (Union[str, List[str], Callable[['Client', Message], Union[str, List[str]]]]):
             The prefix(es) for commands. Defaults to '!'.
         verbose (bool): If True, print raw HTTP and Gateway traffic for debugging.
+        mention_replies (bool): Whether replies mention the author by default.
+        allowed_mentions (Optional[Dict[str, Any]]): Default allowed mentions for messages.
         http_options (Optional[Dict[str, Any]]): Extra options passed to
             :class:`HTTPClient` for creating the internal
             :class:`aiohttp.ClientSession`.
@@ -95,6 +97,7 @@ class Client:
         application_id: Optional[Union[str, int]] = None,
         verbose: bool = False,
         mention_replies: bool = False,
+        allowed_mentions: Optional[Dict[str, Any]] = None,
         shard_count: Optional[int] = None,
         gateway_max_retries: int = 5,
         gateway_max_backoff: float = 60.0,
@@ -165,6 +168,7 @@ class Client:
 
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
+        self.allowed_mentions: Optional[Dict[str, Any]] = allowed_mentions
 
         # Basic signal handling for graceful shutdown
         # This might be better handled by the user's application code, but can be a nice default.
@@ -693,7 +697,7 @@ class Client:
             )
             # import traceback
             # traceback.print_exception(type(error.original), error.original, error.original.__traceback__)
- 
+
     async def on_command_completion(self, ctx: "CommandContext") -> None:
         """
         Default command completion handler. Called when a command has successfully completed.
@@ -1010,7 +1014,7 @@ class Client:
             embeds (Optional[List[Embed]]): A list of embeds to send. Cannot be used with `embed`.
                                             Discord supports up to 10 embeds per message.
             components (Optional[List[ActionRow]]): A list of ActionRow components to include.
-            allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
+            allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message. Defaults to :attr:`Client.allowed_mentions`.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
             attachments (Optional[List[Any]]): Attachments to include with the message.
             files (Optional[List[Any]]): Files to upload with the message.
@@ -1056,6 +1060,9 @@ class Client:
                 for comp in components
                 if isinstance(comp, ComponentModel)
             ]
+
+        if allowed_mentions is None:
+            allowed_mentions = self.allowed_mentions
 
         message_data = await self._http.send_message(
             channel_id=channel_id,
@@ -1514,35 +1521,35 @@ class Client:
         return [self.parse_invite(inv) for inv in data]
 
     def add_persistent_view(self, view: "View") -> None:
-       """
-       Registers a persistent view with the client.
+        """
+        Registers a persistent view with the client.
 
-       Persistent views have a timeout of `None` and their components must have a `custom_id`.
-       This allows the view to be re-instantiated across bot restarts.
+        Persistent views have a timeout of `None` and their components must have a `custom_id`.
+        This allows the view to be re-instantiated across bot restarts.
 
-       Args:
-           view (View): The view instance to register.
+        Args:
+            view (View): The view instance to register.
 
-       Raises:
-           ValueError: If the view is not persistent (timeout is not None) or if a component's
-                       custom_id is already registered.
-       """
-       if self.is_ready():
-           print(
-               "Warning: Adding a persistent view after the client is ready. "
-               "This view will only be available for interactions on this session."
-           )
+        Raises:
+            ValueError: If the view is not persistent (timeout is not None) or if a component's
+                        custom_id is already registered.
+        """
+        if self.is_ready():
+            print(
+                "Warning: Adding a persistent view after the client is ready. "
+                "This view will only be available for interactions on this session."
+            )
 
-       if view.timeout is not None:
-           raise ValueError("Persistent views must have a timeout of None.")
+        if view.timeout is not None:
+            raise ValueError("Persistent views must have a timeout of None.")
 
-       for item in view.children:
-           if item.custom_id:  # Ensure custom_id is not None
-               if item.custom_id in self._persistent_views:
-                   raise ValueError(
-                       f"A component with custom_id '{item.custom_id}' is already registered."
-                   )
-               self._persistent_views[item.custom_id] = view
+        for item in view.children:
+            if item.custom_id:  # Ensure custom_id is not None
+                if item.custom_id in self._persistent_views:
+                    raise ValueError(
+                        f"A component with custom_id '{item.custom_id}' is already registered."
+                    )
+                self._persistent_views[item.custom_id] = view
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:
