@@ -94,6 +94,7 @@ async def test_requires_permissions_pass(message):
 
     await cmd.invoke(ctx)
 
+
 @pytest.mark.asyncio
 @pytest.mark.asyncio
 async def test_requires_permissions_fail(message):

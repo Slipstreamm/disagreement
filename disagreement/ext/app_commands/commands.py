@@ -202,8 +202,6 @@ class MessageCommand(AppCommand):
         super().__init__(callback, type=ApplicationCommandType.MESSAGE, **kwargs)
 
 
-
-
 class AppCommandGroup:
     """
     Represents a group of application commands (subcommands or subcommand groups).

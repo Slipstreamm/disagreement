@@ -50,7 +50,9 @@ class Color:
         return ((self.value >> 16) & 0xFF, (self.value >> 8) & 0xFF, self.value & 0xFF)
 
     @classmethod
-    def parse(cls, value: "Color | int | str | tuple[int, int, int] | None") -> "Color | None":
+    def parse(
+        cls, value: "Color | int | str | tuple[int, int, int] | None"
+    ) -> "Color | None":
         """Convert ``value`` to a :class:`Color` instance.
 
         Parameters
