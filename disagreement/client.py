@@ -80,6 +80,8 @@ class Client:
         command_prefix (Union[str, List[str], Callable[['Client', Message], Union[str, List[str]]]]):
             The prefix(es) for commands. Defaults to '!'.
         verbose (bool): If True, print raw HTTP and Gateway traffic for debugging.
+        mention_replies (bool): Whether replies mention the author by default.
+        allowed_mentions (Optional[Dict[str, Any]]): Default allowed mentions for messages.
         http_options (Optional[Dict[str, Any]]): Extra options passed to
             :class:`HTTPClient` for creating the internal
             :class:`aiohttp.ClientSession`.
@@ -98,6 +100,7 @@ class Client:
         application_id: Optional[Union[str, int]] = None,
         verbose: bool = False,
         mention_replies: bool = False,
+        allowed_mentions: Optional[Dict[str, Any]] = None,
         shard_count: Optional[int] = None,
         gateway_max_retries: int = 5,
         gateway_max_backoff: float = 60.0,
@@ -170,6 +173,7 @@ class Client:
 
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
+        self.allowed_mentions: Optional[Dict[str, Any]] = allowed_mentions
 
         # Basic signal handling for graceful shutdown
         # This might be better handled by the user's application code, but can be a nice default.
@@ -1012,7 +1016,7 @@ class Client:
             embeds (Optional[List[Embed]]): A list of embeds to send. Cannot be used with `embed`.
                                             Discord supports up to 10 embeds per message.
             components (Optional[List[ActionRow]]): A list of ActionRow components to include.
-            allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message.
+            allowed_mentions (Optional[Dict[str, Any]]): Allowed mentions for the message. Defaults to :attr:`Client.allowed_mentions`.
             message_reference (Optional[Dict[str, Any]]): Message reference for replying.
             attachments (Optional[List[Any]]): Attachments to include with the message.
             files (Optional[List[Any]]): Files to upload with the message.
@@ -1058,6 +1062,9 @@ class Client:
                 for comp in components
                 if isinstance(comp, ComponentModel)
             ]
+
+        if allowed_mentions is None:
+            allowed_mentions = self.allowed_mentions
 
         message_data = await self._http.send_message(
             channel_id=channel_id,

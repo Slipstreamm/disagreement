@@ -102,6 +102,20 @@ These options are forwarded to ``HTTPClient`` when it creates the underlying
 ``aiohttp.ClientSession``. You can specify a custom ``connector`` or any other
 session parameter supported by ``aiohttp``.
 
+### Default Allowed Mentions
+
+Specify default mention behaviour for all outgoing messages when constructing the client:
+
+```python
+client = disagreement.Client(
+    token=token,
+    allowed_mentions={"parse": [], "replied_user": False},
+)
+```
+
+This dictionary is used whenever ``send_message`` is called without an explicit
+``allowed_mentions`` argument.
+
 ### Defining Subcommands with `AppCommandGroup`
 
 ```python
