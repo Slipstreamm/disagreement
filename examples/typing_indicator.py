@@ -70,16 +70,21 @@ class TypingCog(commands.Cog):
         await ctx.reply("Showing typing indicator for 5 seconds...")
         try:
             async with client.typing(ctx.message.channel_id):
-                print(f"Displaying typing indicator in channel {ctx.message.channel_id} for 5 seconds.")
+                print(
+                    f"Displaying typing indicator in channel {ctx.message.channel_id} for 5 seconds."
+                )
                 await asyncio.sleep(5)
             print("Typing indicator stopped.")
             await ctx.send("Done!")
         except disagreement.HTTPException as e:
             print(f"Failed to send typing indicator: {e}")
-            await ctx.reply("I couldn't show the typing indicator. I might be missing permissions.")
+            await ctx.reply(
+                "I couldn't show the typing indicator. I might be missing permissions."
+            )
 
 
 # --- Event Handlers ---
+
 
 @client.event
 async def on_ready():

@@ -8,6 +8,9 @@ A Python library for interacting with the Discord API, with a focus on bot devel
 - Gateway and HTTP API clients
 - Slash command framework
 - Message component helpers
+- Internationalization helpers
+- Hybrid context for commands
+- Built-in rate limiting
 - Built-in caching layer
 - Experimental voice support
 - Helpful error handling utilities
@@ -163,7 +166,7 @@ the client:
 client = disagreement.Client(token=BOT_TOKEN, shard_count=2)
 ```
 
-If you want the a to determine the recommended shard count automatically,
+If you want the library to determine the recommended shard count automatically,
 use ``AutoShardedClient``:
 
 ```python
