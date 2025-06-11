@@ -1,4 +1,3 @@
-# disagreement/ext/commands/decorators.py
 from __future__ import annotations
 
 import asyncio

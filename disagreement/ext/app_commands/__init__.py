@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/__init__.py
-
 """
 Application Commands Extension for Disagreement.
 

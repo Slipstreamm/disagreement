@@ -1,5 +1,3 @@
-# disagreement/gateway.py
-
 """
 Manages the WebSocket connection to the Discord Gateway.
 """
@@ -152,12 +150,11 @@ class GatewayClient:
         self._last_heartbeat_sent = time.monotonic()
         payload = {"op": GatewayOpcode.HEARTBEAT, "d": self._last_sequence}
         await self._send_json(payload)
-        # print("Sent heartbeat.")
 
     async def _keep_alive(self):
         """Manages the heartbeating loop."""
         if self._heartbeat_interval is None:
-            # This should not happen if HELLO was processed correctly
+
             logger.error("Heartbeat interval not set. Cannot start keep_alive.")
             return
 
@@ -358,7 +355,7 @@ class GatewayClient:
                             del self._member_chunk_requests[nonce]
 
         elif event_name == "INTERACTION_CREATE":
-            # print(f"GATEWAY RECV INTERACTION_CREATE: {raw_event_d_payload}")
+
             if isinstance(raw_event_d_payload, dict):
                 interaction = Interaction(
                     data=raw_event_d_payload, client_instance=self._client_instance
@@ -397,7 +394,7 @@ class GatewayClient:
             event_data_to_dispatch = (
                 raw_event_d_payload if isinstance(raw_event_d_payload, dict) else {}
             )
-            # print(f"GATEWAY RECV EVENT: {event_name} | DATA: {event_data_to_dispatch}")
+
             await self._dispatcher.dispatch(event_name, event_data_to_dispatch)
         else:
             logger.warning("Received dispatch with no event name: %s", data)
@@ -496,8 +493,6 @@ class GatewayClient:
                 await self._identify()
         elif op == GatewayOpcode.HEARTBEAT_ACK:
             self._last_heartbeat_ack = time.monotonic()
-            # print("Received heartbeat ACK.")
-            pass  # Good, connection is alive
         else:
             logger.warning(
                 "Received unhandled Gateway Opcode: %s with data: %s", op, data
@@ -584,7 +579,7 @@ class GatewayClient:
             try:
                 await self._keep_alive_task
             except asyncio.CancelledError:
-                pass  # Expected
+                pass
 
         if self._receive_task and not self._receive_task.done():
             current = asyncio.current_task(loop=self._loop)
@@ -593,7 +588,7 @@ class GatewayClient:
                 try:
                     await self._receive_task
                 except asyncio.CancelledError:
-                    pass  # Expected
+                    pass
 
         if self._ws and not self._ws.closed:
             await self._ws.close(code=code)

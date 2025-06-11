@@ -1,5 +1,3 @@
-# disagreement/__init__.py
-
 """
 Disagreement
 ~~~~~~~~~~~~
@@ -31,7 +29,7 @@ from .errors import (
 )
 from .color import Color
 from .utils import utcnow, message_pager
-from .enums import GatewayIntent, GatewayOpcode  # Export enums
+from .enums import GatewayIntent, GatewayOpcode
 from .error_handler import setup_global_error_handler
 from .hybrid_context import HybridContext
 from .ext import tasks

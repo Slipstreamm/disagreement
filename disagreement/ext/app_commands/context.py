@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/context.py
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, List, Union, Any, Dict

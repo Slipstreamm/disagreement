@@ -1,5 +1,3 @@
-# disagreement/models.py
-
 """
 Data models for Discord objects.
 """
@@ -714,7 +712,7 @@ class Member(User):  # Member inherits from User
             # We'd need to construct a partial user from top-level member fields if 'user' is missing.
             # For now, assume 'user' object is present for full Member hydration.
             # If 'user' is missing, the User part might be incomplete.
-            pass  # User fields will be missing or default if 'user' not in data.
+            pass
 
         super().__init__(
             user_data if user_data else data

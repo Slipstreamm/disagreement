@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/converters.py
-
 """
 Converters for transforming application command option values.
 """
@@ -466,8 +464,8 @@ async def run_converters(
 
     # If no specific converter, and it's not a basic type match, raise error or return raw
     # For now, let's raise if no converter found for a specific option type
-    if option_type in DEFAULT_CONVERTERS:  # Should have been handled
-        pass  # This path implies a logic error above or missing converter in DEFAULT_CONVERTERS
+    if option_type in DEFAULT_CONVERTERS:
+        pass
 
     # If it's a model type but no converter yet, this will need to be handled
     # e.g. if param_type is User and option_type is ApplicationCommandOptionType.USER

@@ -1,10 +1,8 @@
-# disagreement/errors.py
-
 """
 Custom exceptions for the Disagreement library.
 """
 
-from typing import Optional, Any  # Add Optional and Any here
+from typing import Optional, Any
 
 
 class DisagreementException(Exception):

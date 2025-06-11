@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/hybrid.py
-
 from typing import Any, Callable, List, Optional
 
 from .commands import SlashCommand

@@ -1,10 +1,8 @@
-# disagreement/enums.py
-
 """
 Enums for Discord constants.
 """
 
-from enum import IntEnum, Enum  # Import Enum
+from enum import IntEnum, Enum
 
 
 class GatewayOpcode(IntEnum):

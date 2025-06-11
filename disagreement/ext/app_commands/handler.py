@@ -1,5 +1,3 @@
-# disagreement/ext/app_commands/handler.py
-
 import inspect
 import json
 import logging
@@ -341,7 +339,7 @@ class AppCommandHandler:
                     return value.lower() == "true"
                 return bool(value)
         except (ValueError, TypeError):
-            pass  # Conversion failed
+            pass
         return value  # Return as is if no specific resolution or conversion applied
 
     async def _resolve_value(
