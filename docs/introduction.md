@@ -118,14 +118,18 @@ session parameter supported by ``aiohttp``.
 Specify default mention behaviour for all outgoing messages when constructing the client:
 
 ```python
+from disagreement.models import AllowedMentions
 client = disagreement.Client(
     token=token,
-    allowed_mentions={"parse": [], "replied_user": False},
+    allowed_mentions=AllowedMentions.none().to_dict(),
 )
 ```
 
 This dictionary is used whenever ``send_message`` is called without an explicit
 ``allowed_mentions`` argument.
+
+The :class:`AllowedMentions` class offers ``none()`` and ``all()`` helpers for
+quickly generating these configurations.
 
 ### Defining Subcommands with `AppCommandGroup`
 
