@@ -843,6 +843,10 @@ class HTTPClient:
         """Fetches a user object for a given user ID."""
         return await self.request("GET", f"/users/{user_id}")
 
+    async def get_current_user_guilds(self) -> List[Dict[str, Any]]:
+        """Returns the guilds the current user is in."""
+        return await self.request("GET", "/users/@me/guilds")
+
     async def get_guild_member(
         self, guild_id: "Snowflake", user_id: "Snowflake"
     ) -> Dict[str, Any]:

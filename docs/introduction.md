@@ -161,6 +161,12 @@ guild = await client.fetch_guild("123456789012345678")
 roles = await client.fetch_roles(guild.id)
 ```
 
+To retrieve all guilds available to the bot, use `Client.fetch_guilds`.
+
+```python
+guilds = await client.fetch_guilds()
+```
+
 ## Sharding
 
 To run your bot across multiple gateway shards, pass ``shard_count`` when creating
