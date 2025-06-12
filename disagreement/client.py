@@ -539,6 +539,20 @@ class Client:
 
         return decorator
 
+    def add_listener(
+        self, event_name: str, coro: Callable[..., Awaitable[None]]
+    ) -> None:
+        """Register ``coro`` to listen for ``event_name``."""
+
+        self._event_dispatcher.register(event_name, coro)
+
+    def remove_listener(
+        self, event_name: str, coro: Callable[..., Awaitable[None]]
+    ) -> None:
+        """Remove ``coro`` from ``event_name`` listeners."""
+
+        self._event_dispatcher.unregister(event_name, coro)
+
     async def _process_message_for_commands(self, message: "Message") -> None:
         """Internal listener to process messages for commands."""
         # Make sure message object is valid and not from a bot (optional, common check)
