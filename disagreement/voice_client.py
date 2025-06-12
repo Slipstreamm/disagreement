@@ -261,3 +261,18 @@ class VoiceClient:
             self._udp_receive_thread.join(timeout=1)
         if self._sink:
             self._sink.close()
+
+    async def __aenter__(self) -> "VoiceClient":
+        """Enter the context manager by connecting to the voice gateway."""
+        await self.connect()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[type],
+        exc: Optional[BaseException],
+        tb: Optional[BaseException],
+    ) -> bool:
+        """Exit the context manager and close the connection."""
+        await self.close()
+        return False
