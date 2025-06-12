@@ -1,7 +1,7 @@
 # Events
 
-Disagreement dispatches Gateway events to asynchronous callbacks. Handlers can be registered with `@client.event` or `client.on_event`.
-Listeners may be removed later using `EventDispatcher.unregister(event_name, coro)`.
+Disagreement dispatches Gateway events to asynchronous callbacks. Handlers can be registered with `@client.event`, `client.on_event`, or `client.add_listener(event_name, coro)`.
+Listeners may be removed later using `client.remove_listener(event_name, coro)` or `EventDispatcher.unregister(event_name, coro)`.
 
 ## Raw Events
 
