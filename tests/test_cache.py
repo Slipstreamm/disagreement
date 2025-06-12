@@ -26,3 +26,42 @@ def test_cache_lru_eviction():
     assert cache.get("b") is None
     assert cache.get("a") == 1
     assert cache.get("c") == 3
+
+
+def test_get_or_fetch_uses_cache():
+    cache = Cache()
+    cache.set("a", 1)
+
+    def fetch():
+        raise AssertionError("fetch should not be called")
+
+    assert cache.get_or_fetch("a", fetch) == 1
+
+
+def test_get_or_fetch_fetches_and_stores():
+    cache = Cache()
+    called = False
+
+    def fetch():
+        nonlocal called
+        called = True
+        return 2
+
+    assert cache.get_or_fetch("b", fetch) == 2
+    assert called
+    assert cache.get("b") == 2
+
+
+def test_get_or_fetch_fetches_expired_item():
+    cache = Cache(ttl=0.01)
+    cache.set("c", 1)
+    time.sleep(0.02)
+    called = False
+
+    def fetch():
+        nonlocal called
+        called = True
+        return 3
+
+    assert cache.get_or_fetch("c", fetch) == 3
+    assert called

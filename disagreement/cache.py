@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING, Dict, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Callable, Dict, Generic, Optional, TypeVar
 from collections import OrderedDict
 
 if TYPE_CHECKING:
@@ -38,6 +38,14 @@ class Cache(Generic[T]):
             self.invalidate(key)
             return None
         self._data.move_to_end(key)
+        return value
+
+    def get_or_fetch(self, key: str, fetch_fn: Callable[[], T]) -> T:
+        """Return a cached item or fetch and store it if missing."""
+        value = self.get(key)
+        if value is None:
+            value = fetch_fn()
+            self.set(key, value)
         return value
 
     def invalidate(self, key: str) -> None:
