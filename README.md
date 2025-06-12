@@ -118,9 +118,10 @@ session parameter supported by ``aiohttp``.
 Specify default mention behaviour for all outgoing messages when constructing the client:
 
 ```python
+from disagreement.models import AllowedMentions
 client = disagreement.Client(
     token=token,
-    allowed_mentions={"parse": [], "replied_user": False},
+    allowed_mentions=AllowedMentions.none().to_dict(),
 )
 ```
 

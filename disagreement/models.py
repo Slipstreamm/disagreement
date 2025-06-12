@@ -633,6 +633,23 @@ class AllowedMentions:
         self.users: List[str] = data.get("users", [])
         self.replied_user: bool = data.get("replied_user", False)
 
+    @classmethod
+    def all(cls) -> "AllowedMentions":
+        """Return an instance allowing all mention types."""
+
+        return cls(
+            {
+                "parse": ["users", "roles", "everyone"],
+                "replied_user": True,
+            }
+        )
+
+    @classmethod
+    def none(cls) -> "AllowedMentions":
+        """Return an instance disallowing all mentions."""
+
+        return cls({"parse": [], "replied_user": False})
+
     def to_dict(self) -> Dict[str, Any]:
         payload: Dict[str, Any] = {"parse": self.parse}
         if self.roles:
