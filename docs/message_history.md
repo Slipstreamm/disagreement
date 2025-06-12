@@ -8,6 +8,9 @@ async for message in channel.history(limit=200):
     print(message.content)
 ```
 
+Each returned `Message` has a ``jump_url`` property that links directly to the
+message in the Discord client.
+
 Pass `before` or `after` to control the range of messages returned. The paginator fetches messages in batches of up to 100 until the limit is reached or Discord returns no more messages.
 
 ## Next Steps

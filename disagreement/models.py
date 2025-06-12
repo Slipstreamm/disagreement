@@ -116,6 +116,13 @@ class Message:
         # self.mention_everyone: bool = data.get("mention_everyone", False)
 
     @property
+    def jump_url(self) -> str:
+        """Return a URL that jumps to this message in the Discord client."""
+
+        guild_or_dm = self.guild_id or "@me"
+        return f"https://discord.com/channels/{guild_or_dm}/{self.channel_id}/{self.id}"
+
+    @property
     def clean_content(self) -> str:
         """Returns message content without user, role, or channel mentions."""
 

@@ -11,6 +11,7 @@ A Python library for interacting with the Discord API, with a focus on bot devel
 - Gateway and HTTP API clients
 - Slash command framework
 - Message component helpers
+- `Message.jump_url` property for quick links to messages
 - Built-in caching layer
 - Experimental voice support
 - Helpful error handling utilities
