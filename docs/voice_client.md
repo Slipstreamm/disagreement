@@ -9,15 +9,17 @@ import asyncio
 import os
 import disagreement
 
-vc = disagreement.VoiceClient(
-    os.environ["DISCORD_VOICE_ENDPOINT"],
-    os.environ["DISCORD_SESSION_ID"],
-    os.environ["DISCORD_VOICE_TOKEN"],
-    int(os.environ["DISCORD_GUILD_ID"]),
-    int(os.environ["DISCORD_USER_ID"]),
-)
+async def main():
+    async with disagreement.VoiceClient(
+        os.environ["DISCORD_VOICE_ENDPOINT"],
+        os.environ["DISCORD_SESSION_ID"],
+        os.environ["DISCORD_VOICE_TOKEN"],
+        int(os.environ["DISCORD_GUILD_ID"]),
+        int(os.environ["DISCORD_USER_ID"]),
+    ) as vc:
+        await vc.send_audio_frame(b"...")
 
-asyncio.run(vc.connect())
+asyncio.run(main())
 ```
 
 After connecting you can send raw Opus frames:
@@ -41,7 +43,7 @@ You can switch sources while connected:
 await vc.play(FFmpegAudioSource("other.mp3"))
 ```
 
-Call `await vc.close()` when finished.
+The connection will be closed automatically when leaving the `async with` block.
 
 ## Fetching Available Voice Regions
 
