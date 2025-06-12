@@ -60,6 +60,7 @@ class EventDispatcher:
             "GUILD_BAN_REMOVE": self._parse_guild_ban_remove,
             "GUILD_ROLE_UPDATE": self._parse_guild_role_update,
             "TYPING_START": self._parse_typing_start,
+            "VOICE_STATE_UPDATE": self._parse_voice_state_update,
         }
 
     def _parse_message_create(self, data: Dict[str, Any]) -> Message:
@@ -110,6 +111,13 @@ class EventDispatcher:
         from .models import TypingStart
 
         return TypingStart(data, client_instance=self._client)
+
+    def _parse_voice_state_update(self, data: Dict[str, Any]):
+        """Parses raw VOICE_STATE_UPDATE data into a VoiceStateUpdate object."""
+
+        from .models import VoiceStateUpdate
+
+        return VoiceStateUpdate(data, client_instance=self._client)
 
     def _parse_message_reaction(self, data: Dict[str, Any]):
         """Parses raw reaction data into a Reaction object."""
