@@ -2486,6 +2486,35 @@ class TypingStart:
         return f"<TypingStart channel_id='{self.channel_id}' user_id='{self.user_id}'>"
 
 
+class VoiceStateUpdate:
+    """Represents a VOICE_STATE_UPDATE event."""
+
+    def __init__(
+        self, data: Dict[str, Any], client_instance: Optional["Client"] = None
+    ):
+        self._client = client_instance
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.channel_id: Optional[str] = data.get("channel_id")
+        self.user_id: str = data["user_id"]
+        self.member: Optional[Member] = (
+            Member(data["member"], client_instance) if data.get("member") else None
+        )
+        self.session_id: str = data["session_id"]
+        self.deaf: bool = data.get("deaf", False)
+        self.mute: bool = data.get("mute", False)
+        self.self_deaf: bool = data.get("self_deaf", False)
+        self.self_mute: bool = data.get("self_mute", False)
+        self.self_stream: Optional[bool] = data.get("self_stream")
+        self.self_video: bool = data.get("self_video", False)
+        self.suppress: bool = data.get("suppress", False)
+
+    def __repr__(self) -> str:
+        return (
+            f"<VoiceStateUpdate guild_id='{self.guild_id}' user_id='{self.user_id}' "
+            f"channel_id='{self.channel_id}'>"
+        )
+
+
 class Reaction:
     """Represents a message reaction event."""
 
