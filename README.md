@@ -157,6 +157,14 @@ guild = await client.fetch_guild("123456789012345678")
 roles = await client.fetch_roles(guild.id)
 ```
 
+Call `Client.fetch_guilds` to list all guilds the current user has access to.
+
+```python
+guilds = await client.fetch_guilds()
+for g in guilds:
+    print(g.name)
+```
+
 ## Sharding
 
 To run your bot across multiple gateway shards, pass ``shard_count`` when creating

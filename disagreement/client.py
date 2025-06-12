@@ -1328,6 +1328,18 @@ class Client:
             print(f"Failed to fetch guild {guild_id}: {e}")
             return None
 
+    async def fetch_guilds(self) -> List["Guild"]:
+        """Fetch all guilds the current user is in."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        data = await self._http.get_current_user_guilds()
+        guilds: List["Guild"] = []
+        for guild_data in data:
+            guilds.append(self.parse_guild(guild_data))
+        return guilds
+
     async def fetch_channel(self, channel_id: Snowflake) -> Optional["Channel"]:
         """Fetches a channel from Discord by its ID and updates the cache."""
 

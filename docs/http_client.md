@@ -18,3 +18,14 @@ client = Client(
 These options are passed through to `aiohttp.ClientSession` when the session is
 created. You can set a proxy URL, provide a custom connector, or supply any
 other supported session argument.
+
+## Get Current User Guilds
+
+The HTTP client can list the guilds the bot user is in:
+
+```python
+from disagreement.http import HTTPClient
+
+http = HTTPClient(token="TOKEN")
+guilds = await http.get_current_user_guilds()
+```
