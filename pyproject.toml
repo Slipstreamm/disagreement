@@ -34,8 +34,6 @@ test = [
     "pytest>=8.0.0",
     "pytest-asyncio>=1.0.0",
     "hypothesis>=6.132.0",
-    "aiohttp",
-    "python-dotenv",
 ]
 dev = [
     "python-dotenv>=1.0.0",

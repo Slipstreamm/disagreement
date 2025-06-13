@@ -36,7 +36,11 @@ jobs:
           pip install -e .
       
       - name: Run Pyright
-        run: pyright
+        run: |
+          source venv/bin/activate
+          pyright
 
       - name: Run Tests
-        run: pytest tests/
+        run: |
+          source venv/bin/activate
+          pytest tests/
