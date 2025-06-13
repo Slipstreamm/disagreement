@@ -1,6 +1,6 @@
 {
   "include": ["."],
-  "exclude": ["**/node_modules", "**/__pycache__", "**/.venv", "**/.git", "**/dist", "**/build", "**/tests/**", "tavilytool.py"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/.venv", "**/venv", "**/.git", "**/dist", "**/build", "**/tests/**", "tavilytool.py"],
   "ignore": [],
   "reportMissingImports": true,
   "reportMissingTypeStubs": false,
