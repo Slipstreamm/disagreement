@@ -38,6 +38,35 @@ from .logging_config import setup_logging
 import logging
 
 
+__all__ = [
+    "Client",
+    "AutoShardedClient",
+    "Message",
+    "User",
+    "Reaction",
+    "AuditLogEntry",
+    "VoiceClient",
+    "AudioSource",
+    "FFmpegAudioSource",
+    "Typing",
+    "DisagreementException",
+    "HTTPException",
+    "GatewayException",
+    "AuthenticationError",
+    "Forbidden",
+    "NotFound",
+    "Color",
+    "utcnow",
+    "message_pager",
+    "GatewayIntent",
+    "GatewayOpcode",
+    "setup_global_error_handler",
+    "HybridContext",
+    "tasks",
+    "setup_logging",
+]
+
+
 # Configure a default logger if none has been configured yet
 if not logging.getLogger().hasHandlers():
     setup_logging(logging.INFO)
