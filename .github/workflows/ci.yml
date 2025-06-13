@@ -24,20 +24,10 @@ jobs:
     runs-on: self-hosted
     container:
       image: ghcr.io/slipstreamm/disagreement-image:latest
-      options: --user 1001:1001 --network host
+      network: host
+      options: --user 1001:1001
 
     steps:
-      - name: Who am I
-        run: id
-      - name: Check DNS
-        run: nslookup github.com
-      - name: Try git clone
-        run: |
-          apk add --no-cache git ca-certificates
-          git clone https://github.com/Slipstreamm/disagreement.git /tmp/testclone
-      - name: Test outbound TCP 443
-        run: apk add --no-cache busybox-extras && timeout 5 nc -vz github.com 443 || echo "connection failed"
-
       - name: Checkout code
         uses: actions/checkout@v4
 
