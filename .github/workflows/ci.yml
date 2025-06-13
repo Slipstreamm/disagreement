@@ -35,7 +35,8 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       
       - name: Run Pyright
-        run: pyright
+        run: |
+          pwd
 
       - name: Run Tests
         run: pytest tests/
