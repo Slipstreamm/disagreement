@@ -24,7 +24,7 @@ jobs:
     runs-on: self-hosted
     container:
       image: ghcr.io/slipstreamm/disagreement-image:latest
-      options: --user 1001:1001
+      options: --user 1001:1001 --network host
 
     steps:
       - name: Who am I
@@ -38,7 +38,6 @@ jobs:
       - name: Test outbound TCP 443
         run: apk add --no-cache busybox-extras && timeout 5 nc -vz github.com 443 || echo "connection failed"
 
-    
       - name: Checkout code
         uses: actions/checkout@v4
 
