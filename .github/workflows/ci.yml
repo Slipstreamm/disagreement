@@ -27,6 +27,17 @@ jobs:
       options: --user 1001:1001
 
     steps:
+      - name: Who am I
+        run: id
+      - name: Check DNS
+        run: nslookup github.com
+      - name: Ping github.com
+        run: ping -c 2 github.com
+      - name: Try git clone
+        run: |
+          apk add --no-cache git ca-certificates
+          git clone https://github.com/Slipstreamm/disagreement.git /tmp/testclone
+    
       - name: Checkout code
         uses: actions/checkout@v4
 
