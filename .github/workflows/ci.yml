@@ -37,6 +37,9 @@ jobs:
         run: |
           apk add --no-cache git ca-certificates
           git clone https://github.com/Slipstreamm/disagreement.git /tmp/testclone
+      - name: Test outbound TCP 443
+        run: apk add --no-cache busybox-extras && timeout 5 nc -vz github.com 443 || echo "connection failed"
+
     
       - name: Checkout code
         uses: actions/checkout@v4
