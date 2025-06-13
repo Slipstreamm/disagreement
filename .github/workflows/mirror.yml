@@ -3,11 +3,12 @@ name: Mirror to Gitea
 on:
   push:
     branches:
-      - master  # or change to your default branch
+      - master
 
 jobs:
   mirror:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3

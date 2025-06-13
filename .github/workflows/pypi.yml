@@ -3,14 +3,14 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - 'v*'  # only trigger on version tags like v1.0.0
+      - 'v*'
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     permissions:
-      id-token: write  # required for trusted publishing, if used
+      id-token: write
       contents: read
 
     steps:
@@ -27,17 +27,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          source venv/bin/activate
           pip install build twine
 
       - name: Build package
         run: |
+          source venv/bin/activate
           python -m build
 
       - name: Publish to PyPI
@@ -45,4 +47,5 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
+          source venv/bin/activate
           python -m twine upload dist/*
