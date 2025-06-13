@@ -253,6 +253,8 @@ class AppCommandContext:
             Optional[Message]: The sent message object if a new message was created and not ephemeral.
                                None if the response was ephemeral or an edit to a deferred message.
         """
+        if allowed_mentions is None:
+            allowed_mentions = getattr(self.bot, "allowed_mentions", None)
         if not self._responded and self._deferred:  # Editing a deferred response
             # Use edit_original_interaction_response
             payload: Dict[str, Any] = {}
@@ -393,6 +395,9 @@ class AppCommandContext:
                 "Must acknowledge or defer the interaction before sending a followup."
             )
 
+        if allowed_mentions is None:
+            allowed_mentions = getattr(self.bot, "allowed_mentions", None)
+
         payload: Dict[str, Any] = {}
         if content is not None:
             payload["content"] = content
@@ -472,6 +477,9 @@ class AppCommandContext:
             raise RuntimeError(
                 "Cannot edit response if interaction hasn't been responded to or deferred."
             )
+
+        if allowed_mentions is None:
+            allowed_mentions = getattr(self.bot, "allowed_mentions", None)
 
         payload: Dict[str, Any] = {}
         if content is not None:

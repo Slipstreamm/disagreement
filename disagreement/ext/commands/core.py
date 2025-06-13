@@ -255,10 +255,10 @@ class CommandContext:
             mention_author = getattr(self.bot, "mention_replies", False)
 
         if allowed_mentions is None:
-            allowed_mentions = {"replied_user": mention_author}
+            allowed_mentions = dict(getattr(self.bot, "allowed_mentions", {}) or {})
         else:
             allowed_mentions = dict(allowed_mentions)
-            allowed_mentions.setdefault("replied_user", mention_author)
+        allowed_mentions.setdefault("replied_user", mention_author)
 
         return await self.bot.send_message(
             channel_id=self.message.channel_id,
