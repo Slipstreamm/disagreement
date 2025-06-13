@@ -31,8 +31,6 @@ jobs:
         run: id
       - name: Check DNS
         run: nslookup github.com
-      - name: Ping github.com
-        run: ping -c 2 github.com
       - name: Try git clone
         run: |
           apk add --no-cache git ca-certificates
