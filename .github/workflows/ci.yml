@@ -36,8 +36,7 @@ jobs:
           pip install -e .
       
       - name: Run Pyright
-        run: |
-          pyright
+        run: pyright
 
       - name: Run Tests
         run: pytest tests/
