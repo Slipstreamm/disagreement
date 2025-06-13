@@ -24,5 +24,7 @@ jobs:
         env:
           MIRROR_PAT: ${{ secrets.MIRROR_PAT }}
         run: |
-          git remote add mirror https://slipstream:${MIRROR_PAT}@git.slipstreamm.dev/slipstream/disagreement.git
+          if ! git remote | grep -q "^mirror$"; then
+            git remote add mirror https://slipstream:${MIRROR_PAT}@git.slipstreamm.dev/slipstream/disagreement.git
+          fi
           git push --mirror mirror
