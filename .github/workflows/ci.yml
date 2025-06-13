@@ -24,7 +24,7 @@ jobs:
     runs-on: self-hosted
     container:
       image: ghcr.io/slipstreamm/disagreement-image:latest
-      options: --user runneruser
+      options: --user 1001:1001
 
     steps:
       - name: Checkout code
