@@ -126,8 +126,8 @@ client = disagreement.Client(
 )
 ```
 
-This dictionary is used whenever ``send_message`` is called without an explicit
-``allowed_mentions`` argument.
+This dictionary is used whenever ``send_message`` or helpers like ``Message.reply``
+are called without an explicit ``allowed_mentions`` argument.
 
 ### Defining Subcommands with `AppCommandGroup`
 

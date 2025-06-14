@@ -15,7 +15,8 @@ client = disagreement.Client(
 )
 ```
 
-When ``Client.send_message`` is called without an explicit ``allowed_mentions``
+When ``Client.send_message`` or convenience methods like ``Message.reply`` and
+``CommandContext.reply`` are called without an explicit ``allowed_mentions``
 argument this value will be used.
 
 ``AllowedMentions`` also provides the convenience methods

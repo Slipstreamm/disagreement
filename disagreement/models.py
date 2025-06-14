@@ -198,10 +198,10 @@ class Message:
             mention_author = getattr(self._client, "mention_replies", False)
 
         if allowed_mentions is None:
-            allowed_mentions = {"replied_user": mention_author}
+            allowed_mentions = dict(getattr(self._client, "allowed_mentions", {}) or {})
         else:
             allowed_mentions = dict(allowed_mentions)
-            allowed_mentions.setdefault("replied_user", mention_author)
+        allowed_mentions.setdefault("replied_user", mention_author)
 
         # Client.send_message is already updated to handle these parameters
         return await self._client.send_message(
