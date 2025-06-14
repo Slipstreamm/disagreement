@@ -1540,8 +1540,8 @@ client = disagreement.Client(
     allowed_mentions=AllowedMentions.none().to_dict(),
 )
 </code></pre>
-<p>This dictionary is used whenever <code>send_message</code> is called without an explicit
-<code>allowed_mentions</code> argument.</p>
+<p>This dictionary is used whenever <code>send_message</code> or helpers like <code>Message.reply</code>
+are called without an explicit <code>allowed_mentions</code> argument.</p>
 <p>The :class:<code>AllowedMentions</code> class offers <code>none()</code> and <code>all()</code> helpers for
 quickly generating these configurations.</p>
 <h3 id="defining-subcommands-with-appcommandgroup">Defining Subcommands with <code>AppCommandGroup</code></h3>

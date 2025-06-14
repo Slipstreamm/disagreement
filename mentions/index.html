@@ -1352,7 +1352,8 @@ client = disagreement.Client(
     allowed_mentions=AllowedMentions.none().to_dict(),
 )
 </code></pre>
-<p>When <code>Client.send_message</code> is called without an explicit <code>allowed_mentions</code>
+<p>When <code>Client.send_message</code> or convenience methods like <code>Message.reply</code> and
+<code>CommandContext.reply</code> are called without an explicit <code>allowed_mentions</code>
 argument this value will be used.</p>
 <p><code>AllowedMentions</code> also provides the convenience methods
 <code>AllowedMentions.none()</code> and <code>AllowedMentions.all()</code> to quickly create
