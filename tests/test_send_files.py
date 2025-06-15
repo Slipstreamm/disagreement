@@ -1,3 +1,4 @@
+import io
 import pytest
 from unittest.mock import AsyncMock
 
@@ -38,7 +39,9 @@ async def test_http_send_message_with_files_uses_formdata():
             "timestamp": "t",
         }
     )
-    await http.send_message("c", "hi", files=[File("f.txt", b"data")])
+    await http.send_message(
+        "c", "hi", files=[File(io.BytesIO(b"data"), filename="f.txt")]
+    )
     args, kwargs = http.request.call_args
     assert kwargs["is_json"] is False
 
@@ -75,7 +78,33 @@ async def test_client_send_message_passes_files():
             "timestamp": "t",
         }
     )
-    await client.send_message("c", "hi", files=[File("f.txt", b"data")])
+    await client.send_message(
+        "c", "hi", files=[File(io.BytesIO(b"data"), filename="f.txt")]
+    )
     client._http.send_message.assert_awaited_once()
     kwargs = client._http.send_message.call_args.kwargs
     assert kwargs["files"][0].filename == "f.txt"
+
+
+@pytest.mark.asyncio
+async def test_file_from_path(tmp_path):
+    file_path = tmp_path / "path.txt"
+    file_path.write_bytes(b"ok")
+    http = HTTPClient(token="t")
+    http.request = AsyncMock(
+        return_value={
+            "id": "1",
+            "channel_id": "c",
+            "author": {"id": "2", "username": "u", "discriminator": "0001"},
+            "content": "hi",
+            "timestamp": "t",
+        }
+    )
+    await http.send_message("c", "hi", files=[File(file_path)])
+    _, kwargs = http.request.call_args
+    assert kwargs["is_json"] is False
+
+
+def test_file_spoiler():
+    f = File(io.BytesIO(b"d"), filename="a.txt", spoiler=True)
+    assert f.filename == "SPOILER_a.txt"

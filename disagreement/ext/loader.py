@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 from importlib import import_module
+import inspect
 import sys
 from types import ModuleType
-from typing import Dict
+from typing import Any, Coroutine, Dict, cast
 
 __all__ = ["load_extension", "unload_extension", "reload_extension"]
 
@@ -25,7 +27,20 @@ def load_extension(name: str) -> ModuleType:
     if not hasattr(module, "setup"):
         raise ImportError(f"Extension '{name}' does not define a setup function")
 
-    module.setup()
+    result = module.setup()
+    if inspect.isawaitable(result):
+        coro = cast(Coroutine[Any, Any, Any], result)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(coro)
+        else:
+            if loop.is_running():
+                future = asyncio.run_coroutine_threadsafe(coro, loop)
+                future.result()
+            else:
+                loop.run_until_complete(coro)
+
     _loaded_extensions[name] = module
     return module
 

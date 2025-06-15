@@ -3,10 +3,22 @@ Data models for Discord objects.
 """
 
 import asyncio
+import io
 import json
+import os
 import re
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    List,
+    Optional,
+    TYPE_CHECKING,
+    Union,
+    cast,
+    IO,
+)
 
 from .cache import ChannelCache, MemberCache
 from .caching import MemberCacheFlags
@@ -40,6 +52,7 @@ if TYPE_CHECKING:
     from .ui.view import View
     from .interactions import Snowflake
     from .typing import Typing
+    from .shard_manager import Shard
 
     # Forward reference Message if it were used in type hints before its definition
     # from .models import Message # Not needed as Message is defined before its use in TextChannel.send etc.
@@ -635,11 +648,45 @@ class Attachment:
 
 
 class File:
-    """Represents a file to be uploaded."""
+    """Represents a file to be uploaded.
 
-    def __init__(self, filename: str, data: bytes):
-        self.filename = filename
-        self.data = data
+    Parameters
+    ----------
+    fp:
+        A file path, file-like object, or bytes-like object containing the
+        data to upload.
+    filename:
+        Optional name of the file. If not provided and ``fp`` is a path or has
+        a ``name`` attribute, the name will be inferred.
+    spoiler:
+        When ``True`` the filename will be prefixed with ``"SPOILER_"``.
+    """
+
+    def __init__(
+        self,
+        fp: Union[str, bytes, os.PathLike[Any], IO[bytes]],
+        *,
+        filename: Optional[str] = None,
+        spoiler: bool = False,
+    ) -> None:
+        if isinstance(fp, (str, os.PathLike)):
+            self.data = open(fp, "rb")
+            inferred = os.path.basename(fp)
+        elif isinstance(fp, bytes):
+            self.data = io.BytesIO(fp)
+            inferred = None
+        else:
+            self.data = fp
+            inferred = getattr(fp, "name", None)
+
+        name = filename or inferred
+        if name is None:
+            raise ValueError("filename could not be inferred")
+
+        if spoiler and not name.startswith("SPOILER_"):
+            name = f"SPOILER_{name}"
+        self.filename = name
+        self.spoiler = spoiler
 
 
 class AllowedMentions:
@@ -1084,10 +1131,22 @@ class Guild:
         nsfw_level (GuildNSFWLevel): Guild NSFW level.
         stickers (Optional[List[Dict]]): Custom stickers in the guild. (Consider a Sticker model)
         premium_progress_bar_enabled (bool): Whether the guild has the premium progress bar enabled.
+        text_channels (List[TextChannel]): List of text-based channels in this guild.
+        voice_channels (List[VoiceChannel]): List of voice-based channels in this guild.
+        category_channels (List[CategoryChannel]): List of category channels in this guild.
     """
 
-    def __init__(self, data: Dict[str, Any], client_instance: "Client"):
+    def __init__(
+        self,
+        data: Dict[str, Any],
+        client_instance: "Client",
+        *,
+        shard_id: Optional[int] = None,
+    ):
         self._client: "Client" = client_instance
+        self._shard_id: Optional[int] = (
+            shard_id if shard_id is not None else data.get("shard_id")
+        )
         self.id: str = data["id"]
         self.name: str = data["name"]
         self.icon: Optional[str] = data.get("icon")
@@ -1168,6 +1227,28 @@ class Guild:
             getattr(client_instance, "member_cache_flags", MemberCacheFlags())
         )
         self._threads: Dict[str, "Thread"] = {}
+        self.text_channels: List["TextChannel"] = []
+        self.voice_channels: List["VoiceChannel"] = []
+        self.category_channels: List["CategoryChannel"] = []
+
+    @property
+    def shard_id(self) -> Optional[int]:
+        """ID of the shard that received this guild, if any."""
+
+        return self._shard_id
+
+    @property
+    def shard(self) -> Optional["Shard"]:
+        """The :class:`Shard` this guild belongs to."""
+
+        if self._shard_id is None:
+            return None
+        manager = getattr(self._client, "_shard_manager", None)
+        if not manager:
+            return None
+        if 0 <= self._shard_id < len(manager.shards):
+            return manager.shards[self._shard_id]
+        return None
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:
         return self._channels.get(channel_id)
@@ -2638,6 +2719,18 @@ class Invite:
 
     def __repr__(self) -> str:
         return f"<Invite code='{self.code}' guild_id='{self.guild_id}' channel_id='{self.channel_id}'>"
+
+
+class InviteDelete:
+    """Represents an INVITE_DELETE event."""
+
+    def __init__(self, data: Dict[str, Any]):
+        self.channel_id: str = data["channel_id"]
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.code: str = data["code"]
+
+    def __repr__(self) -> str:
+        return f"<InviteDelete code='{self.code}' guild_id='{self.guild_id}' channel_id='{self.channel_id}'>"
 
 
 class GuildMemberRemove:
