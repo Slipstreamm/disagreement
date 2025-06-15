@@ -14,6 +14,7 @@ from typing import (
     Union,
     List,
     Dict,
+    cast,
 )
 from types import ModuleType
 
@@ -754,7 +755,7 @@ class Client:
         """Parses user data and returns a User object, updating cache."""
         from .models import User  # Ensure User model is available
 
-        user = User(data)
+        user = User(data, client_instance=self)
         self._users.set(user.id, user)  # Cache the user
         return user
 
@@ -1106,6 +1107,23 @@ class Client:
             self._views[message_id] = view
 
         return self.parse_message(message_data)
+
+    async def create_dm(self, user_id: Snowflake) -> "DMChannel":
+        """|coro| Create or fetch a DM channel with a user."""
+        from .models import DMChannel
+
+        dm_data = await self._http.create_dm(user_id)
+        return cast(DMChannel, self.parse_channel(dm_data))
+
+    async def send_dm(
+        self,
+        user_id: Snowflake,
+        content: Optional[str] = None,
+        **kwargs: Any,
+    ) -> "Message":
+        """|coro| Convenience method to send a direct message to a user."""
+        channel = await self.create_dm(user_id)
+        return await self.send_message(channel.id, content=content, **kwargs)
 
     def typing(self, channel_id: str) -> Typing:
         """Return a context manager to show a typing indicator in a channel."""
