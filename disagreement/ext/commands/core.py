@@ -366,6 +366,11 @@ class CommandHandler:
     def get_command(self, name: str) -> Optional[Command]:
         return self.commands.get(name.lower())
 
+    def get_cog(self, name: str) -> Optional["Cog"]:
+        """Return a loaded cog by name if present."""
+
+        return self.cogs.get(name)
+
     def add_cog(self, cog_to_add: "Cog") -> None:
         from .cog import Cog
 

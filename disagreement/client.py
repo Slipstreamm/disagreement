@@ -653,6 +653,11 @@ class Client:
             # For now, assuming name is sufficient for removal from the handler's flat list.
         return removed_cog
 
+    def get_cog(self, name: str) -> Optional[Cog]:
+        """Return a loaded cog by name if present."""
+
+        return self.command_handler.get_cog(name)
+
     def check(self, coro: Callable[["CommandContext"], Awaitable[bool]]):
         """
         A decorator that adds a global check to the bot.

@@ -62,6 +62,8 @@ intents = GatewayIntent.default() | GatewayIntent.MESSAGE_CONTENT
 client = Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
 async def main() -> None:
     client.add_cog(Basics(client))
+    # Retrieve the cog later by name
+    basics = client.get_cog("Basics")
     await client.run()
 
 
