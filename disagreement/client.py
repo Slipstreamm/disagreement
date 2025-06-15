@@ -90,6 +90,9 @@ class Client:
             :class:`aiohttp.ClientSession`.
         message_cache_maxlen (Optional[int]): Maximum number of messages to keep
             in the cache. When ``None``, the cache size is unlimited.
+        sync_commands_on_ready (bool): If ``True``, automatically call
+            :meth:`Client.sync_application_commands` after the ``READY`` event
+            when :attr:`Client.application_id` is available.
     """
 
     def __init__(
@@ -110,6 +113,7 @@ class Client:
         member_cache_flags: Optional[MemberCacheFlags] = None,
         message_cache_maxlen: Optional[int] = None,
         http_options: Optional[Dict[str, Any]] = None,
+        sync_commands_on_ready: bool = True,
     ):
         if not token:
             raise ValueError("A bot token must be provided.")
@@ -177,6 +181,7 @@ class Client:
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
         self.allowed_mentions: Optional[Dict[str, Any]] = allowed_mentions
+        self.sync_commands_on_ready: bool = sync_commands_on_ready
 
         # Basic signal handling for graceful shutdown
         # This might be better handled by the user's application code, but can be a nice default.
