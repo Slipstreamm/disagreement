@@ -339,6 +339,12 @@ class GatewayClient:
             logger.info("Client is now marked as ready.")
 
             await self._dispatcher.dispatch(event_name, raw_event_d_payload)
+
+            if (
+                getattr(self._client_instance, "sync_commands_on_ready", True)
+                and self._client_instance.application_id
+            ):
+                asyncio.create_task(self._client_instance.sync_application_commands())
         elif event_name == "GUILD_MEMBERS_CHUNK":
             if isinstance(raw_event_d_payload, dict):
                 nonce = raw_event_d_payload.get("nonce")
