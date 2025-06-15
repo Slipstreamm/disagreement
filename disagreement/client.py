@@ -416,6 +416,11 @@ class Client:
         latency = getattr(self._gateway, "latency_ms", None)
         return round(latency, 2) if latency is not None else None
 
+    @property
+    def guilds(self) -> List["Guild"]:
+        """Returns all guilds from the internal cache."""
+        return self._guilds.values()
+
     async def wait_until_ready(self) -> None:
         """|coro|
         Waits until the client is fully connected to Discord and the initial state is processed.
