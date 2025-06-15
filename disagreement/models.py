@@ -3,10 +3,22 @@ Data models for Discord objects.
 """
 
 import asyncio
+import io
 import json
+import os
 import re
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, List, Optional, TYPE_CHECKING, Union, cast
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    List,
+    Optional,
+    TYPE_CHECKING,
+    Union,
+    cast,
+    IO,
+)
 
 from .cache import ChannelCache, MemberCache
 from .caching import MemberCacheFlags
@@ -636,11 +648,45 @@ class Attachment:
 
 
 class File:
-    """Represents a file to be uploaded."""
+    """Represents a file to be uploaded.
 
-    def __init__(self, filename: str, data: bytes):
-        self.filename = filename
-        self.data = data
+    Parameters
+    ----------
+    fp:
+        A file path, file-like object, or bytes-like object containing the
+        data to upload.
+    filename:
+        Optional name of the file. If not provided and ``fp`` is a path or has
+        a ``name`` attribute, the name will be inferred.
+    spoiler:
+        When ``True`` the filename will be prefixed with ``"SPOILER_"``.
+    """
+
+    def __init__(
+        self,
+        fp: Union[str, bytes, os.PathLike[Any], IO[bytes]],
+        *,
+        filename: Optional[str] = None,
+        spoiler: bool = False,
+    ) -> None:
+        if isinstance(fp, (str, os.PathLike)):
+            self.data = open(fp, "rb")
+            inferred = os.path.basename(fp)
+        elif isinstance(fp, bytes):
+            self.data = io.BytesIO(fp)
+            inferred = None
+        else:
+            self.data = fp
+            inferred = getattr(fp, "name", None)
+
+        name = filename or inferred
+        if name is None:
+            raise ValueError("filename could not be inferred")
+
+        if spoiler and not name.startswith("SPOILER_"):
+            name = f"SPOILER_{name}"
+        self.filename = name
+        self.spoiler = spoiler
 
 
 class AllowedMentions:
