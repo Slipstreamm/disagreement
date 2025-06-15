@@ -569,6 +569,7 @@ class GatewayClient:
             await self._dispatcher.dispatch(
                 "SHARD_CONNECT", {"shard_id": self._shard_id}
             )
+            await self._dispatcher.dispatch("CONNECT", {"shard_id": self._shard_id})
 
         except aiohttp.ClientConnectorError as e:
             raise GatewayException(
@@ -624,6 +625,7 @@ class GatewayClient:
         await self._dispatcher.dispatch(
             "SHARD_DISCONNECT", {"shard_id": self._shard_id}
         )
+        await self._dispatcher.dispatch("DISCONNECT", {"shard_id": self._shard_id})
 
     @property
     def latency(self) -> Optional[float]:
