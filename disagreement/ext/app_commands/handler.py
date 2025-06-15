@@ -18,51 +18,23 @@ from typing import (
 if TYPE_CHECKING:
     from disagreement.client import Client
     from disagreement.interactions import Interaction, ResolvedData, Snowflake
-    from disagreement.enums import (
-        ApplicationCommandType,
-        ApplicationCommandOptionType,
-        InteractionType,
-    )
-    from .commands import (
-        AppCommand,
-        SlashCommand,
-        UserCommand,
-        MessageCommand,
-        AppCommandGroup,
-    )
-    from .context import AppCommandContext
-    from disagreement.models import (
-        User,
-        Member,
-        Role,
-        Attachment,
-        Message,
-    )  # For resolved data
 
-    # Channel models would also go here
+from disagreement.enums import (
+    ApplicationCommandType,
+    ApplicationCommandOptionType,
+    InteractionType,
+)
+from .commands import (
+    AppCommand,
+    SlashCommand,
+    UserCommand,
+    MessageCommand,
+    AppCommandGroup,
+)
+from .context import AppCommandContext
+from disagreement.models import User, Member, Role, Attachment, Message
 
-# Placeholder for models not yet fully defined or imported
-if not TYPE_CHECKING:
-    from disagreement.enums import (
-        ApplicationCommandType,
-        ApplicationCommandOptionType,
-        InteractionType,
-    )
-    from .commands import (
-        AppCommand,
-        SlashCommand,
-        UserCommand,
-        MessageCommand,
-        AppCommandGroup,
-    )
-    from .context import AppCommandContext
-
-    User = Any
-    Member = Any
-    Role = Any
-    Attachment = Any
-    Channel = Any
-    Message = Any
+Channel = Any
 
 
 logger = logging.getLogger(__name__)
