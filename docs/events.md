@@ -132,6 +132,28 @@ async def on_shard_resume(info: dict):
     ...
 ```
 
+## CONNECT
+
+Dispatched when the WebSocket connection opens. The callback receives a
+dictionary with the shard ID.
+
+```python
+@client.event
+async def on_connect(info: dict):
+    print("connected", info.get("shard_id"))
+```
+
+## DISCONNECT
+
+Fired when the WebSocket connection closes. The callback receives a dictionary
+with the shard ID.
+
+```python
+@client.event
+async def on_disconnect(info: dict):
+    ...
+```
+
 ## VOICE_STATE_UPDATE
 
 Triggered when a user's voice connection state changes, such as joining or leaving a voice channel. The callback receives a `VoiceStateUpdate` model.

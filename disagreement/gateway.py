@@ -338,7 +338,15 @@ class GatewayClient:
             self._client_instance._ready_event.set()
             logger.info("Client is now marked as ready.")
 
+            if isinstance(raw_event_d_payload, dict) and self._shard_id is not None:
+                raw_event_d_payload["shard_id"] = self._shard_id
             await self._dispatcher.dispatch(event_name, raw_event_d_payload)
+
+            if (
+                getattr(self._client_instance, "sync_commands_on_ready", True)
+                and self._client_instance.application_id
+            ):
+                asyncio.create_task(self._client_instance.sync_application_commands())
         elif event_name == "GUILD_MEMBERS_CHUNK":
             if isinstance(raw_event_d_payload, dict):
                 nonce = raw_event_d_payload.get("nonce")
@@ -388,6 +396,8 @@ class GatewayClient:
             event_data_to_dispatch = (
                 raw_event_d_payload if isinstance(raw_event_d_payload, dict) else {}
             )
+            if isinstance(event_data_to_dispatch, dict) and self._shard_id is not None:
+                event_data_to_dispatch["shard_id"] = self._shard_id
             await self._dispatcher.dispatch(event_name, event_data_to_dispatch)
             await self._dispatcher.dispatch(
                 "SHARD_RESUME", {"shard_id": self._shard_id}
@@ -398,6 +408,8 @@ class GatewayClient:
             event_data_to_dispatch = (
                 raw_event_d_payload if isinstance(raw_event_d_payload, dict) else {}
             )
+            if isinstance(event_data_to_dispatch, dict) and self._shard_id is not None:
+                event_data_to_dispatch["shard_id"] = self._shard_id
 
             await self._dispatcher.dispatch(event_name, event_data_to_dispatch)
         else:
@@ -557,6 +569,7 @@ class GatewayClient:
             await self._dispatcher.dispatch(
                 "SHARD_CONNECT", {"shard_id": self._shard_id}
             )
+            await self._dispatcher.dispatch("CONNECT", {"shard_id": self._shard_id})
 
         except aiohttp.ClientConnectorError as e:
             raise GatewayException(
@@ -612,6 +625,7 @@ class GatewayClient:
         await self._dispatcher.dispatch(
             "SHARD_DISCONNECT", {"shard_id": self._shard_id}
         )
+        await self._dispatcher.dispatch("DISCONNECT", {"shard_id": self._shard_id})
 
     @property
     def latency(self) -> Optional[float]:

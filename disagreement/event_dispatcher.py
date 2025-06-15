@@ -61,6 +61,11 @@ class EventDispatcher:
             "GUILD_ROLE_UPDATE": self._parse_guild_role_update,
             "TYPING_START": self._parse_typing_start,
             "VOICE_STATE_UPDATE": self._parse_voice_state_update,
+            "THREAD_CREATE": self._parse_thread_create,
+            "THREAD_UPDATE": self._parse_thread_update,
+            "THREAD_DELETE": self._parse_thread_delete,
+            "INVITE_CREATE": self._parse_invite_create,
+            "INVITE_DELETE": self._parse_invite_delete,
         }
 
     def _parse_message_create(self, data: Dict[str, Any]) -> Message:
@@ -164,6 +169,43 @@ class EventDispatcher:
         from .models import GuildRoleUpdate
 
         return GuildRoleUpdate(data, client_instance=self._client)
+
+    def _parse_thread_create(self, data: Dict[str, Any]):
+        """Parses THREAD_CREATE into a Thread object and updates caches."""
+
+        return self._client.parse_channel(data)
+
+    def _parse_thread_update(self, data: Dict[str, Any]):
+        """Parses THREAD_UPDATE into a Thread object."""
+
+        return self._client.parse_channel(data)
+
+    def _parse_thread_delete(self, data: Dict[str, Any]):
+        """Parses THREAD_DELETE, removing the thread from caches."""
+
+        thread = self._client.parse_channel(data)
+        thread_id = data.get("id")
+        if thread_id:
+            self._client._channels.invalidate(thread_id)
+            guild_id = data.get("guild_id")
+            if guild_id:
+                guild = self._client._guilds.get(guild_id)
+                if guild:
+                    guild._channels.invalidate(thread_id)
+                    guild._threads.pop(thread_id, None)
+        return thread
+
+    def _parse_invite_create(self, data: Dict[str, Any]):
+        """Parses INVITE_CREATE into an Invite object."""
+
+        return self._client.parse_invite(data)
+
+    def _parse_invite_delete(self, data: Dict[str, Any]):
+        """Parses INVITE_DELETE into an InviteDelete model."""
+
+        from .models import InviteDelete
+
+        return InviteDelete(data)
 
     # Potentially add _parse_user for events that directly provide a full user object
     # def _parse_user_update(self, data: Dict[str, Any]) -> User:
