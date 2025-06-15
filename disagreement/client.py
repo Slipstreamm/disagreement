@@ -65,6 +65,15 @@ if TYPE_CHECKING:
     from .ext.app_commands.commands import AppCommand, AppCommandGroup
 
 
+def _update_list(lst: List[Any], item: Any) -> None:
+    """Replace an item with the same ID in a list or append if missing."""
+    for i, existing in enumerate(lst):
+        if getattr(existing, "id", None) == getattr(item, "id", None):
+            lst[i] = item
+            return
+    lst.append(item)
+
+
 class Client:
     """
     Represents a client connection that connects to Discord.
@@ -762,7 +771,12 @@ class Client:
     def parse_channel(self, data: Dict[str, Any]) -> "Channel":
         """Parses channel data and returns a Channel object, updating caches."""
 
-        from .models import channel_factory
+        from .models import (
+            channel_factory,
+            TextChannel,
+            VoiceChannel,
+            CategoryChannel,
+        )
 
         channel = channel_factory(data, self)
         self._channels.set(channel.id, channel)
@@ -770,6 +784,12 @@ class Client:
             guild = self._guilds.get(channel.guild_id)
             if guild:
                 guild._channels.set(channel.id, channel)
+                if isinstance(channel, TextChannel):
+                    _update_list(guild.text_channels, channel)
+                elif isinstance(channel, VoiceChannel):
+                    _update_list(guild.voice_channels, channel)
+                elif isinstance(channel, CategoryChannel):
+                    _update_list(guild.category_channels, channel)
         return channel
 
     def parse_message(self, data: Dict[str, Any]) -> "Message":
