@@ -22,6 +22,22 @@ def create_dummy_module(name):
     return called
 
 
+def create_async_module(name):
+    mod = types.ModuleType(name)
+    called = {"setup": False, "teardown": False}
+
+    async def setup():
+        called["setup"] = True
+
+    def teardown():
+        called["teardown"] = True
+
+    mod.setup = setup
+    mod.teardown = teardown
+    sys.modules[name] = mod
+    return called
+
+
 def test_load_and_unload_extension():
     called = create_dummy_module("dummy_ext")
 
@@ -75,3 +91,13 @@ def test_reload_extension(monkeypatch):
 
     loader.unload_extension("reload_ext")
     assert called_second["teardown"] is True
+
+
+def test_async_setup():
+    called = create_async_module("async_ext")
+
+    loader.load_extension("async_ext")
+    assert called["setup"] is True
+
+    loader.unload_extension("async_ext")
+    assert called["teardown"] is True

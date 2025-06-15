@@ -18,6 +18,8 @@ from typing import (
 )
 from types import ModuleType
 
+from datetime import datetime, timedelta
+
 from .http import HTTPClient
 from .gateway import GatewayClient
 from .shard_manager import ShardManager
@@ -36,6 +38,7 @@ from .interactions import Interaction, Snowflake
 from .error_handler import setup_global_error_handler
 from .voice_client import VoiceClient
 from .models import Activity
+from .utils import utcnow
 
 if TYPE_CHECKING:
     from .models import (
@@ -99,6 +102,9 @@ class Client:
             :class:`aiohttp.ClientSession`.
         message_cache_maxlen (Optional[int]): Maximum number of messages to keep
             in the cache. When ``None``, the cache size is unlimited.
+        sync_commands_on_ready (bool): If ``True``, automatically call
+            :meth:`Client.sync_application_commands` after the ``READY`` event
+            when :attr:`Client.application_id` is available.
     """
 
     def __init__(
@@ -119,6 +125,7 @@ class Client:
         member_cache_flags: Optional[MemberCacheFlags] = None,
         message_cache_maxlen: Optional[int] = None,
         http_options: Optional[Dict[str, Any]] = None,
+        sync_commands_on_ready: bool = True,
     ):
         if not token:
             raise ValueError("A bot token must be provided.")
@@ -173,6 +180,8 @@ class Client:
             None  # The bot's own user object, populated on READY
         )
 
+        self.start_time: Optional[datetime] = None
+
         # Internal Caches
         self._guilds: GuildCache = GuildCache()
         self._channels: ChannelCache = ChannelCache()
@@ -186,6 +195,7 @@ class Client:
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
         self.allowed_mentions: Optional[Dict[str, Any]] = allowed_mentions
+        self.sync_commands_on_ready: bool = sync_commands_on_ready
 
         # Basic signal handling for graceful shutdown
         # This might be better handled by the user's application code, but can be a nice default.
@@ -239,7 +249,7 @@ class Client:
             AuthenticationError: If the token is invalid.
         """
         if self._closed:
-            raise DisagreementException("Client is closed and cannot connect.")
+            raise DisagreementException("Client is closed and cannot connect.")>>>>>>> master
         if self.shard_count and self.shard_count > 1:
             await self._initialize_shard_manager()
             assert self._shard_manager is not None
@@ -248,6 +258,7 @@ class Client:
                 f"Client connected using {self.shard_count} shards, waiting for READY signal..."
             )
             await self.wait_until_ready()
+            self.start_time = utcnow()
             print("Client is READY!")
             return
 
@@ -264,6 +275,7 @@ class Client:
                 # and its READY handler will set self._ready_event via dispatcher.
                 print("Client connected to Gateway, waiting for READY signal...")
                 await self.wait_until_ready()  # Wait for the READY event from Gateway
+                self.start_time = utcnow()
                 print("Client is READY!")
                 return  # Successfully connected and ready
             except AuthenticationError:  # Non-recoverable by retry here
@@ -377,6 +389,7 @@ class Client:
             await self._http.close()
 
         self._ready_event.set()  # Ensure any waiters for ready are unblocked
+        self.start_time = None
         print("Client closed.")
 
     async def __aenter__(self) -> "Client":
@@ -424,6 +437,17 @@ class Client:
         """Returns the gateway latency in milliseconds, or ``None`` if unavailable."""
         latency = getattr(self._gateway, "latency_ms", None)
         return round(latency, 2) if latency is not None else None
+
+    @property
+    def guilds(self) -> List["Guild"]:
+        """Returns all guilds from the internal cache."""
+        return self._guilds.values()
+
+    def uptime(self) -> Optional[timedelta]:
+        """Return the duration since the client connected, or ``None`` if not connected."""
+        if self.start_time is None:
+            return None
+        return utcnow() - self.start_time
 
     async def wait_until_ready(self) -> None:
         """|coro|
@@ -950,7 +974,8 @@ class Client:
         """Parses guild data and returns a Guild object, updating cache."""
         from .models import Guild
 
-        guild = Guild(data, client_instance=self)
+        shard_id = data.get("shard_id")
+        guild = Guild(data, client_instance=self, shard_id=shard_id)
         self._guilds.set(guild.id, guild)
 
         presences = {p["user"]["id"]: p for p in data.get("presences", [])}
@@ -1702,6 +1727,16 @@ class Client:
 
     async def on_typing_start(self, typing) -> None:
         """|coro| Called when a user starts typing in a channel."""
+
+        pass
+
+    async def on_connect(self) -> None:
+        """|coro| Called when the WebSocket connection opens."""
+
+        pass
+
+    async def on_disconnect(self) -> None:
+        """|coro| Called when the WebSocket connection closes."""
 
         pass
 
