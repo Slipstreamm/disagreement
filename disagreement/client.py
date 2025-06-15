@@ -125,8 +125,10 @@ class Client:
         member_cache_flags: Optional[MemberCacheFlags] = None,
         message_cache_maxlen: Optional[int] = None,
         http_options: Optional[Dict[str, Any]] = None,
+        owner_ids: Optional[List[Union[str, int]]] = None,
         sync_commands_on_ready: bool = True,
     ):
+
         if not token:
             raise ValueError("A bot token must be provided.")
 
@@ -163,6 +165,7 @@ class Client:
         self.gateway_max_retries: int = gateway_max_retries
         self.gateway_max_backoff: float = gateway_max_backoff
         self._shard_manager: Optional[ShardManager] = None
+        self.owner_ids: List[str] = [str(o) for o in owner_ids] if owner_ids else []
 
         # Initialize CommandHandler
         self.command_handler: CommandHandler = CommandHandler(

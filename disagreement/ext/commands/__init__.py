@@ -18,6 +18,7 @@ from .decorators import (
     requires_permissions,
     has_role,
     has_any_role,
+    is_owner,
 )
 from .errors import (
     CommandError,
@@ -49,6 +50,7 @@ __all__ = [
     "requires_permissions",
     "has_role",
     "has_any_role",
+    "is_owner",
     # Errors
     "CommandError",
     "CommandNotFound",
