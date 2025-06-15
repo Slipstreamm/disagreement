@@ -71,3 +71,42 @@ async def message_pager(
                 remaining -= 1
                 if remaining == 0:
                     return
+
+
+class Paginator:
+    """Helper to split text into pages under a character limit."""
+
+    def __init__(self, limit: int = 2000) -> None:
+        self.limit = limit
+        self._pages: list[str] = []
+        self._current = ""
+
+    def add_line(self, line: str) -> None:
+        """Add a line of text to the paginator."""
+        if len(line) > self.limit:
+            if self._current:
+                self._pages.append(self._current)
+                self._current = ""
+            for i in range(0, len(line), self.limit):
+                chunk = line[i : i + self.limit]
+                if len(chunk) == self.limit:
+                    self._pages.append(chunk)
+                else:
+                    self._current = chunk
+            return
+
+        if not self._current:
+            self._current = line
+        elif len(self._current) + 1 + len(line) <= self.limit:
+            self._current += "\n" + line
+        else:
+            self._pages.append(self._current)
+            self._current = line
+
+    @property
+    def pages(self) -> list[str]:
+        """Return the accumulated pages."""
+        pages = list(self._pages)
+        if self._current:
+            pages.append(self._current)
+        return pages
