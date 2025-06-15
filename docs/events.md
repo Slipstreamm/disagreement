@@ -20,7 +20,7 @@ Triggered when a user's presence changes. The callback receives a `PresenceUpdat
 
 ```python
 @client.event
-async def on_presence_update(presence: disagreement.PresenceUpdate):
+async def on_presence_update(presence: PresenceUpdate):
     ...
 ```
 
@@ -30,7 +30,7 @@ Dispatched when a user begins typing in a channel. The callback receives a `Typi
 
 ```python
 @client.event
-async def on_typing_start(typing: disagreement.TypingStart):
+async def on_typing_start(typing: TypingStart):
     ...
 ```
 
@@ -40,7 +40,7 @@ Fired when a new member joins a guild. The callback receives a `Member` model.
 
 ```python
 @client.event
-async def on_guild_member_add(member: disagreement.Member):
+async def on_guild_member_add(member: Member):
     ...
 ```
 
@@ -51,7 +51,7 @@ receives a `GuildMemberRemove` model.
 
 ```python
 @client.event
-async def on_guild_member_remove(event: disagreement.GuildMemberRemove):
+async def on_guild_member_remove(event: GuildMemberRemove):
     ...
 ```
 
@@ -62,7 +62,7 @@ Dispatched when a user is banned from a guild. The callback receives a
 
 ```python
 @client.event
-async def on_guild_ban_add(event: disagreement.GuildBanAdd):
+async def on_guild_ban_add(event: GuildBanAdd):
     ...
 ```
 
@@ -73,7 +73,7 @@ Dispatched when a user's ban is lifted. The callback receives a
 
 ```python
 @client.event
-async def on_guild_ban_remove(event: disagreement.GuildBanRemove):
+async def on_guild_ban_remove(event: GuildBanRemove):
     ...
 ```
 
@@ -84,7 +84,7 @@ Sent when a channel's settings change. The callback receives an updated
 
 ```python
 @client.event
-async def on_channel_update(channel: disagreement.Channel):
+async def on_channel_update(channel: Channel):
     ...
 ```
 
@@ -95,7 +95,7 @@ Emitted when a guild role is updated. The callback receives a
 
 ```python
 @client.event
-async def on_guild_role_update(event: disagreement.GuildRoleUpdate):
+async def on_guild_role_update(event: GuildRoleUpdate):
     ...
 ```
 
@@ -138,6 +138,6 @@ Triggered when a user's voice connection state changes, such as joining or leavi
 
 ```python
 @client.event
-async def on_voice_state_update(state: disagreement.VoiceStateUpdate):
+async def on_voice_state_update(state: VoiceStateUpdate):
     ...
 ```

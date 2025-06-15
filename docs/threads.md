@@ -4,7 +4,7 @@
 Use :class:`AutoArchiveDuration` to control when a thread is automatically archived.
 
 ```python
-from disagreement.enums import AutoArchiveDuration
+from disagreement import AutoArchiveDuration
 
 await message.create_thread(
     "discussion",

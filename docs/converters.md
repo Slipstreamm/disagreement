@@ -13,8 +13,8 @@
 
 ```python
 from disagreement.ext.commands import command
+from disagreement import Member
 from disagreement.ext.commands.core import CommandContext
-from disagreement.models import Member
 
 @command()
 async def kick(ctx: CommandContext, target: Member):

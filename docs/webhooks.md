@@ -5,7 +5,7 @@ The `HTTPClient` includes helper methods for creating, editing and deleting Disc
 ## Create a webhook
 
 ```python
-from disagreement.http import HTTPClient
+from disagreement import HTTPClient
 
 http = HTTPClient(token="TOKEN")
 payload = {"name": "My Webhook"}
@@ -27,7 +27,7 @@ await http.delete_webhook("456")
 The methods now return a `Webhook` object directly:
 
 ```python
-from disagreement.models import Webhook
+from disagreement import Webhook
 
 print(webhook.id, webhook.name)
 ```
@@ -37,7 +37,7 @@ print(webhook.id, webhook.name)
 You can construct a `Webhook` object from an existing webhook URL without any API calls:
 
 ```python
-from disagreement.models import Webhook
+from disagreement import Webhook
 
 webhook = Webhook.from_url("https://discord.com/api/webhooks/123/token")
 print(webhook.id, webhook.token)

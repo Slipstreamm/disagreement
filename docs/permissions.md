@@ -10,7 +10,7 @@ Each attribute of ``Permissions`` represents a single permission bit. The value
 is a power of two so multiple permissions can be combined using bitwise OR.
 
 ```python
-from disagreement.permissions import Permissions
+from disagreement import Permissions
 
 value = Permissions.SEND_MESSAGES | Permissions.MANAGE_MESSAGES
 ```
@@ -47,10 +47,10 @@ Return a list of permissions that ``current`` does not contain.
 
 ```python
 from disagreement.permissions import (
-    Permissions,
     has_permissions,
     missing_permissions,
 )
+from disagreement import Permissions
 
 current = Permissions.SEND_MESSAGES | Permissions.MANAGE_MESSAGES
 

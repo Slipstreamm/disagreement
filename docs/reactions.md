@@ -48,7 +48,7 @@ The event handlers for these events receive both a `Reaction` object and the `Us
 
 ```python
 import disagreement
-from disagreement.models import Reaction, User, Member
+from disagreement import Reaction, User, Member
 
 @client.on_event("MESSAGE_REACTION_ADD")
 async def on_reaction_add(reaction: Reaction, user: User | Member):

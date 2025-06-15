@@ -24,7 +24,7 @@ other supported session argument.
 The HTTP client can list the guilds the bot user is in:
 
 ```python
-from disagreement.http import HTTPClient
+from disagreement import HTTPClient
 
 http = HTTPClient(token="TOKEN")
 guilds = await http.get_current_user_guilds()

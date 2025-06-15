@@ -57,7 +57,7 @@ required permissions in the channel.
 
 ```python
 from disagreement.ext.commands import command, requires_permissions
-from disagreement.permissions import Permissions
+from disagreement import Permissions
 
 @command()
 @requires_permissions(Permissions.MANAGE_MESSAGES)

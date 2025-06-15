@@ -3,7 +3,7 @@
 The `Client` provides helpers to manage guild scheduled events.
 
 ```python
-from disagreement.client import Client
+from disagreement import Client
 
 client = Client(token="TOKEN")
 

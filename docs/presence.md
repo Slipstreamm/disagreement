@@ -26,7 +26,7 @@ An activity dictionary must include a `name` and a `type` field. The type value 
 Example using the provided activity classes:
 
 ```python
-from disagreement.models import Game
+from disagreement import Game
 
 await client.change_presence(status="idle", activity=Game("with Discord"))
 ```
@@ -34,7 +34,7 @@ await client.change_presence(status="idle", activity=Game("with Discord"))
 You can also specify a streaming URL:
 
 ```python
-from disagreement.models import Streaming
+from disagreement import Streaming
 
 await client.change_presence(status="online", activity=Streaming("My Stream", "https://twitch.tv/someone"))
 ```

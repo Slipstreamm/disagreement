@@ -19,8 +19,7 @@ The library exposes three broad categories of components:
 `ActionRow` is a layout container. It may hold up to five buttons or a single select menu.
 
 ```python
-from disagreement.models import ActionRow, Button
-from disagreement.enums import ButtonStyle
+from disagreement import ActionRow, Button, ButtonStyle
 
 row = ActionRow(components=[
     Button(style=ButtonStyle.PRIMARY, label="Click", custom_id="btn")
@@ -32,8 +31,7 @@ row = ActionRow(components=[
 Buttons provide a clickable UI element.
 
 ```python
-from disagreement.models import Button
-from disagreement.enums import ButtonStyle
+from disagreement import Button, ButtonStyle
 
 button = Button(
     style=ButtonStyle.SUCCESS,
@@ -47,8 +45,7 @@ button = Button(
 `SelectMenu` lets the user choose one or more options. The `type` parameter controls the menu variety (`STRING_SELECT`, `USER_SELECT`, `ROLE_SELECT`, `MENTIONABLE_SELECT`, `CHANNEL_SELECT`).
 
 ```python
-from disagreement.models import SelectMenu, SelectOption
-from disagreement.enums import ComponentType, ChannelType
+from disagreement import SelectMenu, SelectOption, ComponentType, ChannelType
 
 menu = SelectMenu(
     custom_id="example",
@@ -70,7 +67,7 @@ For channel selects you may pass `channel_types` with a list of allowed `Channel
 `Section` groups one or more `TextDisplay` components and can include an accessory `Button` or `Thumbnail`.
 
 ```python
-from disagreement.models import Section, TextDisplay, Thumbnail, UnfurledMediaItem
+from disagreement import Section, TextDisplay, Thumbnail, UnfurledMediaItem
 
 section = Section(
     components=[
@@ -86,7 +83,7 @@ section = Section(
 `TextDisplay` simply renders markdown text.
 
 ```python
-from disagreement.models import TextDisplay
+from disagreement import TextDisplay
 
 text_display = TextDisplay(content="**Bold text**")
 ```
@@ -96,7 +93,7 @@ text_display = TextDisplay(content="**Bold text**")
 `Thumbnail` shows a small image. Set `spoiler=True` to hide the image until clicked.
 
 ```python
-from disagreement.models import Thumbnail, UnfurledMediaItem
+from disagreement import Thumbnail, UnfurledMediaItem
 
 thumb = Thumbnail(
     media=UnfurledMediaItem(url="https://example.com/image.png"),
@@ -110,7 +107,7 @@ thumb = Thumbnail(
 `MediaGallery` holds multiple `MediaGalleryItem` objects.
 
 ```python
-from disagreement.models import MediaGallery, MediaGalleryItem, UnfurledMediaItem
+from disagreement import MediaGallery, MediaGalleryItem, UnfurledMediaItem
 
 gallery = MediaGallery(
     items=[
@@ -125,7 +122,7 @@ gallery = MediaGallery(
 `File` displays an uploaded file. Use `spoiler=True` to mark it as a spoiler.
 
 ```python
-from disagreement.models import File, UnfurledMediaItem
+from disagreement import File, UnfurledMediaItem
 
 file_component = File(
     file=UnfurledMediaItem(url="attachment://file.zip"),
@@ -138,7 +135,7 @@ file_component = File(
 `Separator` adds vertical spacing or an optional divider line between components.
 
 ```python
-from disagreement.models import Separator
+from disagreement import Separator
 
 separator = Separator(divider=True, spacing=2)
 ```
@@ -148,7 +145,7 @@ separator = Separator(divider=True, spacing=2)
 `Container` visually groups a set of components and can apply an accent colour or spoiler.
 
 ```python
-from disagreement.models import Container, TextDisplay
+from disagreement import Container, TextDisplay
 
 container = Container(
     components=[TextDisplay(content="Inside a container")],

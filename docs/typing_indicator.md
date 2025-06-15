@@ -4,9 +4,9 @@ The library exposes an async context manager to send the typing indicator for a 
 
 ```python
 import asyncio
-import disagreement
+from disagreement import Client
 
-client = disagreement.Client(token="YOUR_TOKEN")
+client = Client(token="YOUR_TOKEN")
 
 async def indicate(channel_id: str):
     async with client.typing(channel_id):

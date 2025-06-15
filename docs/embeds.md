@@ -4,7 +4,7 @@
 These helper methods return the embed instance so you can chain calls.
 
 ```python
-from disagreement.models import Embed
+from disagreement import Embed
 
 embed = (
     Embed()

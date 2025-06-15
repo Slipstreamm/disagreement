@@ -39,14 +39,14 @@ pip install "disagreement[dev]"
 import asyncio
 import os
 
-import disagreement
+from disagreement import Client, GatewayIntent
 from disagreement.ext import commands
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class Basics(commands.Cog):
-    def __init__(self, client: disagreement.Client) -> None:
+    def __init__(self, client: Client) -> None:
         super().__init__(client)
 
     @commands.command()
@@ -58,8 +58,8 @@ token = os.getenv("DISCORD_BOT_TOKEN")
 if not token:
     raise RuntimeError("DISCORD_BOT_TOKEN environment variable not set")
 
-intents = disagreement.GatewayIntent.default() | disagreement.GatewayIntent.MESSAGE_CONTENT
-client = disagreement.Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
+intents = GatewayIntent.default() | GatewayIntent.MESSAGE_CONTENT
+client = Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
 async def main() -> None:
     client.add_cog(Basics(client))
     await client.run()
@@ -100,10 +100,10 @@ setup_logging(logging.DEBUG, file="bot.log")
 ### HTTP Session Options
 
 Pass additional keyword arguments to ``aiohttp.ClientSession`` using the
-``http_options`` parameter when constructing :class:`disagreement.Client`:
+``http_options`` parameter when constructing :class:`Client`:
 
 ```python
-client = disagreement.Client(
+client = Client(
     token=token,
     http_options={"proxy": "http://localhost:8080"},
 )
@@ -119,7 +119,7 @@ Specify default mention behaviour for all outgoing messages when constructing th
 
 ```python
 from disagreement.models import AllowedMentions
-client = disagreement.Client(
+client = Client(
     token=token,
     allowed_mentions=AllowedMentions.none().to_dict(),
 )
@@ -173,14 +173,15 @@ To run your bot across multiple gateway shards, pass ``shard_count`` when creati
 the client:
 
 ```python
-client = disagreement.Client(token=BOT_TOKEN, shard_count=2)
+client = Client(token=BOT_TOKEN, shard_count=2)
 ```
 
 If you want the library to determine the recommended shard count automatically,
 use ``AutoShardedClient``:
 
 ```python
-client = disagreement.AutoShardedClient(token=BOT_TOKEN)
+from disagreement import AutoShardedClient
+client = AutoShardedClient(token=BOT_TOKEN)
 ```
 
 See `examples/sharded_bot.py` for a full example.

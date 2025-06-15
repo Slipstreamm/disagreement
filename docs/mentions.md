@@ -8,8 +8,8 @@ Use the ``allowed_mentions`` parameter of :class:`disagreement.Client` to set a
 default for all messages:
 
 ```python
-from disagreement.models import AllowedMentions
-client = disagreement.Client(
+from disagreement import AllowedMentions, Client
+client = Client(
     token="YOUR_TOKEN",
     allowed_mentions=AllowedMentions.none().to_dict(),
 )

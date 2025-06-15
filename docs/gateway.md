@@ -8,6 +8,8 @@ You can control the maximum number of retries and the backoff cap when construct
 These options are forwarded to `GatewayClient` as `max_retries` and `max_backoff`:
 
 ```python
+from disagreement import Client
+
 bot = Client(
     token="your-token",
     gateway_max_retries=10,

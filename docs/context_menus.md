@@ -5,8 +5,8 @@
 define them.
 
 ```python
+from disagreement import User, Message
 from disagreement.ext.app_commands import user_command, message_command, AppCommandContext
-from disagreement.models import User, Message
 
 @user_command(name="User Info")
 async def user_info(ctx: AppCommandContext, user: User) -> None:
