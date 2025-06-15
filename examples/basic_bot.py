@@ -27,9 +27,16 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
-    import disagreement
-    from disagreement.models import Guild
-    from disagreement.ext import commands  # Import the new commands extension
+    from disagreement import (
+        Client,
+        GatewayIntent,
+        Message,
+        Guild,
+        ext,
+        AuthenticationError,
+        DisagreementException,
+    )
+    from disagreement.ext import commands
 except ImportError:
     print(
         "Failed to import disagreement. Make sure it's installed or PYTHONPATH is set correctly."
@@ -59,15 +66,15 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 # --- Intents Configuration ---
 # Define the intents your bot needs. For basic message reading and responding:
 intents = (
-    disagreement.GatewayIntent.GUILDS
-    | disagreement.GatewayIntent.GUILD_MESSAGES
-    | disagreement.GatewayIntent.MESSAGE_CONTENT
+    GatewayIntent.GUILDS
+    | GatewayIntent.GUILD_MESSAGES
+    | GatewayIntent.MESSAGE_CONTENT
 )  # MESSAGE_CONTENT is privileged!
 
 # If you don't need message content and only react to commands/mentions,
 # you might not need MESSAGE_CONTENT intent.
-# intents = disagreement.GatewayIntent.default() # A good starting point without privileged intents
-# intents |= disagreement.GatewayIntent.MESSAGE_CONTENT # Add if needed
+# intents = GatewayIntent.default() # A good starting point without privileged intents
+# intents |= GatewayIntent.MESSAGE_CONTENT # Add if needed
 
 # --- Initialize the Client ---
 if not BOT_TOKEN:
@@ -76,7 +83,7 @@ if not BOT_TOKEN:
     sys.exit(1)
 
 # Initialize Client with a command prefix
-client = disagreement.Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
+client = Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
 
 
 # --- Define a Cog for example commands ---
@@ -177,7 +184,7 @@ async def on_ready():
 
 
 @client.event
-async def on_message(message: disagreement.Message):
+async def on_message(message: Message):
     """Called when a message is created and received."""
     # Command processing is now handled by the CommandHandler via client._process_message_for_commands
     # This on_message can be used for other message-related logic if needed,
@@ -210,11 +217,11 @@ async def main():
         # client.add_cog is synchronous, but it schedules cog.cog_load() if it's async.
 
         await client.run()
-    except disagreement.AuthenticationError:
+    except AuthenticationError:
         print(
             "Authentication failed. Please check your bot token and ensure it's correct."
         )
-    except disagreement.DisagreementException as e:
+    except DisagreementException as e:
         print(f"A Disagreement library error occurred: {e}")
     except KeyboardInterrupt:
         print("Bot shutting down due to KeyboardInterrupt...")

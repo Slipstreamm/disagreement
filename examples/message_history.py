@@ -8,7 +8,7 @@ import sys
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from disagreement.client import Client
+from disagreement import Client, Channel
 from disagreement.models import TextChannel
 
 try:

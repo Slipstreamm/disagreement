@@ -25,9 +25,16 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
-    import disagreement
+    from disagreement import (
+        Client,
+        GatewayIntent,
+        Reaction,
+        User,
+        Member,
+        HTTPException,
+        AuthenticationError,
+    )
     from disagreement.ext import commands
-    from disagreement.models import Reaction, User, Member
 except ImportError:
     print(
         "Failed to import disagreement. Make sure it's installed or PYTHONPATH is set correctly."
@@ -50,10 +57,10 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 # We need GUILDS for server context, GUILD_MESSAGES to receive messages,
 # and GUILD_MESSAGE_REACTIONS to listen for reaction events.
 intents = (
-    disagreement.GatewayIntent.GUILDS
-    | disagreement.GatewayIntent.GUILD_MESSAGES
-    | disagreement.GatewayIntent.GUILD_MESSAGE_REACTIONS
-    | disagreement.GatewayIntent.MESSAGE_CONTENT  # For commands
+    GatewayIntent.GUILDS
+    | GatewayIntent.GUILD_MESSAGES
+    | GatewayIntent.GUILD_MESSAGE_REACTIONS
+    | GatewayIntent.MESSAGE_CONTENT  # For commands
 )
 
 # --- Initialize the Client ---
@@ -61,7 +68,7 @@ if not BOT_TOKEN:
     print("Error: The DISCORD_BOT_TOKEN environment variable is not set.")
     sys.exit(1)
 
-client = disagreement.Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
+client = Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
 
 
 # --- Define a Cog for reaction-related commands ---
@@ -76,7 +83,7 @@ class ReactionCog(commands.Cog):
             # The emoji can be a standard Unicode emoji or a custom one in the format '<:name:id>'
             await ctx.message.add_reaction("👍")
             print(f"Reacted to command from {ctx.author.username}")
-        except disagreement.HTTPException as e:
+        except HTTPException as e:
             print(f"Failed to add reaction: {e}")
             await ctx.reply(
                 "I couldn't add the reaction. I might be missing permissions."
@@ -133,7 +140,7 @@ async def main():
     try:
         client.add_cog(ReactionCog(client))
         await client.run()
-    except disagreement.AuthenticationError:
+    except AuthenticationError:
         print("Authentication failed. Check your bot token.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")

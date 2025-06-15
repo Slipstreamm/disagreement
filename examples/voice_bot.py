@@ -16,7 +16,7 @@ except ImportError:  # pragma: no cover - example helper
     load_dotenv = None
     print("python-dotenv is not installed. Environment variables will not be loaded")
 
-import disagreement
+from disagreement import Client
 
 if load_dotenv:
     load_dotenv()
@@ -39,7 +39,7 @@ CHANNEL_ID = cast(str, _CHANNEL_ID)
 
 
 async def main() -> None:
-    client = disagreement.Client(TOKEN)
+    client = Client(TOKEN)
     await client.connect()
     voice = await client.join_voice(GUILD_ID, CHANNEL_ID)
     try:

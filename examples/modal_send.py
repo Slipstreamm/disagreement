@@ -11,9 +11,8 @@ except ImportError:  # pragma: no cover - example helper
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from disagreement import Client, GatewayIntent, ui  # type: ignore
-from disagreement.ext.app_commands.decorators import slash_command
-from disagreement.ext.app_commands.context import AppCommandContext
+from disagreement import Client, GatewayIntent, ui
+from disagreement.ext.app_commands import slash_command, AppCommandContext
 
 if load_dotenv:
     load_dotenv()

@@ -8,7 +8,7 @@ import sys
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import disagreement
+from disagreement import Client
 
 try:
     from dotenv import load_dotenv
@@ -23,7 +23,7 @@ TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 if not TOKEN:
     raise RuntimeError("DISCORD_BOT_TOKEN environment variable not set")
 
-client = disagreement.Client(token=TOKEN, shard_count=2)
+client = Client(token=TOKEN, shard_count=2)
 
 
 @client.event

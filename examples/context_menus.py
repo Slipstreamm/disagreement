@@ -7,13 +7,12 @@ import sys
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from disagreement.client import Client
+from disagreement import Client, User, Message
 from disagreement.ext.app_commands import (
     user_command,
     message_command,
     AppCommandContext,
 )
-from disagreement.models import User, Message
 
 try:
     from dotenv import load_dotenv

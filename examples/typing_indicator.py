@@ -24,7 +24,7 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
-    import disagreement
+    from disagreement import Client, GatewayIntent, HTTPException, AuthenticationError
     from disagreement.ext import commands
 except ImportError:
     print(
@@ -46,9 +46,9 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 
 # --- Intents Configuration ---
 intents = (
-    disagreement.GatewayIntent.GUILDS
-    | disagreement.GatewayIntent.GUILD_MESSAGES
-    | disagreement.GatewayIntent.MESSAGE_CONTENT
+    GatewayIntent.GUILDS
+    | GatewayIntent.GUILD_MESSAGES
+    | GatewayIntent.MESSAGE_CONTENT
 )
 
 # --- Initialize the Client ---
@@ -56,7 +56,7 @@ if not BOT_TOKEN:
     print("Error: The DISCORD_BOT_TOKEN environment variable is not set.")
     sys.exit(1)
 
-client = disagreement.Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
+client = Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
 
 
 # --- Define a Cog for the typing indicator command ---
@@ -76,7 +76,7 @@ class TypingCog(commands.Cog):
                 await asyncio.sleep(5)
             print("Typing indicator stopped.")
             await ctx.send("Done!")
-        except disagreement.HTTPException as e:
+        except HTTPException as e:
             print(f"Failed to send typing indicator: {e}")
             await ctx.reply(
                 "I couldn't show the typing indicator. I might be missing permissions."
@@ -104,7 +104,7 @@ async def main():
     try:
         client.add_cog(TypingCog(client))
         await client.run()
-    except disagreement.AuthenticationError:
+    except AuthenticationError:
         print("Authentication failed. Check your bot token.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")

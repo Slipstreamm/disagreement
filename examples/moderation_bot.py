@@ -9,9 +9,8 @@ from typing import Set
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import disagreement
+from disagreement import Client, GatewayIntent, Member, Message
 from disagreement.ext import commands
-from disagreement.models import Member, Message
 
 try:
     from dotenv import load_dotenv
@@ -28,18 +27,18 @@ if not BOT_TOKEN:
     sys.exit(1)
 
 intents = (
-    disagreement.GatewayIntent.GUILDS
-    | disagreement.GatewayIntent.GUILD_MESSAGES
-    | disagreement.GatewayIntent.MESSAGE_CONTENT
+    GatewayIntent.GUILDS
+    | GatewayIntent.GUILD_MESSAGES
+    | GatewayIntent.MESSAGE_CONTENT
 )
-client = disagreement.Client(token=BOT_TOKEN, command_prefix="!", intents=intents)
+client = Client(token=BOT_TOKEN, command_prefix="!", intents=intents)
 
 # Simple list of banned words
 BANNED_WORDS: Set[str] = {"badword1", "badword2"}
 
 
 class ModerationCog(commands.Cog):
-    def __init__(self, bot: disagreement.Client) -> None:
+    def __init__(self, bot: Client) -> None:
         super().__init__(bot)
 
     @commands.command()

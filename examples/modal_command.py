@@ -9,10 +9,9 @@ except ImportError:  # pragma: no cover - example helper
     load_dotenv = None
     print("python-dotenv is not installed. Environment variables will not be loaded")
 
-from disagreement import Client, ui
-from disagreement.enums import GatewayIntent, TextInputStyle
-from disagreement.ext.app_commands.decorators import slash_command
-from disagreement.ext.app_commands.context import AppCommandContext
+from disagreement import Client, ui, GatewayIntent
+from disagreement.enums import TextInputStyle
+from disagreement.ext.app_commands import slash_command, AppCommandContext
 
 if load_dotenv:
     load_dotenv()
