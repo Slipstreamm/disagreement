@@ -240,7 +240,7 @@ class Client:
             AuthenticationError: If the token is invalid.
         """
         if self._closed:
-            raise DisagreementException("Client is closed and cannot connect.")
+            raise DisagreementException("Client is closed and cannot connect.")>>>>>>> master
         if self.shard_count and self.shard_count > 1:
             await self._initialize_shard_manager()
             assert self._shard_manager is not None
@@ -428,6 +428,11 @@ class Client:
         """Returns the gateway latency in milliseconds, or ``None`` if unavailable."""
         latency = getattr(self._gateway, "latency_ms", None)
         return round(latency, 2) if latency is not None else None
+
+    @property
+    def guilds(self) -> List["Guild"]:
+        """Returns all guilds from the internal cache."""
+        return self._guilds.values()
 
     def uptime(self) -> Optional[timedelta]:
         """Return the duration since the client connected, or ``None`` if not connected."""
