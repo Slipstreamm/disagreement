@@ -587,12 +587,19 @@ class AppCommandHandler:
             #         print(f"Failed to send error message for app command: {send_e}")
 
     async def sync_commands(
-        self, application_id: "Snowflake", guild_id: Optional["Snowflake"] = None
+        self,
+        application_id: Optional["Snowflake"] = None,
+        guild_id: Optional["Snowflake"] = None,
     ) -> None:
         """
         Synchronizes (registers/updates) all application commands with Discord.
         If guild_id is provided, syncs commands for that guild. Otherwise, syncs global commands.
         """
+        if application_id is None:
+            application_id = self.client.application_id
+        if application_id is None:
+            raise ValueError("application_id must be provided to sync commands")
+
         cache = self._load_cached_ids()
         scope_key = str(guild_id) if guild_id else "global"
         stored = cache.get(scope_key, {})
