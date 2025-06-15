@@ -2640,6 +2640,18 @@ class Invite:
         return f"<Invite code='{self.code}' guild_id='{self.guild_id}' channel_id='{self.channel_id}'>"
 
 
+class InviteDelete:
+    """Represents an INVITE_DELETE event."""
+
+    def __init__(self, data: Dict[str, Any]):
+        self.channel_id: str = data["channel_id"]
+        self.guild_id: Optional[str] = data.get("guild_id")
+        self.code: str = data["code"]
+
+    def __repr__(self) -> str:
+        return f"<InviteDelete code='{self.code}' guild_id='{self.guild_id}' channel_id='{self.channel_id}'>"
+
+
 class GuildMemberRemove:
     """Represents a GUILD_MEMBER_REMOVE event."""
 
