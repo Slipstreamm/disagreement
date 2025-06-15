@@ -1346,8 +1346,8 @@
 <h2 id="default-allowed-mentions">Default Allowed Mentions</h2>
 <p>Use the <code>allowed_mentions</code> parameter of :class:<code>disagreement.Client</code> to set a
 default for all messages:</p>
-<pre><code class="language-python">from disagreement.models import AllowedMentions
-client = disagreement.Client(
+<pre><code class="language-python">from disagreement import AllowedMentions, Client
+client = Client(
     token=&quot;YOUR_TOKEN&quot;,
     allowed_mentions=AllowedMentions.none().to_dict(),
 )

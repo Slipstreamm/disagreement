@@ -1302,9 +1302,9 @@
 <h1 id="typing-indicator">Typing Indicator</h1>
 <p>The library exposes an async context manager to send the typing indicator for a channel.</p>
 <pre><code class="language-python">import asyncio
-import disagreement
+from disagreement import Client
 
-client = disagreement.Client(token=&quot;YOUR_TOKEN&quot;)
+client = Client(token=&quot;YOUR_TOKEN&quot;)
 
 async def indicate(channel_id: str):
     async with client.typing(channel_id):

@@ -1350,7 +1350,7 @@ created. You can set a proxy URL, provide a custom connector, or supply any
 other supported session argument.</p>
 <h2 id="get-current-user-guilds">Get Current User Guilds</h2>
 <p>The HTTP client can list the guilds the bot user is in:</p>
-<pre><code class="language-python">from disagreement.http import HTTPClient
+<pre><code class="language-python">from disagreement import HTTPClient
 
 http = HTTPClient(token=&quot;TOKEN&quot;)
 guilds = await http.get_current_user_guilds()

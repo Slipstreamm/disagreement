@@ -1473,14 +1473,14 @@ environment variables. Install the development extras with:</p>
 <pre><code class="language-python">import asyncio
 import os
 
-import disagreement
+from disagreement import Client, GatewayIntent
 from disagreement.ext import commands
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class Basics(commands.Cog):
-    def __init__(self, client: disagreement.Client) -&gt; None:
+    def __init__(self, client: Client) -&gt; None:
         super().__init__(client)
 
     @commands.command()
@@ -1492,8 +1492,8 @@ token = os.getenv(&quot;DISCORD_BOT_TOKEN&quot;)
 if not token:
     raise RuntimeError(&quot;DISCORD_BOT_TOKEN environment variable not set&quot;)
 
-intents = disagreement.GatewayIntent.default() | disagreement.GatewayIntent.MESSAGE_CONTENT
-client = disagreement.Client(token=token, command_prefix=&quot;!&quot;, intents=intents, mention_replies=True)
+intents = GatewayIntent.default() | GatewayIntent.MESSAGE_CONTENT
+client = Client(token=token, command_prefix=&quot;!&quot;, intents=intents, mention_replies=True)
 async def main() -&gt; None:
     client.add_cog(Basics(client))
     await client.run()
@@ -1523,8 +1523,8 @@ setup_logging(logging.DEBUG, file=&quot;bot.log&quot;)
 </code></pre>
 <h3 id="http-session-options">HTTP Session Options</h3>
 <p>Pass additional keyword arguments to <code>aiohttp.ClientSession</code> using the
-<code>http_options</code> parameter when constructing :class:<code>disagreement.Client</code>:</p>
-<pre><code class="language-python">client = disagreement.Client(
+<code>http_options</code> parameter when constructing :class:<code>Client</code>:</p>
+<pre><code class="language-python">client = Client(
     token=token,
     http_options={&quot;proxy&quot;: &quot;http://localhost:8080&quot;},
 )
@@ -1535,7 +1535,7 @@ session parameter supported by <code>aiohttp</code>.</p>
 <h3 id="default-allowed-mentions">Default Allowed Mentions</h3>
 <p>Specify default mention behaviour for all outgoing messages when constructing the client:</p>
 <pre><code class="language-python">from disagreement.models import AllowedMentions
-client = disagreement.Client(
+client = Client(
     token=token,
     allowed_mentions=AllowedMentions.none().to_dict(),
 )
@@ -1574,11 +1574,12 @@ roles = await client.fetch_roles(guild.id)
 <h2 id="sharding">Sharding</h2>
 <p>To run your bot across multiple gateway shards, pass <code>shard_count</code> when creating
 the client:</p>
-<pre><code class="language-python">client = disagreement.Client(token=BOT_TOKEN, shard_count=2)
+<pre><code class="language-python">client = Client(token=BOT_TOKEN, shard_count=2)
 </code></pre>
 <p>If you want the library to determine the recommended shard count automatically,
 use <code>AutoShardedClient</code>:</p>
-<pre><code class="language-python">client = disagreement.AutoShardedClient(token=BOT_TOKEN)
+<pre><code class="language-python">from disagreement import AutoShardedClient
+client = AutoShardedClient(token=BOT_TOKEN)
 </code></pre>
 <p>See <code>examples/sharded_bot.py</code> for a full example.</p>
 <h2 id="contributing">Contributing</h2>

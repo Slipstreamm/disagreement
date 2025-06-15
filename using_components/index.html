@@ -1461,8 +1461,7 @@
 </ul>
 <h2 id="action-row">Action Row</h2>
 <p><code>ActionRow</code> is a layout container. It may hold up to five buttons or a single select menu.</p>
-<pre><code class="language-python">from disagreement.models import ActionRow, Button
-from disagreement.enums import ButtonStyle
+<pre><code class="language-python">from disagreement import ActionRow, Button, ButtonStyle
 
 row = ActionRow(components=[
     Button(style=ButtonStyle.PRIMARY, label=&quot;Click&quot;, custom_id=&quot;btn&quot;)
@@ -1470,8 +1469,7 @@ row = ActionRow(components=[
 </code></pre>
 <h2 id="button">Button</h2>
 <p>Buttons provide a clickable UI element.</p>
-<pre><code class="language-python">from disagreement.models import Button
-from disagreement.enums import ButtonStyle
+<pre><code class="language-python">from disagreement import Button, ButtonStyle
 
 button = Button(
     style=ButtonStyle.SUCCESS,
@@ -1481,8 +1479,7 @@ button = Button(
 </code></pre>
 <h2 id="select-menus">Select Menus</h2>
 <p><code>SelectMenu</code> lets the user choose one or more options. The <code>type</code> parameter controls the menu variety (<code>STRING_SELECT</code>, <code>USER_SELECT</code>, <code>ROLE_SELECT</code>, <code>MENTIONABLE_SELECT</code>, <code>CHANNEL_SELECT</code>).</p>
-<pre><code class="language-python">from disagreement.models import SelectMenu, SelectOption
-from disagreement.enums import ComponentType, ChannelType
+<pre><code class="language-python">from disagreement import SelectMenu, SelectOption, ComponentType, ChannelType
 
 menu = SelectMenu(
     custom_id=&quot;example&quot;,
@@ -1499,7 +1496,7 @@ menu = SelectMenu(
 <p>For channel selects you may pass <code>channel_types</code> with a list of allowed <code>ChannelType</code> values.</p>
 <h2 id="section">Section</h2>
 <p><code>Section</code> groups one or more <code>TextDisplay</code> components and can include an accessory <code>Button</code> or <code>Thumbnail</code>.</p>
-<pre><code class="language-python">from disagreement.models import Section, TextDisplay, Thumbnail, UnfurledMediaItem
+<pre><code class="language-python">from disagreement import Section, TextDisplay, Thumbnail, UnfurledMediaItem
 
 section = Section(
     components=[
@@ -1511,13 +1508,13 @@ section = Section(
 </code></pre>
 <h2 id="text-display">Text Display</h2>
 <p><code>TextDisplay</code> simply renders markdown text.</p>
-<pre><code class="language-python">from disagreement.models import TextDisplay
+<pre><code class="language-python">from disagreement import TextDisplay
 
 text_display = TextDisplay(content=&quot;**Bold text**&quot;)
 </code></pre>
 <h2 id="thumbnail">Thumbnail</h2>
 <p><code>Thumbnail</code> shows a small image. Set <code>spoiler=True</code> to hide the image until clicked.</p>
-<pre><code class="language-python">from disagreement.models import Thumbnail, UnfurledMediaItem
+<pre><code class="language-python">from disagreement import Thumbnail, UnfurledMediaItem
 
 thumb = Thumbnail(
     media=UnfurledMediaItem(url=&quot;https://example.com/image.png&quot;),
@@ -1527,7 +1524,7 @@ thumb = Thumbnail(
 </code></pre>
 <h2 id="media-gallery">Media Gallery</h2>
 <p><code>MediaGallery</code> holds multiple <code>MediaGalleryItem</code> objects.</p>
-<pre><code class="language-python">from disagreement.models import MediaGallery, MediaGalleryItem, UnfurledMediaItem
+<pre><code class="language-python">from disagreement import MediaGallery, MediaGalleryItem, UnfurledMediaItem
 
 gallery = MediaGallery(
     items=[
@@ -1538,7 +1535,7 @@ gallery = MediaGallery(
 </code></pre>
 <h2 id="file">File</h2>
 <p><code>File</code> displays an uploaded file. Use <code>spoiler=True</code> to mark it as a spoiler.</p>
-<pre><code class="language-python">from disagreement.models import File, UnfurledMediaItem
+<pre><code class="language-python">from disagreement import File, UnfurledMediaItem
 
 file_component = File(
     file=UnfurledMediaItem(url=&quot;attachment://file.zip&quot;),
@@ -1547,13 +1544,13 @@ file_component = File(
 </code></pre>
 <h2 id="separator">Separator</h2>
 <p><code>Separator</code> adds vertical spacing or an optional divider line between components.</p>
-<pre><code class="language-python">from disagreement.models import Separator
+<pre><code class="language-python">from disagreement import Separator
 
 separator = Separator(divider=True, spacing=2)
 </code></pre>
 <h2 id="container">Container</h2>
 <p><code>Container</code> visually groups a set of components and can apply an accent colour or spoiler.</p>
-<pre><code class="language-python">from disagreement.models import Container, TextDisplay
+<pre><code class="language-python">from disagreement import Container, TextDisplay
 
 container = Container(
     components=[TextDisplay(content=&quot;Inside a container&quot;)],

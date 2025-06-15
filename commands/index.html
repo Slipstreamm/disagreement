@@ -1371,7 +1371,7 @@
 <p>Use <code>commands.check</code> to prevent a command from running unless a predicate
 returns <code>True</code>. Checks may be regular or async callables that accept a
 <code>CommandContext</code>.</p>
-<pre><code class="language-python">from disagreement.ext.commands import command, check, CheckFailure
+<pre><code class="language-python">from disagreement import command, check, CheckFailure
 
 def is_owner(ctx):
     return ctx.author.id == &quot;1&quot;
@@ -1386,7 +1386,7 @@ command error handler.</p>
 <h2 id="cooldowns">Cooldowns</h2>
 <p>Commands can be rate limited using the <code>cooldown</code> decorator. The example
 below restricts usage to once every three seconds per user:</p>
-<pre><code class="language-python">from disagreement.ext.commands import command, cooldown
+<pre><code class="language-python">from disagreement import command, cooldown
 
 @command()
 @cooldown(1, 3.0)
@@ -1397,8 +1397,8 @@ async def ping(ctx):
 <h2 id="permission-checks">Permission Checks</h2>
 <p>Use <code>commands.requires_permissions</code> to ensure the invoking member has the
 required permissions in the channel.</p>
-<pre><code class="language-python">from disagreement.ext.commands import command, requires_permissions
-from disagreement.permissions import Permissions
+<pre><code class="language-python">from disagreement import command, requires_permissions
+from disagreement import Permissions
 
 @command()
 @requires_permissions(Permissions.MANAGE_MESSAGES)

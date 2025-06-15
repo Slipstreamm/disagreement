@@ -1388,12 +1388,12 @@ Pass an :class:<code>~disagreement.models.Activity</code> (such as :class:<code>
 </tbody>
 </table>
 <p>Example using the provided activity classes:</p>
-<pre><code class="language-python">from disagreement.models import Game
+<pre><code class="language-python">from disagreement import Game
 
 await client.change_presence(status=&quot;idle&quot;, activity=Game(&quot;with Discord&quot;))
 </code></pre>
 <p>You can also specify a streaming URL:</p>
-<pre><code class="language-python">from disagreement.models import Streaming
+<pre><code class="language-python">from disagreement import Streaming
 
 await client.change_presence(status=&quot;online&quot;, activity=Streaming(&quot;My Stream&quot;, &quot;https://twitch.tv/someone&quot;))
 </code></pre>

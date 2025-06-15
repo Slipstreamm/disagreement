@@ -1300,10 +1300,10 @@
 
 
 <h1 id="task-loops">Task Loops</h1>
-<p>The tasks extension allows you to run functions periodically. Decorate an async function with <code>@tasks.loop</code> and start it using <code>.start()</code>.</p>
-<pre><code class="language-python">from disagreement.ext import tasks
+<p>The tasks extension allows you to run functions periodically. Decorate an async function with <code>@loop</code> and start it using <code>.start()</code>.</p>
+<pre><code class="language-python">from disagreement import loop
 
-@tasks.loop(minutes=1.0)
+@loop(minutes=1.0)
 async def announce():
     print(&quot;Hello from a loop&quot;)
 
@@ -1313,7 +1313,7 @@ announce.start()
 <p>You can provide the interval in seconds, minutes, hours or as a <code>datetime.timedelta</code>:</p>
 <pre><code class="language-python">import datetime
 
-@tasks.loop(delta=datetime.timedelta(seconds=30))
+@loop(delta=datetime.timedelta(seconds=30))
 async def ping():
     ...
 </code></pre>
@@ -1321,12 +1321,12 @@ async def ping():
 <pre><code class="language-python">async def log_error(exc: Exception) -&gt; None:
     print(&quot;Loop failed:&quot;, exc)
 
-@tasks.loop(seconds=5.0, on_error=log_error)
+@loop(seconds=5.0, on_error=log_error)
 async def worker():
     ...
 </code></pre>
 <p>Run setup and teardown code using <code>before_loop</code> and <code>after_loop</code>:</p>
-<pre><code class="language-python">@tasks.loop(seconds=5.0)
+<pre><code class="language-python">@loop(seconds=5.0)
 async def worker():
     ...
 
@@ -1343,7 +1343,7 @@ async def after_worker():
 
 time_to_run = (datetime.now() + timedelta(seconds=5)).time()
 
-@tasks.loop(time_of_day=time_to_run)
+@loop(time_of_day=time_to_run)
 async def daily_task():
     ...
 </code></pre>

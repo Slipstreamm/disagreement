@@ -1343,7 +1343,7 @@
 <h1 id="threads">Threads</h1>
 <p><code>Message.create_thread</code> and <code>TextChannel.create_thread</code> let you start new threads.
 Use :class:<code>AutoArchiveDuration</code> to control when a thread is automatically archived.</p>
-<pre><code class="language-python">from disagreement.enums import AutoArchiveDuration
+<pre><code class="language-python">from disagreement import AutoArchiveDuration
 
 await message.create_thread(
     &quot;discussion&quot;,

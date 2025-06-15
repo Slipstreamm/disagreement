@@ -1301,10 +1301,9 @@
 
 <h1 id="context-menu-commands">Context Menu Commands</h1>
 <p><code>disagreement</code> supports Discord's user and message context menu commands. Use the
-<code>user_command</code> and <code>message_command</code> decorators from <code>ext.app_commands</code> to
-define them.</p>
-<pre><code class="language-python">from disagreement.ext.app_commands import user_command, message_command, AppCommandContext
-from disagreement.models import User, Message
+<code>user_command</code> and <code>message_command</code> decorators to define them.</p>
+<pre><code class="language-python">from disagreement import User, Message
+from disagreement import User, Message, user_command, message_command, AppCommandContext
 
 @user_command(name=&quot;User Info&quot;)
 async def user_info(ctx: AppCommandContext, user: User) -&gt; None:

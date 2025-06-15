@@ -1460,54 +1460,54 @@ async def handle_raw_delete(payload: dict):
 <h2 id="presence_update">PRESENCE_UPDATE</h2>
 <p>Triggered when a user's presence changes. The callback receives a <code>PresenceUpdate</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_presence_update(presence: disagreement.PresenceUpdate):
+async def on_presence_update(presence: PresenceUpdate):
     ...
 </code></pre>
 <h2 id="typing_start">TYPING_START</h2>
 <p>Dispatched when a user begins typing in a channel. The callback receives a <code>TypingStart</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_typing_start(typing: disagreement.TypingStart):
+async def on_typing_start(typing: TypingStart):
     ...
 </code></pre>
 <h2 id="guild_member_add">GUILD_MEMBER_ADD</h2>
 <p>Fired when a new member joins a guild. The callback receives a <code>Member</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_guild_member_add(member: disagreement.Member):
+async def on_guild_member_add(member: Member):
     ...
 </code></pre>
 <h2 id="guild_member_remove">GUILD_MEMBER_REMOVE</h2>
 <p>Triggered when a member leaves or is removed from a guild. The callback
 receives a <code>GuildMemberRemove</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_guild_member_remove(event: disagreement.GuildMemberRemove):
+async def on_guild_member_remove(event: GuildMemberRemove):
     ...
 </code></pre>
 <h2 id="guild_ban_add">GUILD_BAN_ADD</h2>
 <p>Dispatched when a user is banned from a guild. The callback receives a
 <code>GuildBanAdd</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_guild_ban_add(event: disagreement.GuildBanAdd):
+async def on_guild_ban_add(event: GuildBanAdd):
     ...
 </code></pre>
 <h2 id="guild_ban_remove">GUILD_BAN_REMOVE</h2>
 <p>Dispatched when a user's ban is lifted. The callback receives a
 <code>GuildBanRemove</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_guild_ban_remove(event: disagreement.GuildBanRemove):
+async def on_guild_ban_remove(event: GuildBanRemove):
     ...
 </code></pre>
 <h2 id="channel_update">CHANNEL_UPDATE</h2>
 <p>Sent when a channel's settings change. The callback receives an updated
 <code>Channel</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_channel_update(channel: disagreement.Channel):
+async def on_channel_update(channel: Channel):
     ...
 </code></pre>
 <h2 id="guild_role_update">GUILD_ROLE_UPDATE</h2>
 <p>Emitted when a guild role is updated. The callback receives a
 <code>GuildRoleUpdate</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_guild_role_update(event: disagreement.GuildRoleUpdate):
+async def on_guild_role_update(event: GuildRoleUpdate):
     ...
 </code></pre>
 <h2 id="shard_connect">SHARD_CONNECT</h2>
@@ -1534,7 +1534,7 @@ async def on_shard_resume(info: dict):
 <h2 id="voice_state_update">VOICE_STATE_UPDATE</h2>
 <p>Triggered when a user's voice connection state changes, such as joining or leaving a voice channel. The callback receives a <code>VoiceStateUpdate</code> model.</p>
 <pre><code class="language-python">@client.event
-async def on_voice_state_update(state: disagreement.VoiceStateUpdate):
+async def on_voice_state_update(state: VoiceStateUpdate):
     ...
 </code></pre>
 

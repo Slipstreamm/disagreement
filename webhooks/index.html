@@ -1379,7 +1379,7 @@
 <h1 id="working-with-webhooks">Working with Webhooks</h1>
 <p>The <code>HTTPClient</code> includes helper methods for creating, editing and deleting Discord webhooks.</p>
 <h2 id="create-a-webhook">Create a webhook</h2>
-<pre><code class="language-python">from disagreement.http import HTTPClient
+<pre><code class="language-python">from disagreement import HTTPClient
 
 http = HTTPClient(token=&quot;TOKEN&quot;)
 payload = {&quot;name&quot;: &quot;My Webhook&quot;}
@@ -1392,13 +1392,13 @@ webhook = await http.create_webhook(&quot;123&quot;, payload)
 <pre><code class="language-python">await http.delete_webhook(&quot;456&quot;)
 </code></pre>
 <p>The methods now return a <code>Webhook</code> object directly:</p>
-<pre><code class="language-python">from disagreement.models import Webhook
+<pre><code class="language-python">from disagreement import Webhook
 
 print(webhook.id, webhook.name)
 </code></pre>
 <h2 id="create-a-webhook-from-a-url">Create a Webhook from a URL</h2>
 <p>You can construct a <code>Webhook</code> object from an existing webhook URL without any API calls:</p>
-<pre><code class="language-python">from disagreement.models import Webhook
+<pre><code class="language-python">from disagreement import Webhook
 
 webhook = Webhook.from_url(&quot;https://discord.com/api/webhooks/123/token&quot;)
 print(webhook.id, webhook.token)

@@ -1389,7 +1389,7 @@ users = await client.get_reactions(channel_id, message_id, &quot;👍&quot;)
 <p>The event handlers for these events receive both a <code>Reaction</code> object and the <code>User</code> or <code>Member</code> who triggered the event.</p>
 <p>```python
 import disagreement
-from disagreement.models import Reaction, User, Member</p>
+from disagreement import Reaction, User, Member</p>
 <p>@client.on_event("MESSAGE_REACTION_ADD")
 async def on_reaction_add(reaction: Reaction, user: User | Member):
     # Ignore reactions from the bot itself

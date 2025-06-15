@@ -1390,7 +1390,7 @@ the Discord permission bitmask.</p>
 <h2 id="permissions-enum">Permissions Enum</h2>
 <p>Each attribute of <code>Permissions</code> represents a single permission bit. The value
 is a power of two so multiple permissions can be combined using bitwise OR.</p>
-<pre><code class="language-python">from disagreement.permissions import Permissions
+<pre><code class="language-python">from disagreement import Permissions
 
 value = Permissions.SEND_MESSAGES | Permissions.MANAGE_MESSAGES
 </code></pre>
@@ -1411,10 +1411,10 @@ the provided permissions.</p>
 <p>Return a list of permissions that <code>current</code> does not contain.</p>
 <h2 id="example">Example</h2>
 <pre><code class="language-python">from disagreement.permissions import (
-    Permissions,
     has_permissions,
     missing_permissions,
 )
+from disagreement import Permissions
 
 current = Permissions.SEND_MESSAGES | Permissions.MANAGE_MESSAGES
 
