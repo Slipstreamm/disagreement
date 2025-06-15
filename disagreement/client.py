@@ -18,6 +18,8 @@ from typing import (
 )
 from types import ModuleType
 
+from datetime import datetime, timedelta
+
 from .http import HTTPClient
 from .gateway import GatewayClient
 from .shard_manager import ShardManager
@@ -36,6 +38,7 @@ from .interactions import Interaction, Snowflake
 from .error_handler import setup_global_error_handler
 from .voice_client import VoiceClient
 from .models import Activity
+from .utils import utcnow
 
 if TYPE_CHECKING:
     from .models import (
@@ -168,6 +171,8 @@ class Client:
             None  # The bot's own user object, populated on READY
         )
 
+        self.start_time: Optional[datetime] = None
+
         # Internal Caches
         self._guilds: GuildCache = GuildCache()
         self._channels: ChannelCache = ChannelCache()
@@ -244,6 +249,7 @@ class Client:
                 f"Client connected using {self.shard_count} shards, waiting for READY signal..."
             )
             await self.wait_until_ready()
+            self.start_time = utcnow()
             print("Client is READY!")
             return
 
@@ -260,6 +266,7 @@ class Client:
                 # and its READY handler will set self._ready_event via dispatcher.
                 print("Client connected to Gateway, waiting for READY signal...")
                 await self.wait_until_ready()  # Wait for the READY event from Gateway
+                self.start_time = utcnow()
                 print("Client is READY!")
                 return  # Successfully connected and ready
             except AuthenticationError:  # Non-recoverable by retry here
@@ -373,6 +380,7 @@ class Client:
             await self._http.close()
 
         self._ready_event.set()  # Ensure any waiters for ready are unblocked
+        self.start_time = None
         print("Client closed.")
 
     async def __aenter__(self) -> "Client":
@@ -420,6 +428,12 @@ class Client:
         """Returns the gateway latency in milliseconds, or ``None`` if unavailable."""
         latency = getattr(self._gateway, "latency_ms", None)
         return round(latency, 2) if latency is not None else None
+
+    def uptime(self) -> Optional[timedelta]:
+        """Return the duration since the client connected, or ``None`` if not connected."""
+        if self.start_time is None:
+            return None
+        return utcnow() - self.start_time
 
     async def wait_until_ready(self) -> None:
         """|coro|
