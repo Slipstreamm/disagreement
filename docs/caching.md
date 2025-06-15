@@ -13,6 +13,15 @@ if member:
     print(member.display_name)
 ```
 
+To access the bot's own member object, use the ``Guild.me`` property. It returns
+``None`` if the bot is not in the guild or its user data hasn't been loaded:
+
+```python
+bot_member = guild.me
+if bot_member:
+    print(bot_member.joined_at)
+```
+
 The cache can be cleared manually if needed:
 
 ```python
