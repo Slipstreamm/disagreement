@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from .ui.view import View
     from .interactions import Snowflake
     from .typing import Typing
+    from .shard_manager import Shard
 
     # Forward reference Message if it were used in type hints before its definition
     # from .models import Message # Not needed as Message is defined before its use in TextChannel.send etc.
@@ -1086,8 +1087,17 @@ class Guild:
         premium_progress_bar_enabled (bool): Whether the guild has the premium progress bar enabled.
     """
 
-    def __init__(self, data: Dict[str, Any], client_instance: "Client"):
+    def __init__(
+        self,
+        data: Dict[str, Any],
+        client_instance: "Client",
+        *,
+        shard_id: Optional[int] = None,
+    ):
         self._client: "Client" = client_instance
+        self._shard_id: Optional[int] = (
+            shard_id if shard_id is not None else data.get("shard_id")
+        )
         self.id: str = data["id"]
         self.name: str = data["name"]
         self.icon: Optional[str] = data.get("icon")
@@ -1168,6 +1178,25 @@ class Guild:
             getattr(client_instance, "member_cache_flags", MemberCacheFlags())
         )
         self._threads: Dict[str, "Thread"] = {}
+
+    @property
+    def shard_id(self) -> Optional[int]:
+        """ID of the shard that received this guild, if any."""
+
+        return self._shard_id
+
+    @property
+    def shard(self) -> Optional["Shard"]:
+        """The :class:`Shard` this guild belongs to."""
+
+        if self._shard_id is None:
+            return None
+        manager = getattr(self._client, "_shard_manager", None)
+        if not manager:
+            return None
+        if 0 <= self._shard_id < len(manager.shards):
+            return manager.shards[self._shard_id]
+        return None
 
     def get_channel(self, channel_id: str) -> Optional["Channel"]:
         return self._channels.get(channel_id)
