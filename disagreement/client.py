@@ -252,7 +252,7 @@ class Client:
             AuthenticationError: If the token is invalid.
         """
         if self._closed:
-            raise DisagreementException("Client is closed and cannot connect.")>>>>>>> master
+            raise DisagreementException("Client is closed and cannot connect.")
         if self.shard_count and self.shard_count > 1:
             await self._initialize_shard_manager()
             assert self._shard_manager is not None
