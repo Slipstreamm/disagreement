@@ -334,6 +334,10 @@ class GatewayClient:
                     self._resume_gateway_url,
                 )
 
+            # The client is now ready for operations. Set the event before dispatching to user code.
+            self._client_instance._ready_event.set()
+            logger.info("Client is now marked as ready.")
+
             await self._dispatcher.dispatch(event_name, raw_event_d_payload)
         elif event_name == "GUILD_MEMBERS_CHUNK":
             if isinstance(raw_event_d_payload, dict):

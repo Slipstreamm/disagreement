@@ -1665,16 +1665,6 @@ class Client:
                 "Ensure the client is connected and READY."
             )
             return
-        if not self.is_ready():
-            print(
-                "Warning: Client is not ready. Waiting for client to be ready before syncing commands."
-            )
-            await self.wait_until_ready()
-            if not self.application_id:
-                print(
-                    "Error: application_id still not set after client is ready. Cannot sync commands."
-                )
-                return
 
         await self.app_command_handler.sync_commands(
             application_id=self.application_id, guild_id=guild_id

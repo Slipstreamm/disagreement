@@ -51,6 +51,8 @@ class User:
 
     def __init__(self, data: dict, client_instance: Optional["Client"] = None) -> None:
         self._client = client_instance
+        if "id" not in data and "user" in data:
+            data = data["user"]
         self.id: str = data["id"]
         self.username: Optional[str] = data.get("username")
         self.discriminator: Optional[str] = data.get("discriminator")
@@ -752,12 +754,10 @@ class Member(User):  # Member inherits from User
         )  # Pass user_data or data if user_data is empty
 
         self.nick: Optional[str] = data.get("nick")
-        self.avatar: Optional[str] = data.get("avatar")  # Guild-specific avatar hash
-        self.roles: List[str] = data.get("roles", [])  # List of role IDs
-        self.joined_at: str = data["joined_at"]  # ISO8601 timestamp
-        self.premium_since: Optional[str] = data.get(
-            "premium_since"
-        )  # ISO8601 timestamp
+        self.avatar: Optional[str] = data.get("avatar")
+        self.roles: List[str] = data.get("roles", [])
+        self.joined_at: str = data["joined_at"]
+        self.premium_since: Optional[str] = data.get("premium_since")
         self.deaf: bool = data.get("deaf", False)
         self.mute: bool = data.get("mute", False)
         self.pending: bool = data.get("pending", False)

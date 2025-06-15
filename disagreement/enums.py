@@ -268,6 +268,8 @@ class GuildFeature(str, Enum):  # Changed from IntEnum to Enum
     VERIFIED = "VERIFIED"
     VIP_REGIONS = "VIP_REGIONS"
     WELCOME_SCREEN_ENABLED = "WELCOME_SCREEN_ENABLED"
+    SOUNDBOARD = "SOUNDBOARD"
+    VIDEO_QUALITY_720_60FPS = "VIDEO_QUALITY_720_60FPS"
     # Add more as they become known or needed
 
     # This allows GuildFeature("UNKNOWN_FEATURE_STRING") to work
