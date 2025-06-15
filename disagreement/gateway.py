@@ -338,6 +338,8 @@ class GatewayClient:
             self._client_instance._ready_event.set()
             logger.info("Client is now marked as ready.")
 
+            if isinstance(raw_event_d_payload, dict) and self._shard_id is not None:
+                raw_event_d_payload["shard_id"] = self._shard_id
             await self._dispatcher.dispatch(event_name, raw_event_d_payload)
         elif event_name == "GUILD_MEMBERS_CHUNK":
             if isinstance(raw_event_d_payload, dict):
@@ -388,6 +390,8 @@ class GatewayClient:
             event_data_to_dispatch = (
                 raw_event_d_payload if isinstance(raw_event_d_payload, dict) else {}
             )
+            if isinstance(event_data_to_dispatch, dict) and self._shard_id is not None:
+                event_data_to_dispatch["shard_id"] = self._shard_id
             await self._dispatcher.dispatch(event_name, event_data_to_dispatch)
             await self._dispatcher.dispatch(
                 "SHARD_RESUME", {"shard_id": self._shard_id}
@@ -398,6 +402,8 @@ class GatewayClient:
             event_data_to_dispatch = (
                 raw_event_d_payload if isinstance(raw_event_d_payload, dict) else {}
             )
+            if isinstance(event_data_to_dispatch, dict) and self._shard_id is not None:
+                event_data_to_dispatch["shard_id"] = self._shard_id
 
             await self._dispatcher.dispatch(event_name, event_data_to_dispatch)
         else:

@@ -927,10 +927,11 @@ class Client:
         return role
 
     def parse_guild(self, data: Dict[str, Any]) -> "Guild":
-        """Parses guild data and returns a Guild object, updating cache."""
+        """Parses guild data and returns a :class:`Guild` object, updating cache."""
         from .models import Guild
 
-        guild = Guild(data, client_instance=self)
+        shard_id = data.get("shard_id")
+        guild = Guild(data, client_instance=self, shard_id=shard_id)
         self._guilds.set(guild.id, guild)
 
         presences = {p["user"]["id"]: p for p in data.get("presences", [])}
