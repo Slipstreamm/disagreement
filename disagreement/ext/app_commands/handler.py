@@ -18,51 +18,23 @@ from typing import (
 if TYPE_CHECKING:
     from disagreement.client import Client
     from disagreement.interactions import Interaction, ResolvedData, Snowflake
-    from disagreement.enums import (
-        ApplicationCommandType,
-        ApplicationCommandOptionType,
-        InteractionType,
-    )
-    from .commands import (
-        AppCommand,
-        SlashCommand,
-        UserCommand,
-        MessageCommand,
-        AppCommandGroup,
-    )
-    from .context import AppCommandContext
-    from disagreement.models import (
-        User,
-        Member,
-        Role,
-        Attachment,
-        Message,
-    )  # For resolved data
 
-    # Channel models would also go here
+from disagreement.enums import (
+    ApplicationCommandType,
+    ApplicationCommandOptionType,
+    InteractionType,
+)
+from .commands import (
+    AppCommand,
+    SlashCommand,
+    UserCommand,
+    MessageCommand,
+    AppCommandGroup,
+)
+from .context import AppCommandContext
+from disagreement.models import User, Member, Role, Attachment, Message
 
-# Placeholder for models not yet fully defined or imported
-if not TYPE_CHECKING:
-    from disagreement.enums import (
-        ApplicationCommandType,
-        ApplicationCommandOptionType,
-        InteractionType,
-    )
-    from .commands import (
-        AppCommand,
-        SlashCommand,
-        UserCommand,
-        MessageCommand,
-        AppCommandGroup,
-    )
-    from .context import AppCommandContext
-
-    User = Any
-    Member = Any
-    Role = Any
-    Attachment = Any
-    Channel = Any
-    Message = Any
+Channel = Any
 
 
 logger = logging.getLogger(__name__)
@@ -587,12 +559,19 @@ class AppCommandHandler:
             #         print(f"Failed to send error message for app command: {send_e}")
 
     async def sync_commands(
-        self, application_id: "Snowflake", guild_id: Optional["Snowflake"] = None
+        self,
+        application_id: Optional["Snowflake"] = None,
+        guild_id: Optional["Snowflake"] = None,
     ) -> None:
         """
         Synchronizes (registers/updates) all application commands with Discord.
         If guild_id is provided, syncs commands for that guild. Otherwise, syncs global commands.
         """
+        if application_id is None:
+            application_id = self.client.application_id
+        if application_id is None:
+            raise ValueError("application_id must be provided to sync commands")
+
         cache = self._load_cached_ids()
         scope_key = str(guild_id) if guild_id else "global"
         stored = cache.get(scope_key, {})

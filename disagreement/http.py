@@ -1364,3 +1364,8 @@ class HTTPClient:
     async def leave_thread(self, channel_id: "Snowflake") -> None:
         """Removes the current user from a thread."""
         await self.request("DELETE", f"/channels/{channel_id}/thread-members/@me")
+
+    async def create_dm(self, recipient_id: "Snowflake") -> Dict[str, Any]:
+        """Creates (or opens) a DM channel with the given user."""
+        payload = {"recipient_id": str(recipient_id)}
+        return await self.request("POST", "/users/@me/channels", payload=payload)
