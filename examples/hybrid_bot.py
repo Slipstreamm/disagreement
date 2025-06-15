@@ -230,7 +230,7 @@ class TestCog(Cog):
 
 
 # --- Main Bot Script ---
-async def main():
+def main():
     bot_token = os.getenv("DISCORD_BOT_TOKEN")
     application_id = os.getenv("DISCORD_APPLICATION_ID")
 
@@ -291,7 +291,7 @@ async def main():
     client.add_cog(TestCog(client))
 
     try:
-        await client.run()
+        client.run()
     except KeyboardInterrupt:
         logger.info("Bot shutting down...")
     except Exception as e:
@@ -300,7 +300,7 @@ async def main():
         )
     finally:
         if not client.is_closed():
-            await client.close()
+            asyncio.run(client.close())
         logger.info("Bot has been closed.")
 
 
@@ -310,6 +310,6 @@ if __name__ == "__main__":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         logger.info("Main loop interrupted. Exiting.")

@@ -27,10 +27,10 @@ intents = GatewayIntent.default() | GatewayIntent.MESSAGE_CONTENT
 client = Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
 
 
-async def main() -> None:
+def main() -> None:
     client.add_cog(Basics(client))
-    await client.run()
+    client.run()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

@@ -53,9 +53,7 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 
 # --- Intents Configuration ---
 intents = (
-    GatewayIntent.GUILDS
-    | GatewayIntent.GUILD_MESSAGES
-    | GatewayIntent.MESSAGE_CONTENT
+    GatewayIntent.GUILDS | GatewayIntent.GUILD_MESSAGES | GatewayIntent.MESSAGE_CONTENT
 )
 
 # --- Initialize the Client ---
@@ -106,11 +104,11 @@ async def on_ready():
 
 
 # --- Main Execution ---
-async def main():
+def main():
     print("Starting Typing Indicator Bot...")
     try:
         client.add_cog(TypingCog(client))
-        await client.run()
+        client.run()
     except AuthenticationError:
         print("Authentication failed. Check your bot token.")
     except Exception as e:
@@ -118,9 +116,9 @@ async def main():
         traceback.print_exc()
     finally:
         if not client.is_closed():
-            await client.close()
+            asyncio.run(client.close())
         print("Bot has been shut down.")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

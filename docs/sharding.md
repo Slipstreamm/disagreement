@@ -8,13 +8,8 @@ manually.
 and configures the `ShardManager` automatically.
 
 ```python
-import asyncio
 import disagreement
 
 bot = disagreement.AutoShardedClient(token="YOUR_TOKEN")
-
-async def main():
-    await bot.run()
-
-asyncio.run(main())
+bot.run()
 ```
