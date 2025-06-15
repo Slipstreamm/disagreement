@@ -1,7 +1,7 @@
-from disagreement.ext import tasks
+from disagreement import loop
 
 
-@tasks.loop(seconds=2.0)
+@loop(seconds=2.0)
 async def ticker() -> None:
     print("Extension tick")
 

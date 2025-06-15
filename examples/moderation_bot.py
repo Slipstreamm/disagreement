@@ -9,8 +9,7 @@ from typing import Set
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from disagreement import Client, GatewayIntent, Member, Message
-from disagreement.ext import commands
+from disagreement import Client, GatewayIntent, Member, Message, Cog, command, CommandContext
 
 try:
     from dotenv import load_dotenv
@@ -37,21 +36,21 @@ client = Client(token=BOT_TOKEN, command_prefix="!", intents=intents)
 BANNED_WORDS: Set[str] = {"badword1", "badword2"}
 
 
-class ModerationCog(commands.Cog):
+class ModerationCog(Cog):
     def __init__(self, bot: Client) -> None:
         super().__init__(bot)
 
-    @commands.command()
+    @command()
     async def kick(
-        self, ctx: commands.CommandContext, member: Member, *, reason: str = ""
+        self, ctx: CommandContext, member: Member, *, reason: str = ""
     ) -> None:
         """Kick a member from the guild."""
         await member.kick(reason=reason or None)
         await ctx.reply(f"Kicked {member.display_name}")
 
-    @commands.command()
+    @command()
     async def ban(
-        self, ctx: commands.CommandContext, member: Member, *, reason: str = ""
+        self, ctx: CommandContext, member: Member, *, reason: str = ""
     ) -> None:
         """Ban a member from the guild."""
         await member.ban(reason=reason or None)

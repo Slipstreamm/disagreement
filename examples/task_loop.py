@@ -8,12 +8,12 @@ import sys
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from disagreement.ext import tasks
+from disagreement import loop
 
 counter = 0
 
 
-@tasks.loop(seconds=1.0)
+@loop(seconds=1.0)
 async def ticker() -> None:
     global counter
     counter += 1

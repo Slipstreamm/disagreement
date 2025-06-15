@@ -3,8 +3,6 @@ import asyncio
 from typing import Union
 from disagreement import (
     Client,
-    ui,
-    ext,
     HybridContext,
     Message,
     SelectOption,
@@ -27,9 +25,14 @@ from disagreement import (
     ChannelType,
     MessageFlags,
     Interaction,
+    Cog,
+    CommandContext,
+    AppCommandContext,
+    hybrid_command,
+    View,
+    button,
+    select,
 )
-from disagreement.ext.commands import Cog, CommandContext
-from disagreement.ext.app_commands import AppCommandContext, hybrid_command
 
 try:
     from dotenv import load_dotenv
@@ -69,12 +72,12 @@ STOCKS = [
 
 
 # Define a View class that contains our components
-class MyView(ui.View):
+class MyView(View):
     def __init__(self):
         super().__init__(timeout=180)  # 180-second timeout
         self.click_count = 0
 
-    @ui.button(label="Click Me!", style=ButtonStyle.SUCCESS, emoji="🖱️")
+    @button(label="Click Me!", style=ButtonStyle.SUCCESS, emoji="🖱️")
     async def click_me(self, interaction: Interaction):
         self.click_count += 1
         await interaction.respond(
@@ -82,7 +85,7 @@ class MyView(ui.View):
             ephemeral=True,
         )
 
-    @ui.select(
+    @select(
         custom_id="string_select",
         placeholder="Choose an option",
         options=[
@@ -108,12 +111,12 @@ class MyView(ui.View):
 
 
 # View for cycling through available stocks
-class StockView(ui.View):
+class StockView(View):
     def __init__(self):
         super().__init__(timeout=180)
         self.index = 0
 
-    @ui.button(label="Next Stock", style=ButtonStyle.PRIMARY)
+    @button(label="Next Stock", style=ButtonStyle.PRIMARY)
     async def next_stock(self, interaction: Interaction):
         self.index = (self.index + 1) % len(STOCKS)
         stock = STOCKS[self.index]

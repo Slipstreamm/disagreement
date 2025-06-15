@@ -33,8 +33,10 @@ try:
         Member,
         HTTPException,
         AuthenticationError,
+        Cog,
+        command,
+        CommandContext,
     )
-    from disagreement.ext import commands
 except ImportError:
     print(
         "Failed to import disagreement. Make sure it's installed or PYTHONPATH is set correctly."
@@ -72,12 +74,12 @@ client = Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
 
 
 # --- Define a Cog for reaction-related commands ---
-class ReactionCog(commands.Cog):
+class ReactionCog(Cog):
     def __init__(self, bot_client):
         super().__init__(bot_client)
 
-    @commands.command(name="react")
-    async def react_command(self, ctx: commands.CommandContext):
+    @command(name="react")
+    async def react_command(self, ctx: CommandContext):
         """Reacts to the command message with a thumbs up."""
         try:
             # The emoji can be a standard Unicode emoji or a custom one in the format '<:name:id>'

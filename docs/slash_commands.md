@@ -1,9 +1,9 @@
 # Using Slash Commands
 
-The library provides a slash command framework via the `ext.app_commands` package. Define commands with decorators and register them with Discord.
+The library provides a slash command framework to define commands with decorators and register them with Discord.
 
 ```python
-from disagreement.ext.app_commands import AppCommandGroup
+from disagreement import AppCommandGroup
 
 bot_commands = AppCommandGroup("bot", "Bot commands")
 

@@ -32,11 +32,12 @@ try:
         GatewayIntent,
         Message,
         Guild,
-        ext,
         AuthenticationError,
         DisagreementException,
+        Cog,
+        command,
+        CommandContext,
     )
-    from disagreement.ext import commands
 except ImportError:
     print(
         "Failed to import disagreement. Make sure it's installed or PYTHONPATH is set correctly."
@@ -87,26 +88,26 @@ client = Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
 
 
 # --- Define a Cog for example commands ---
-class ExampleCog(commands.Cog):  # Ensuring this uses commands.Cog
+class ExampleCog(Cog):  # Ensuring this uses commands.Cog
     def __init__(
         self, bot_client
     ):  # Renamed client to bot_client to avoid conflict with self.client
         super().__init__(bot_client)  # Pass the client instance to the base Cog
 
-    @commands.command(name="hello", aliases=["hi"])
-    async def hello_command(self, ctx: commands.CommandContext, *, who: str = "world"):
+    @command(name="hello", aliases=["hi"])
+    async def hello_command(self, ctx: CommandContext, *, who: str = "world"):
         """Greets someone."""
         await ctx.reply(f"Hello {ctx.author.mention} and {who}!")
         print(f"Executed 'hello' command for {ctx.author.username}, greeting {who}")
 
-    @commands.command()
-    async def ping(self, ctx: commands.CommandContext):
+    @command()
+    async def ping(self, ctx: CommandContext):
         """Responds with Pong!"""
         await ctx.reply("Pong!")
         print(f"Executed 'ping' command for {ctx.author.username}")
 
-    @commands.command()
-    async def me(self, ctx: commands.CommandContext):
+    @command()
+    async def me(self, ctx: CommandContext):
         """Shows information about the invoking user."""
         reply_content = (
             f"Hello {ctx.author.mention}!\n"
@@ -117,8 +118,8 @@ class ExampleCog(commands.Cog):  # Ensuring this uses commands.Cog
         await ctx.reply(reply_content)
         print(f"Executed 'me' command for {ctx.author.username}")
 
-    @commands.command(name="add")
-    async def add_numbers(self, ctx: commands.CommandContext, num1: int, num2: int):
+    @command(name="add")
+    async def add_numbers(self, ctx: CommandContext, num1: int, num2: int):
         """Adds two numbers."""
         result = num1 + num2
         await ctx.reply(f"The sum of {num1} and {num2} is {result}.")
@@ -126,16 +127,16 @@ class ExampleCog(commands.Cog):  # Ensuring this uses commands.Cog
             f"Executed 'add' command for {ctx.author.username}: {num1} + {num2} = {result}"
         )
 
-    @commands.command(name="say")
-    async def say_something(self, ctx: commands.CommandContext, *, text_to_say: str):
+    @command(name="say")
+    async def say_something(self, ctx: CommandContext, *, text_to_say: str):
         """Repeats the text you provide."""
         await ctx.reply(f"You said: {text_to_say}")
         print(
             f"Executed 'say' command for {ctx.author.username}, saying: {text_to_say}"
         )
 
-    @commands.command(name="whois")
-    async def whois(self, ctx: commands.CommandContext, *, name: str):
+    @command(name="whois")
+    async def whois(self, ctx: CommandContext, *, name: str):
         """Looks up a member by username or nickname using the guild cache."""
         if not ctx.guild:
             await ctx.reply("This command can only be used in a guild.")
@@ -149,8 +150,8 @@ class ExampleCog(commands.Cog):  # Ensuring this uses commands.Cog
         else:
             await ctx.reply("Member not found in cache.")
 
-    @commands.command(name="quit")
-    async def quit_command(self, ctx: commands.CommandContext):
+    @command(name="quit")
+    async def quit_command(self, ctx: CommandContext):
         """Shuts down the bot (requires YOUR_USER_ID to be set)."""
         # Replace YOUR_USER_ID with your actual Discord User ID for a safe shutdown command
         your_user_id = "YOUR_USER_ID_REPLACE_ME"  # IMPORTANT: Replace this

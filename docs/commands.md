@@ -20,7 +20,7 @@ returns ``True``. Checks may be regular or async callables that accept a
 `CommandContext`.
 
 ```python
-from disagreement.ext.commands import command, check, CheckFailure
+from disagreement import command, check, CheckFailure
 
 def is_owner(ctx):
     return ctx.author.id == "1"
@@ -40,7 +40,7 @@ Commands can be rate limited using the ``cooldown`` decorator. The example
 below restricts usage to once every three seconds per user:
 
 ```python
-from disagreement.ext.commands import command, cooldown
+from disagreement import command, cooldown
 
 @command()
 @cooldown(1, 3.0)
@@ -56,7 +56,7 @@ Use `commands.requires_permissions` to ensure the invoking member has the
 required permissions in the channel.
 
 ```python
-from disagreement.ext.commands import command, requires_permissions
+from disagreement import command, requires_permissions
 from disagreement import Permissions
 
 @command()

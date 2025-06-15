@@ -1,11 +1,11 @@
 # Task Loops
 
-The tasks extension allows you to run functions periodically. Decorate an async function with `@tasks.loop` and start it using `.start()`.
+The tasks extension allows you to run functions periodically. Decorate an async function with `@loop` and start it using `.start()`.
 
 ```python
-from disagreement.ext import tasks
+from disagreement import loop
 
-@tasks.loop(minutes=1.0)
+@loop(minutes=1.0)
 async def announce():
     print("Hello from a loop")
 
@@ -19,7 +19,7 @@ You can provide the interval in seconds, minutes, hours or as a `datetime.timede
 ```python
 import datetime
 
-@tasks.loop(delta=datetime.timedelta(seconds=30))
+@loop(delta=datetime.timedelta(seconds=30))
 async def ping():
     ...
 ```
@@ -30,7 +30,7 @@ Handle exceptions raised by the looped coroutine using `on_error`:
 async def log_error(exc: Exception) -> None:
     print("Loop failed:", exc)
 
-@tasks.loop(seconds=5.0, on_error=log_error)
+@loop(seconds=5.0, on_error=log_error)
 async def worker():
     ...
 ```
@@ -38,7 +38,7 @@ async def worker():
 Run setup and teardown code using `before_loop` and `after_loop`:
 
 ```python
-@tasks.loop(seconds=5.0)
+@loop(seconds=5.0)
 async def worker():
     ...
 
@@ -58,7 +58,7 @@ from datetime import datetime, timedelta
 
 time_to_run = (datetime.now() + timedelta(seconds=5)).time()
 
-@tasks.loop(time_of_day=time_to_run)
+@loop(time_of_day=time_to_run)
 async def daily_task():
     ...
 ```

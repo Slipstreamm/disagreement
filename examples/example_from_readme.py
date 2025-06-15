@@ -4,19 +4,18 @@
 import asyncio
 import os
 
-from disagreement import Client, GatewayIntent
-from disagreement.ext import commands
+from disagreement import Client, GatewayIntent, Cog, command, CommandContext
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-class Basics(commands.Cog):
+class Basics(Cog):
     def __init__(self, client: Client) -> None:
         super().__init__(client)
 
-    @commands.command()
-    async def ping(self, ctx: commands.CommandContext) -> None:
+    @command()
+    async def ping(self, ctx: CommandContext) -> None:
         await ctx.reply(f"Pong! Gateway Latency: {self.client.latency_ms} ms.")  # type: ignore (latency is None during static analysis)
 
 

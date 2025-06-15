@@ -24,8 +24,15 @@ if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__fi
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
-    from disagreement import Client, GatewayIntent, HTTPException, AuthenticationError
-    from disagreement.ext import commands
+    from disagreement import (
+        Client,
+        GatewayIntent,
+        HTTPException,
+        AuthenticationError,
+        Cog,
+        command,
+        CommandContext,
+    )
 except ImportError:
     print(
         "Failed to import disagreement. Make sure it's installed or PYTHONPATH is set correctly."
@@ -60,12 +67,12 @@ client = Client(token=BOT_TOKEN, intents=intents, command_prefix="!")
 
 
 # --- Define a Cog for the typing indicator command ---
-class TypingCog(commands.Cog):
+class TypingCog(Cog):
     def __init__(self, bot_client):
         super().__init__(bot_client)
 
-    @commands.command(name="typing")
-    async def typing_test_command(self, ctx: commands.CommandContext):
+    @command(name="typing")
+    async def typing_test_command(self, ctx: CommandContext):
         """Shows a typing indicator for 5 seconds."""
         await ctx.reply("Showing typing indicator for 5 seconds...")
         try:
