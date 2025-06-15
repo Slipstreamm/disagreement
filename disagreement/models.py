@@ -1131,6 +1131,9 @@ class Guild:
         nsfw_level (GuildNSFWLevel): Guild NSFW level.
         stickers (Optional[List[Dict]]): Custom stickers in the guild. (Consider a Sticker model)
         premium_progress_bar_enabled (bool): Whether the guild has the premium progress bar enabled.
+        text_channels (List[TextChannel]): List of text-based channels in this guild.
+        voice_channels (List[VoiceChannel]): List of voice-based channels in this guild.
+        category_channels (List[CategoryChannel]): List of category channels in this guild.
     """
 
     def __init__(
@@ -1224,6 +1227,9 @@ class Guild:
             getattr(client_instance, "member_cache_flags", MemberCacheFlags())
         )
         self._threads: Dict[str, "Thread"] = {}
+        self.text_channels: List["TextChannel"] = []
+        self.voice_channels: List["VoiceChannel"] = []
+        self.category_channels: List["CategoryChannel"] = []
 
     @property
     def shard_id(self) -> Optional[int]:
