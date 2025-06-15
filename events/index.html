@@ -652,6 +652,24 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#connect" class="md-nav__link">
+    <span class="md-ellipsis">
+      CONNECT
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disconnect" class="md-nav__link">
+    <span class="md-ellipsis">
+      DISCONNECT
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#voice_state_update" class="md-nav__link">
     <span class="md-ellipsis">
       VOICE_STATE_UPDATE
@@ -1529,6 +1547,20 @@ async def on_shard_disconnect(info: dict):
 a dictionary with the shard ID.</p>
 <pre><code class="language-python">@client.event
 async def on_shard_resume(info: dict):
+    ...
+</code></pre>
+<h2 id="connect">CONNECT</h2>
+<p>Dispatched when the WebSocket connection opens. The callback receives a
+dictionary with the shard ID.</p>
+<pre><code class="language-python">@client.event
+async def on_connect(info: dict):
+    print(&quot;connected&quot;, info.get(&quot;shard_id&quot;))
+</code></pre>
+<h2 id="disconnect">DISCONNECT</h2>
+<p>Fired when the WebSocket connection closes. The callback receives a dictionary
+with the shard ID.</p>
+<pre><code class="language-python">@client.event
+async def on_disconnect(info: dict):
     ...
 </code></pre>
 <h2 id="voice_state_update">VOICE_STATE_UPDATE</h2>
