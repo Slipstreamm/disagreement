@@ -6,6 +6,7 @@ from disagreement.ext.commands.decorators import (
     check,
     cooldown,
     requires_permissions,
+    is_owner,
 )
 from disagreement.ext.commands.errors import CheckFailure, CommandOnCooldown
 from disagreement.permissions import Permissions
@@ -119,6 +120,47 @@ async def test_requires_permissions_fail(message):
     message._client.get_guild = lambda gid: Guild()
 
     @requires_permissions(Permissions.MANAGE_MESSAGES)
+    async def cb(ctx):
+        pass
+
+    cmd = Command(cb)
+    ctx = CommandContext(
+        message=message,
+        bot=message._client,
+        prefix="!",
+        command=cmd,
+        invoked_with="test",
+    )
+
+    with pytest.raises(CheckFailure):
+        await cmd.invoke(ctx)
+
+
+@pytest.mark.asyncio
+async def test_is_owner_pass(message):
+    message._client.owner_ids = ["2"]
+
+    @is_owner()
+    async def cb(ctx):
+        pass
+
+    cmd = Command(cb)
+    ctx = CommandContext(
+        message=message,
+        bot=message._client,
+        prefix="!",
+        command=cmd,
+        invoked_with="test",
+    )
+
+    await cmd.invoke(ctx)
+
+
+@pytest.mark.asyncio
+async def test_is_owner_fail(message):
+    message._client.owner_ids = ["1"]
+
+    @is_owner()
     async def cb(ctx):
         pass
 

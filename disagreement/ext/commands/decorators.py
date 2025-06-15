@@ -292,3 +292,19 @@ def has_any_role(
         )
 
     return check(predicate)
+
+
+def is_owner() -> (
+    Callable[[Callable[..., Awaitable[None]]], Callable[..., Awaitable[None]]]
+):
+    """Check that the invoking user is listed as a bot owner."""
+
+    async def predicate(ctx: "CommandContext") -> bool:
+        from .errors import CheckFailure
+
+        owner_ids = getattr(ctx.bot, "owner_ids", [])
+        if str(ctx.author.id) not in {str(o) for o in owner_ids}:
+            raise CheckFailure("This command can only be used by the bot owner.")
+        return True
+
+    return check(predicate)
