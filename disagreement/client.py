@@ -1685,6 +1685,16 @@ class Client:
 
         pass
 
+    async def on_connect(self) -> None:
+        """|coro| Called when the WebSocket connection opens."""
+
+        pass
+
+    async def on_disconnect(self) -> None:
+        """|coro| Called when the WebSocket connection closes."""
+
+        pass
+
     async def on_app_command_error(
         self, context: AppCommandContext, error: Exception
     ) -> None:
