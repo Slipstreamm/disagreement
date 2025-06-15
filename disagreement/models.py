@@ -47,20 +47,13 @@ if TYPE_CHECKING:
 
 
 class User:
-    """Represents a Discord User.
+    """Represents a Discord User."""
 
-    Attributes:
-        id (str): The user's unique ID.
-        username (str): The user's username.
-        discriminator (str): The user's 4-digit discord-tag.
-        bot (bool): Whether the user belongs to an OAuth2 application. Defaults to False.
-        avatar (Optional[str]): The user's avatar hash, if any.
-    """
-
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, client_instance: Optional["Client"] = None) -> None:
+        self._client = client_instance
         self.id: str = data["id"]
-        self.username: str = data["username"]
-        self.discriminator: str = data["discriminator"]
+        self.username: Optional[str] = data.get("username")
+        self.discriminator: Optional[str] = data.get("discriminator")
         self.bot: bool = data.get("bot", False)
         self.avatar: Optional[str] = data.get("avatar")
 
@@ -70,7 +63,23 @@ class User:
         return f"<@{self.id}>"
 
     def __repr__(self) -> str:
-        return f"<User id='{self.id}' username='{self.username}' discriminator='{self.discriminator}'>"
+        username = self.username or "Unknown"
+        disc = self.discriminator or "????"
+        return f"<User id='{self.id}' username='{username}' discriminator='{disc}'>"
+
+    async def send(
+        self,
+        content: Optional[str] = None,
+        *,
+        client: Optional["Client"] = None,
+        **kwargs: Any,
+    ) -> "Message":
+        """Send a direct message to this user."""
+
+        target_client = client or self._client
+        if target_client is None:
+            raise DisagreementException("User.send requires a Client instance")
+        return await target_client.send_dm(self.id, content=content, **kwargs)
 
 
 class Message:
@@ -96,7 +105,7 @@ class Message:
         self.id: str = data["id"]
         self.channel_id: str = data["channel_id"]
         self.guild_id: Optional[str] = data.get("guild_id")
-        self.author: User = User(data["author"])
+        self.author: User = User(data["author"], client_instance)
         self.content: str = data["content"]
         self.timestamp: str = data["timestamp"]
         if data.get("components"):
@@ -776,7 +785,7 @@ class Member(User):  # Member inherits from User
     def display_name(self) -> str:
         """Return the nickname if set, otherwise the username."""
 
-        return self.nick or self.username
+        return self.nick or self.username or ""
 
     async def kick(self, *, reason: Optional[str] = None) -> None:
         if not self.guild_id or not self._client:
@@ -1185,7 +1194,7 @@ class Guild:
 
         lowered = name.lower()
         for member in self._members.values():
-            if member.username.lower() == lowered:
+            if member.username and member.username.lower() == lowered:
                 return member
             if member.nick and member.nick.lower() == lowered:
                 return member
@@ -2471,7 +2480,7 @@ class PresenceUpdate:
         self, data: Dict[str, Any], client_instance: Optional["Client"] = None
     ):
         self._client = client_instance
-        self.user = User(data["user"])
+        self.user = User(data["user"], client_instance)
         self.guild_id: Optional[str] = data.get("guild_id")
         self.status: Optional[str] = data.get("status")
         self.activities: List[Activity] = []

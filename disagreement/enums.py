@@ -273,7 +273,12 @@ class GuildFeature(str, Enum):  # Changed from IntEnum to Enum
     # This allows GuildFeature("UNKNOWN_FEATURE_STRING") to work
     @classmethod
     def _missing_(cls, value):  # type: ignore
-        return str(value)
+        member = object.__new__(cls)
+        member._name_ = str(value)
+        member._value_ = str(value)
+        cls._value2member_map_[member._value_] = member  # pylint: disable=no-member
+        cls._member_map_[member._name_] = member  # pylint: disable=no-member
+        return member
 
 
 # --- Guild Scheduled Event Enums ---
@@ -329,7 +334,12 @@ class VoiceRegion(str, Enum):
 
     @classmethod
     def _missing_(cls, value):  # type: ignore
-        return str(value)
+        member = object.__new__(cls)
+        member._name_ = str(value)
+        member._value_ = str(value)
+        cls._value2member_map_[member._value_] = member  # pylint: disable=no-member
+        cls._member_map_[member._name_] = member  # pylint: disable=no-member
+        return member
 
 
 # --- Channel Enums ---
