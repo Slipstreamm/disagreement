@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, Iterable, Optional, TYPE_CHECKING, Callable
+import re
+
+# Discord epoch in milliseconds (2015-01-01T00:00:00Z)
+DISCORD_EPOCH = 1420070400000
 
 if TYPE_CHECKING:  # pragma: no cover - for type hinting only
     from .models import Message, TextChannel
@@ -15,21 +19,7 @@ def utcnow() -> datetime:
 
 
 def find(predicate: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[Any]:
-    """Return the first element in ``iterable`` matching the ``predicate``.
-
-    Parameters
-    ----------
-    predicate:
-        A callable that returns ``True`` for a matching element.
-    iterable:
-        The iterable to search through.
-
-    Returns
-    -------
-    Any | None
-        The first element that matches, or ``None`` if no element does.
-    """
-
+    """Return the first element in ``iterable`` matching the ``predicate``."""
     for element in iterable:
         if predicate(element):
             return element
@@ -37,25 +27,16 @@ def find(predicate: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[
 
 
 def get(iterable: Iterable[Any], **attrs: Any) -> Optional[Any]:
-    """Return the first element with matching attributes.
-
-    Parameters
-    ----------
-    iterable:
-        The iterable to search through.
-    **attrs:
-        Attributes and values to match on.
-
-    Returns
-    -------
-    Any | None
-        The element with matching attributes, or ``None`` if not found.
-    """
-
+    """Return the first element with matching attributes."""
     def predicate(elem: Any) -> bool:
         return all(getattr(elem, attr, None) == value for attr, value in attrs.items())
-
     return find(predicate, iterable)
+
+
+def snowflake_time(snowflake: int) -> datetime:
+    """Return the creation time of a Discord snowflake."""
+    timestamp_ms = (snowflake >> 22) + DISCORD_EPOCH
+    return datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
 
 
 async def message_pager(
@@ -65,32 +46,11 @@ async def message_pager(
     before: Optional[str] = None,
     after: Optional[str] = None,
 ) -> AsyncIterator["Message"]:
-    """Asynchronously paginate a channel's messages.
-
-    Parameters
-    ----------
-    channel:
-        The :class:`TextChannel` to fetch messages from.
-    limit:
-        The maximum number of messages to yield. ``None`` fetches until no
-        more messages are returned.
-    before:
-        Fetch messages with IDs less than this snowflake.
-    after:
-        Fetch messages with IDs greater than this snowflake.
-
-    Yields
-    ------
-    Message
-        Messages in the channel, oldest first.
-    """
-
+    """Asynchronously paginate a channel's messages."""
     remaining = limit
     last_id = before
     while remaining is None or remaining > 0:
-        fetch_limit = 100
-        if remaining is not None:
-            fetch_limit = min(fetch_limit, remaining)
+        fetch_limit = min(100, remaining) if remaining is not None else 100
 
         params: Dict[str, Any] = {"limit": fetch_limit}
         if last_id is not None:
@@ -154,3 +114,13 @@ class Paginator:
         if self._current:
             pages.append(self._current)
         return pages
+
+
+def escape_markdown(text: str) -> str:
+    """Escape Discord markdown formatting in ``text``."""
+    return re.sub(r"([\\*_~`>|])", r"\\\1", text)
+
+
+def escape_mentions(text: str) -> str:
+    """Escape Discord mentions in ``text``."""
+    return text.replace("@", "@\u200b")

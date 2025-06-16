@@ -146,6 +146,16 @@ def test_webhook_from_url_parses_id_and_token():
     assert webhook.url == url
 
 
+def test_webhook_from_token_builds_url_and_fields():
+    from disagreement.models import Webhook
+
+    webhook = Webhook.from_token("123", "token")
+
+    assert webhook.id == "123"
+    assert webhook.token == "token"
+    assert webhook.url == "https://discord.com/api/webhooks/123/token"
+
+
 @pytest.mark.asyncio
 async def test_execute_webhook_calls_request():
     http = HTTPClient(token="t")
@@ -185,3 +195,31 @@ async def test_webhook_send_uses_http():
 
     http.execute_webhook.assert_awaited_once()
     assert isinstance(msg, Message)
+
+
+@pytest.mark.asyncio
+async def test_get_webhook_calls_request():
+    http = HTTPClient(token="t")
+    http.request = AsyncMock(return_value={"id": "1"})
+
+    await http.get_webhook("1")
+
+    http.request.assert_called_once_with("GET", "/webhooks/1")
+
+
+@pytest.mark.asyncio
+async def test_client_fetch_webhook_returns_model():
+    from types import SimpleNamespace
+    from disagreement.client import Client
+    from disagreement.models import Webhook
+
+    http = SimpleNamespace(get_webhook=AsyncMock(return_value={"id": "1"}))
+    client = Client(token="test")
+    client._http = http
+    client._closed = False
+
+    webhook = await client.fetch_webhook("1")
+
+    http.get_webhook.assert_awaited_once_with("1")
+    assert isinstance(webhook, Webhook)
+    assert client._webhooks.get("1") is webhook
