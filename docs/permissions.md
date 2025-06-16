@@ -15,6 +15,12 @@ from disagreement import Permissions
 value = Permissions.SEND_MESSAGES | Permissions.MANAGE_MESSAGES
 ```
 
+You can also get a bitmask containing **every** permission:
+
+```python
+all_perms = Permissions.all()
+```
+
 ## Helper Functions
 
 ### ``permissions_value``
