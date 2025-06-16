@@ -51,7 +51,7 @@ from .errors import (
     NotFound,
 )
 from .color import Color
-from .utils import utcnow, message_pager
+from .utils import utcnow, message_pager, get, find
 from .enums import (
     GatewayIntent,
     GatewayOpcode,
@@ -151,6 +151,8 @@ __all__ = [
     "Color",
     "utcnow",
     "message_pager",
+    "get",
+    "find",
     "GatewayIntent",
     "GatewayOpcode",
     "ButtonStyle",

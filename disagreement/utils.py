@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, AsyncIterator, Dict, Optional, TYPE_CHECKING
+from typing import Any, AsyncIterator, Dict, Iterable, Optional, TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:  # pragma: no cover - for type hinting only
     from .models import Message, TextChannel
@@ -12,6 +12,50 @@ if TYPE_CHECKING:  # pragma: no cover - for type hinting only
 def utcnow() -> datetime:
     """Return the current timezone-aware UTC time."""
     return datetime.now(timezone.utc)
+
+
+def find(predicate: Callable[[Any], bool], iterable: Iterable[Any]) -> Optional[Any]:
+    """Return the first element in ``iterable`` matching the ``predicate``.
+
+    Parameters
+    ----------
+    predicate:
+        A callable that returns ``True`` for a matching element.
+    iterable:
+        The iterable to search through.
+
+    Returns
+    -------
+    Any | None
+        The first element that matches, or ``None`` if no element does.
+    """
+
+    for element in iterable:
+        if predicate(element):
+            return element
+    return None
+
+
+def get(iterable: Iterable[Any], **attrs: Any) -> Optional[Any]:
+    """Return the first element with matching attributes.
+
+    Parameters
+    ----------
+    iterable:
+        The iterable to search through.
+    **attrs:
+        Attributes and values to match on.
+
+    Returns
+    -------
+    Any | None
+        The element with matching attributes, or ``None`` if not found.
+    """
+
+    def predicate(elem: Any) -> bool:
+        return all(getattr(elem, attr, None) == value for attr, value in attrs.items())
+
+    return find(predicate, iterable)
 
 
 async def message_pager(
