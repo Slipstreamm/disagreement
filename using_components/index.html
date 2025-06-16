@@ -675,6 +675,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#persistent-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      Persistent Views
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       Next Steps
@@ -1582,6 +1591,17 @@ container = Container(
 )
 </code></pre>
 <p>A container can itself contain layout and content components, letting you build complex messages.</p>
+<h2 id="persistent-views">Persistent Views</h2>
+<p>Views with <code>timeout=None</code> are persistent. Their <code>custom_id</code> components are saved to <code>persistent_views.json</code> so they survive bot restarts.</p>
+<pre><code class="language-python">class MyView(View):
+    @button(label=&quot;Press&quot;, custom_id=&quot;press&quot;)
+    async def handle(self, view, inter):
+        await inter.respond(&quot;Pressed!&quot;)
+
+client.add_persistent_view(MyView())
+</code></pre>
+<p>When the client starts, it loads this file and registers each view again. Remove
+the file to clear stored views.</p>
 <h2 id="next-steps">Next Steps</h2>
 <ul>
 <li><a href="../slash_commands/">Slash Commands</a></li>
