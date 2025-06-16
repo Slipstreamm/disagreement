@@ -2,6 +2,8 @@
 Data models for Discord objects.
 """
 
+from __future__ import annotations
+
 import asyncio
 import datetime
 import io
@@ -54,6 +56,7 @@ if TYPE_CHECKING:
     from .interactions import Snowflake
     from .typing import Typing
     from .shard_manager import Shard
+    from .asset import Asset
 
     # Forward reference Message if it were used in type hints before its definition
     # from .models import Message # Not needed as Message is defined before its use in TextChannel.send etc.
@@ -71,7 +74,12 @@ class User:
         self.username: Optional[str] = data.get("username")
         self.discriminator: Optional[str] = data.get("discriminator")
         self.bot: bool = data.get("bot", False)
-        self.avatar: Optional[str] = data.get("avatar")
+        avatar_hash = data.get("avatar")
+        self._avatar: Optional[str] = (
+            f"https://cdn.discordapp.com/avatars/{self.id}/{avatar_hash}.png"
+            if avatar_hash
+            else None
+        )
 
     @property
     def mention(self) -> str:
@@ -82,6 +90,25 @@ class User:
         username = self.username or "Unknown"
         disc = self.discriminator or "????"
         return f"<User id='{self.id}' username='{username}' discriminator='{disc}'>"
+
+    @property
+    def avatar(self) -> Optional["Asset"]:
+        """Return the user's avatar as an :class:`Asset`."""
+
+        if self._avatar:
+            from .asset import Asset
+
+            return Asset(self._avatar, self._client)
+        return None
+
+    @avatar.setter
+    def avatar(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._avatar = value
+        elif value is None:
+            self._avatar = None
+        else:
+            self._avatar = value.url
 
     async def send(
         self,
@@ -780,7 +807,12 @@ class Role:
         self.name: str = data["name"]
         self.color: int = data["color"]
         self.hoist: bool = data["hoist"]
-        self.icon: Optional[str] = data.get("icon")
+        icon_hash = data.get("icon")
+        self._icon: Optional[str] = (
+            f"https://cdn.discordapp.com/role-icons/{self.id}/{icon_hash}.png"
+            if icon_hash
+            else None
+        )
         self.unicode_emoji: Optional[str] = data.get("unicode_emoji")
         self.position: int = data["position"]
         self.permissions: str = data["permissions"]  # String of bitwise permissions
@@ -797,6 +829,23 @@ class Role:
 
     def __repr__(self) -> str:
         return f"<Role id='{self.id}' name='{self.name}'>"
+
+    @property
+    def icon(self) -> Optional["Asset"]:
+        if self._icon:
+            from .asset import Asset
+
+            return Asset(self._icon, None)
+        return None
+
+    @icon.setter
+    def icon(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._icon = value
+        elif value is None:
+            self._icon = None
+        else:
+            self._icon = value.url
 
 
 class Member(User):  # Member inherits from User
@@ -826,7 +875,15 @@ class Member(User):  # Member inherits from User
         )  # Pass user_data or data if user_data is empty
 
         self.nick: Optional[str] = data.get("nick")
-        self.avatar: Optional[str] = data.get("avatar")
+        avatar_hash = data.get("avatar")
+        if avatar_hash:
+            guild_id = data.get("guild_id")
+            if guild_id:
+                self._avatar = f"https://cdn.discordapp.com/guilds/{guild_id}/users/{self.id}/avatars/{avatar_hash}.png"
+            else:
+                self._avatar = (
+                    f"https://cdn.discordapp.com/avatars/{self.id}/{avatar_hash}.png"
+                )
         self.roles: List[str] = data.get("roles", [])
         self.joined_at: str = data["joined_at"]
         self.premium_since: Optional[str] = data.get("premium_since")
@@ -853,6 +910,25 @@ class Member(User):  # Member inherits from User
 
     def __repr__(self) -> str:
         return f"<Member id='{self.id}' username='{self.username}' nick='{self.nick}'>"
+
+    @property
+    def avatar(self) -> Optional["Asset"]:
+        """Return the member's avatar as an :class:`Asset`."""
+
+        if self._avatar:
+            from .asset import Asset
+
+            return Asset(self._avatar, self._client)
+        return None
+
+    @avatar.setter
+    def avatar(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._avatar = value
+        elif value is None:
+            self._avatar = None
+        else:
+            self._avatar = value.url
 
     @property
     def display_name(self) -> str:
@@ -921,7 +997,6 @@ class Member(User):  # Member inherits from User
         return max(role_objects, key=lambda r: r.position)
 
     @property
-
     def guild_permissions(self) -> "Permissions":
         """Return the member's guild-level permissions."""
 
@@ -948,6 +1023,7 @@ class Member(User):  # Member inherits from User
 
         return base
 
+    @property
     def voice(self) -> Optional["VoiceState"]:
         """Return the member's cached voice state as a :class:`VoiceState`."""
 
@@ -1210,9 +1286,24 @@ class Guild:
         )
         self.id: str = data["id"]
         self.name: str = data["name"]
-        self.icon: Optional[str] = data.get("icon")
-        self.splash: Optional[str] = data.get("splash")
-        self.discovery_splash: Optional[str] = data.get("discovery_splash")
+        icon_hash = data.get("icon")
+        self._icon: Optional[str] = (
+            f"https://cdn.discordapp.com/icons/{self.id}/{icon_hash}.png"
+            if icon_hash
+            else None
+        )
+        splash_hash = data.get("splash")
+        self._splash: Optional[str] = (
+            f"https://cdn.discordapp.com/splashes/{self.id}/{splash_hash}.png"
+            if splash_hash
+            else None
+        )
+        discovery_hash = data.get("discovery_splash")
+        self._discovery_splash: Optional[str] = (
+            f"https://cdn.discordapp.com/discovery-splashes/{self.id}/{discovery_hash}.png"
+            if discovery_hash
+            else None
+        )
         self.owner: Optional[bool] = data.get("owner")
         self.owner_id: str = data["owner_id"]
         self.permissions: Optional[str] = data.get("permissions")
@@ -1249,7 +1340,12 @@ class Guild:
         self.max_members: Optional[int] = data.get("max_members")
         self.vanity_url_code: Optional[str] = data.get("vanity_url_code")
         self.description: Optional[str] = data.get("description")
-        self.banner: Optional[str] = data.get("banner")
+        banner_hash = data.get("banner")
+        self._banner: Optional[str] = (
+            f"https://cdn.discordapp.com/banners/{self.id}/{banner_hash}.png"
+            if banner_hash
+            else None
+        )
         self.premium_tier: PremiumTier = PremiumTier(data["premium_tier"])
         self.premium_subscription_count: Optional[int] = data.get(
             "premium_subscription_count"
@@ -1356,6 +1452,74 @@ class Guild:
 
     def __repr__(self) -> str:
         return f"<Guild id='{self.id}' name='{self.name}'>"
+
+    @property
+    def icon(self) -> Optional["Asset"]:
+        if self._icon:
+            from .asset import Asset
+
+            return Asset(self._icon, self._client)
+        return None
+
+    @icon.setter
+    def icon(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._icon = value
+        elif value is None:
+            self._icon = None
+        else:
+            self._icon = value.url
+
+    @property
+    def splash(self) -> Optional["Asset"]:
+        if self._splash:
+            from .asset import Asset
+
+            return Asset(self._splash, self._client)
+        return None
+
+    @splash.setter
+    def splash(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._splash = value
+        elif value is None:
+            self._splash = None
+        else:
+            self._splash = value.url
+
+    @property
+    def discovery_splash(self) -> Optional["Asset"]:
+        if self._discovery_splash:
+            from .asset import Asset
+
+            return Asset(self._discovery_splash, self._client)
+        return None
+
+    @discovery_splash.setter
+    def discovery_splash(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._discovery_splash = value
+        elif value is None:
+            self._discovery_splash = None
+        else:
+            self._discovery_splash = value.url
+
+    @property
+    def banner(self) -> Optional["Asset"]:
+        if self._banner:
+            from .asset import Asset
+
+            return Asset(self._banner, self._client)
+        return None
+
+    @banner.setter
+    def banner(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._banner = value
+        elif value is None:
+            self._banner = None
+        else:
+            self._banner = value.url
 
     async def fetch_widget(self) -> Dict[str, Any]:
         """|coro| Fetch this guild's widget settings."""
@@ -2089,7 +2253,12 @@ class Webhook:
         self.guild_id: Optional[str] = data.get("guild_id")
         self.channel_id: Optional[str] = data.get("channel_id")
         self.name: Optional[str] = data.get("name")
-        self.avatar: Optional[str] = data.get("avatar")
+        avatar_hash = data.get("avatar")
+        self._avatar: Optional[str] = (
+            f"https://cdn.discordapp.com/webhooks/{self.id}/{avatar_hash}.png"
+            if avatar_hash
+            else None
+        )
         self.token: Optional[str] = data.get("token")
         self.application_id: Optional[str] = data.get("application_id")
         self.url: Optional[str] = data.get("url")
@@ -2097,6 +2266,25 @@ class Webhook:
 
     def __repr__(self) -> str:
         return f"<Webhook id='{self.id}' name='{self.name}'>"
+
+    @property
+    def avatar(self) -> Optional["Asset"]:
+        """Return the webhook's avatar as an :class:`Asset`."""
+
+        if self._avatar:
+            from .asset import Asset
+
+            return Asset(self._avatar, self._client)
+        return None
+
+    @avatar.setter
+    def avatar(self, value: Optional[Union[str, "Asset"]]) -> None:
+        if isinstance(value, str):
+            self._avatar = value
+        elif value is None:
+            self._avatar = None
+        else:
+            self._avatar = value.url
 
     @classmethod
     def from_url(
