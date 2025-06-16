@@ -40,6 +40,7 @@ from .models import (
     Container,
     Guild,
 )
+from .object import Object
 from .voice_client import VoiceClient
 from .audio import AudioSource, FFmpegAudioSource
 from .typing import Typing
@@ -148,6 +149,7 @@ __all__ = [
     "MediaGallery",
     "MediaGalleryItem",
     "Container",
+    "Object",
     "VoiceClient",
     "AudioSource",
     "FFmpegAudioSource",
