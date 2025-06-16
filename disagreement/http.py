@@ -663,6 +663,15 @@ class HTTPClient:
 
         await self.request("DELETE", f"/channels/{channel_id}/pins/{message_id}")
 
+    async def crosspost_message(
+        self, channel_id: "Snowflake", message_id: "Snowflake"
+    ) -> Dict[str, Any]:
+        """Crossposts a message to any following channels."""
+
+        return await self.request(
+            "POST", f"/channels/{channel_id}/messages/{message_id}/crosspost"
+        )
+
     async def delete_channel(
         self, channel_id: str, reason: Optional[str] = None
     ) -> None:
