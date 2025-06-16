@@ -159,7 +159,7 @@ class Client:
         )
         self._event_dispatcher: EventDispatcher = EventDispatcher(client_instance=self)
         self._gateway: Optional[GatewayClient] = (
-            None  # Initialized in run() or connect()
+            None  # Initialized in start() or connect()
         )
         self.shard_count: Optional[int] = shard_count
         self.gateway_max_retries: int = gateway_max_retries
@@ -269,7 +269,7 @@ class Client:
         assert self._gateway is not None  # Should be initialized by now
 
         retry_delay = 5  # seconds
-        max_retries = 5  # For initial connection attempts by Client.run, Gateway has its own internal retries for some cases.
+        max_retries = 5  # For initial connection attempts by Client.start, Gateway has its own internal retries for some cases.
 
         for attempt in range(max_retries):
             try:
@@ -300,11 +300,10 @@ class Client:
         if max_retries == 0:  # If max_retries was 0, means no retries attempted
             raise DisagreementException("Connection failed with 0 retries allowed.")
 
-    async def run(self) -> None:
+    async def start(self) -> None:
         """
-        A blocking call that connects the client to Discord and runs until the client is closed.
-        This method is a coroutine.
-        It handles login, Gateway connection, and keeping the connection alive.
+        Connect the client to Discord and run until the client is closed.
+        This method is a coroutine containing the main run loop logic.
         """
         if self._closed:
             raise DisagreementException("Client is already closed.")
@@ -371,6 +370,10 @@ class Client:
         finally:
             if not self._closed:
                 await self.close()
+
+    def run(self) -> None:
+        """Synchronously start the client using :func:`asyncio.run`."""
+        asyncio.run(self.start())
 
     async def close(self) -> None:
         """

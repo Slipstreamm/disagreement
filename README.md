@@ -61,13 +61,8 @@ if not token:
 
 intents = disagreement.GatewayIntent.default() | disagreement.GatewayIntent.MESSAGE_CONTENT
 client = disagreement.Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
-async def main() -> None:
-    client.add_cog(Basics(client))
-    await client.run()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+client.add_cog(Basics(client))
+client.run()
 ```
 
 ### Global Error Handling

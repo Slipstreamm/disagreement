@@ -65,11 +65,9 @@ client.app_command_handler.add_command(user_info)
 client.app_command_handler.add_command(quote)
 
 
-async def main() -> None:
-    await client.run()
+def main() -> None:
+    client.run()
 
 
 if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
+    main()

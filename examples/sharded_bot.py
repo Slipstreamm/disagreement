@@ -34,12 +34,12 @@ async def on_ready():
         print("Shard bot ready")
 
 
-async def main():
+def main():
     if not TOKEN:
         print("DISCORD_BOT_TOKEN environment variable not set")
         return
-    await client.run()
+    client.run()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
