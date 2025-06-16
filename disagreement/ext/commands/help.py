@@ -19,7 +19,7 @@ class HelpCommand(Command):
                 await ctx.send(f"**{ctx.prefix}{cmd.name}**\n{description}")
             else:
                 lines: List[str] = []
-                for registered in dict.fromkeys(handler.commands.values()):
+                for registered in handler.walk_commands():
                     brief = registered.brief or registered.description or ""
                     lines.append(f"{ctx.prefix}{registered.name} - {brief}".strip())
                 if lines:

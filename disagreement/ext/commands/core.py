@@ -82,6 +82,13 @@ class GroupMixin:
     def get_command(self, name: str) -> Optional["Command"]:
         return self.commands.get(name.lower())
 
+    def walk_commands(self):
+        """Yield all commands in this group recursively."""
+        for cmd in dict.fromkeys(self.commands.values()):
+            yield cmd
+            if isinstance(cmd, Group):
+                yield from cmd.walk_commands()
+
 
 class Command(GroupMixin):
     """
@@ -365,6 +372,13 @@ class CommandHandler:
 
     def get_command(self, name: str) -> Optional[Command]:
         return self.commands.get(name.lower())
+
+    def walk_commands(self):
+        """Yield every registered command, including subcommands."""
+        for cmd in dict.fromkeys(self.commands.values()):
+            yield cmd
+            if isinstance(cmd, Group):
+                yield from cmd.walk_commands()
 
     def get_cog(self, name: str) -> Optional["Cog"]:
         """Return a loaded cog by name if present."""

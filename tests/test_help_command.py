@@ -1,6 +1,6 @@
 import pytest
 
-from disagreement.ext.commands.core import CommandHandler, Command
+from disagreement.ext.commands.core import CommandHandler, Command, Group
 from disagreement.models import Message
 
 
@@ -55,3 +55,32 @@ async def test_help_specific_command():
     msg = Message(msg_data, client_instance=bot)
     await handler.process_commands(msg)
     assert any("Bar desc" in m for m in bot.sent)
+
+
+@pytest.mark.asyncio
+async def test_help_lists_subcommands():
+    bot = DummyBot()
+    handler = CommandHandler(client=bot, prefix="!")
+
+    async def root(ctx):
+        pass
+
+    group = Group(root, name="root")
+
+    @group.command(name="child")
+    async def child(ctx):
+        pass
+
+    handler.add_command(group)
+
+    msg_data = {
+        "id": "1",
+        "channel_id": "c",
+        "author": {"id": "2", "username": "u", "discriminator": "0001"},
+        "content": "!help",
+        "timestamp": "t",
+    }
+    msg = Message(msg_data, client_instance=bot)
+    await handler.process_commands(msg)
+    assert any("root" in m for m in bot.sent)
+    assert any("child" in m for m in bot.sent)
