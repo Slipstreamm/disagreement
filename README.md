@@ -13,6 +13,7 @@ A Python library for interacting with the Discord API, with a focus on bot devel
 - Message component helpers
 - `Message.jump_url` property for quick links to messages
 - Built-in caching layer
+- `Guild.me` property to access the bot's member object
 - Experimental voice support
 - Helpful error handling utilities
 

@@ -1284,6 +1284,15 @@ class Guild:
     def get_role(self, role_id: str) -> Optional[Role]:
         return next((role for role in self.roles if role.id == role_id), None)
 
+    @property
+    def me(self) -> Optional[Member]:
+        """The member object for the connected bot in this guild, if present."""
+
+        client_user = getattr(self._client, "user", None)
+        if not client_user:
+            return None
+        return self.get_member(client_user.id)
+
     def __repr__(self) -> str:
         return f"<Guild id='{self.id}' name='{self.name}'>"
 
