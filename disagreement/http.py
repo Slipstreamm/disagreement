@@ -738,6 +738,11 @@ class HTTPClient:
 
         return Webhook(data)
 
+    async def get_webhook(self, webhook_id: "Snowflake") -> Dict[str, Any]:
+        """Fetches a webhook by ID."""
+
+        return await self.request("GET", f"/webhooks/{webhook_id}")
+
     async def edit_webhook(
         self, webhook_id: "Snowflake", payload: Dict[str, Any]
     ) -> "Webhook":
