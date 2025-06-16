@@ -3,6 +3,7 @@ Data models for Discord objects.
 """
 
 import asyncio
+import datetime
 import io
 import json
 import os
@@ -123,6 +124,7 @@ class Message:
         self.author: User = User(data["author"], client_instance)
         self.content: str = data["content"]
         self.timestamp: str = data["timestamp"]
+        self.edited_timestamp: Optional[str] = data.get("edited_timestamp")
         if data.get("components"):
             self.components: Optional[List[ActionRow]] = [
                 ActionRow.from_dict(c, client_instance)
@@ -153,6 +155,20 @@ class Message:
         pattern = re.compile(r"<@!?\d+>|<#\d+>|<@&\d+>")
         cleaned = pattern.sub("", self.content)
         return " ".join(cleaned.split())
+
+    @property
+    def created_at(self) -> datetime.datetime:
+        """Return message timestamp as a :class:`~datetime.datetime`."""
+
+        return datetime.datetime.fromisoformat(self.timestamp)
+
+    @property
+    def edited_at(self) -> Optional[datetime.datetime]:
+        """Return edited timestamp as :class:`~datetime.datetime` if present."""
+
+        if self.edited_timestamp is None:
+            return None
+        return datetime.datetime.fromisoformat(self.edited_timestamp)
 
     async def pin(self) -> None:
         """|coro|
