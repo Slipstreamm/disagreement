@@ -726,6 +726,11 @@ class HTTPClient:
 
         await self.request("DELETE", f"/invites/{code}")
 
+    async def get_invite(self, code: "Snowflake") -> Dict[str, Any]:
+        """Fetches a single invite by its code."""
+
+        return await self.request("GET", f"/invites/{code}")
+
     async def create_webhook(
         self, channel_id: "Snowflake", payload: Dict[str, Any]
     ) -> "Webhook":
