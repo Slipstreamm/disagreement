@@ -14,6 +14,7 @@ A Python library for interacting with the Discord API, with a focus on bot devel
 - Built-in caching layer
 - Experimental voice support
 - Helpful error handling utilities
+- Paginator utility for splitting long messages
 
 ## Installation
 
