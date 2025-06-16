@@ -63,7 +63,19 @@ if TYPE_CHECKING:
     from .components import component_factory
 
 
-class User:
+class HashableById:
+    """Mixin providing equality and hashing based on the ``id`` attribute."""
+
+    id: str
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, self.__class__) and self.id == other.id  # type: ignore[attr-defined]
+
+    def __hash__(self) -> int:  # pragma: no cover - trivial
+        return hash(self.id)
+
+
+class User(HashableById):
     """Represents a Discord User."""
 
     def __init__(self, data: dict, client_instance: Optional["Client"] = None) -> None:
@@ -125,7 +137,7 @@ class User:
         return await target_client.send_dm(self.id, content=content, **kwargs)
 
 
-class Message:
+class Message(HashableById):
     """Represents a message sent in a channel on Discord.
 
     Attributes:
@@ -1228,7 +1240,7 @@ class PermissionOverwrite:
         return f"<PermissionOverwrite id='{self.id}' type='{self.type.name if hasattr(self.type, 'name') else self._type_val}' allow='{self.allow}' deny='{self.deny}'>"
 
 
-class Guild:
+class Guild(HashableById):
     """Represents a Discord Guild (Server).
 
     Attributes:
@@ -1649,7 +1661,7 @@ class Guild:
         return cast("CategoryChannel", self._client.parse_channel(data))
 
 
-class Channel:
+class Channel(HashableById):
     """Base class for Discord channels."""
 
     def __init__(self, data: Dict[str, Any], client_instance: "Client"):
