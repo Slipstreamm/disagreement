@@ -19,6 +19,16 @@ class HelpCommand(Command):
                     return
                 if isinstance(cmd, Group):
                     await self.send_group_help(ctx, cmd)
+                elif cmd:
+                    description = cmd.description or cmd.brief or "No description provided."
+                    await ctx.send(f"**{ctx.prefix}{cmd.name}**\n{description}")
+                else:
+                    lines: List[str] = []
+                    for registered in handler.walk_commands():
+                        brief = registered.brief or registered.description or ""
+                        lines.append(f"{ctx.prefix}{registered.name} - {brief}".strip())
+                    if lines:
+                        await ctx.send("\n".join(lines))
                 else:
                     await self.send_command_help(ctx, cmd)
             else:

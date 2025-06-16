@@ -204,7 +204,7 @@ async def test_get_webhook_calls_request():
 
     await http.get_webhook("1")
 
-    http.request.assert_called_once_with("GET", "/webhooks/1")
+    http.request.assert_called_once_with("GET", "/webhooks/1", use_auth_header=True)
 
 
 @pytest.mark.asyncio
