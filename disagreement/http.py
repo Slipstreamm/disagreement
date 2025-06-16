@@ -818,7 +818,10 @@ class HTTPClient:
         if token is not None:
             endpoint += f"/{token}"
             use_auth = False
-        data = await self.request("GET", endpoint, use_auth_header=use_auth)
+        if use_auth:
+            data = await self.request("GET", endpoint)
+        else:
+            data = await self.request("GET", endpoint, use_auth_header=False)
         from .models import Webhook
 
         return Webhook(data)

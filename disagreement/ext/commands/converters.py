@@ -6,7 +6,16 @@ import re
 import inspect
 
 from .errors import BadArgument
-from disagreement.models import Member, Guild, Role, User
+from disagreement.models import (
+    Member,
+    Guild,
+    Role,
+    User,
+    TextChannel,
+    VoiceChannel,
+    Emoji,
+    PartialEmoji,
+)
 
 if TYPE_CHECKING:
     from .core import CommandContext
@@ -158,6 +167,82 @@ class UserConverter(Converter["User"]):
         raise BadArgument(f"User '{argument}' not found.")
 
 
+class TextChannelConverter(Converter["TextChannel"]):
+    async def convert(self, ctx: "CommandContext", argument: str) -> "TextChannel":
+        if not ctx.message.guild_id:
+            raise BadArgument("TextChannel converter requires guild context.")
+
+        match = re.match(r"<#(?P<id>\d+)>$", argument)
+        channel_id = match.group("id") if match else argument
+
+        guild = ctx.bot.get_guild(ctx.message.guild_id)
+        if guild:
+            channel = guild.get_channel(channel_id)
+            if isinstance(channel, TextChannel):
+                return channel
+
+        channel = (
+            ctx.bot.get_channel(channel_id) if hasattr(ctx.bot, "get_channel") else None
+        )
+        if isinstance(channel, TextChannel):
+            return channel
+
+        if hasattr(ctx.bot, "fetch_channel"):
+            channel = await ctx.bot.fetch_channel(channel_id)
+            if isinstance(channel, TextChannel):
+                return channel
+
+        raise BadArgument(f"Text channel '{argument}' not found.")
+
+
+class VoiceChannelConverter(Converter["VoiceChannel"]):
+    async def convert(self, ctx: "CommandContext", argument: str) -> "VoiceChannel":
+        if not ctx.message.guild_id:
+            raise BadArgument("VoiceChannel converter requires guild context.")
+
+        match = re.match(r"<#(?P<id>\d+)>$", argument)
+        channel_id = match.group("id") if match else argument
+
+        guild = ctx.bot.get_guild(ctx.message.guild_id)
+        if guild:
+            channel = guild.get_channel(channel_id)
+            if isinstance(channel, VoiceChannel):
+                return channel
+
+        channel = (
+            ctx.bot.get_channel(channel_id) if hasattr(ctx.bot, "get_channel") else None
+        )
+        if isinstance(channel, VoiceChannel):
+            return channel
+
+        if hasattr(ctx.bot, "fetch_channel"):
+            channel = await ctx.bot.fetch_channel(channel_id)
+            if isinstance(channel, VoiceChannel):
+                return channel
+
+        raise BadArgument(f"Voice channel '{argument}' not found.")
+
+
+class EmojiConverter(Converter["PartialEmoji"]):
+    _CUSTOM_RE = re.compile(r"<(?P<animated>a)?:(?P<name>[^:]+):(?P<id>\d+)>$")
+
+    async def convert(self, ctx: "CommandContext", argument: str) -> "PartialEmoji":
+        match = self._CUSTOM_RE.match(argument)
+        if match:
+            return PartialEmoji(
+                {
+                    "id": match.group("id"),
+                    "name": match.group("name"),
+                    "animated": bool(match.group("animated")),
+                }
+            )
+
+        if argument:
+            return PartialEmoji({"id": None, "name": argument})
+
+        raise BadArgument(f"Emoji '{argument}' not found.")
+
+
 # Default converters mapping
 DEFAULT_CONVERTERS: dict[type, Converter[Any]] = {
     int: IntConverter(),
@@ -168,6 +253,10 @@ DEFAULT_CONVERTERS: dict[type, Converter[Any]] = {
     Guild: GuildConverter(),
     Role: RoleConverter(),
     User: UserConverter(),
+    TextChannel: TextChannelConverter(),
+    VoiceChannel: VoiceChannelConverter(),
+    PartialEmoji: EmojiConverter(),
+    Emoji: EmojiConverter(),
 }
 
 

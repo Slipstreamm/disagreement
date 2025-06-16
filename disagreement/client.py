@@ -4,6 +4,9 @@ The main Client class for interacting with the Discord API.
 
 import asyncio
 import signal
+import json
+import os
+import importlib
 from typing import (
     Optional,
     Callable,
@@ -17,6 +20,8 @@ from typing import (
     cast,
 )
 from types import ModuleType
+
+PERSISTENT_VIEWS_FILE = "persistent_views.json"
 
 from datetime import datetime, timedelta
 
@@ -195,6 +200,9 @@ class Client:
         self._voice_clients: Dict[Snowflake, VoiceClient] = {}
         self._webhooks: Dict[Snowflake, "Webhook"] = {}
 
+        # Load persistent views stored on disk
+        self._load_persistent_views()
+
         # Default whether replies mention the user
         self.mention_replies: bool = mention_replies
         self.allowed_mentions: Optional[Dict[str, Any]] = allowed_mentions
@@ -217,6 +225,39 @@ class Client:
                 "Warning: Signal handlers for SIGINT/SIGTERM could not be added. "
                 "Graceful shutdown via signals might not work as expected on this platform."
             )
+
+    def _load_persistent_views(self) -> None:
+        """Load registered persistent views from disk."""
+        if not os.path.isfile(PERSISTENT_VIEWS_FILE):
+            return
+        try:
+            with open(PERSISTENT_VIEWS_FILE, "r") as fp:
+                mapping = json.load(fp)
+        except Exception as e:  # pragma: no cover - best effort load
+            print(f"Failed to load persistent views: {e}")
+            return
+
+        for custom_id, path in mapping.items():
+            try:
+                module_name, class_name = path.rsplit(".", 1)
+                module = importlib.import_module(module_name)
+                cls = getattr(module, class_name)
+                view = cls()
+                self._persistent_views[custom_id] = view
+            except Exception as e:  # pragma: no cover - best effort load
+                print(f"Failed to initialize persistent view {path}: {e}")
+
+    def _save_persistent_views(self) -> None:
+        """Persist registered views to disk."""
+        data = {}
+        for custom_id, view in self._persistent_views.items():
+            cls = view.__class__
+            data[custom_id] = f"{cls.__module__}.{cls.__name__}"
+        try:
+            with open(PERSISTENT_VIEWS_FILE, "w") as fp:
+                json.dump(data, fp)
+        except Exception as e:  # pragma: no cover - best effort save
+            print(f"Failed to save persistent views: {e}")
 
     async def _initialize_gateway(self):
         """Initializes the GatewayClient if it doesn't exist."""
@@ -422,6 +463,14 @@ class Client:
             await self._gateway.close(code=code)
             self._gateway = None
         self._ready_event.clear()  # No longer ready if gateway is closed
+
+    async def logout(self) -> None:
+        """Invalidate the bot token and disconnect from the Gateway."""
+        await self.close_gateway()
+        self.token = ""
+        self._http.token = ""
+        self.user = None
+        self.start_time = None
 
     def is_closed(self) -> bool:
         """Indicates if the client has been closed."""
@@ -1732,6 +1781,8 @@ class Client:
                         f"A component with custom_id '{item.custom_id}' is already registered."
                     )
                 self._persistent_views[item.custom_id] = view
+
+        self._save_persistent_views()
 
     # --- Application Command Methods ---
     async def process_interaction(self, interaction: Interaction) -> None:
