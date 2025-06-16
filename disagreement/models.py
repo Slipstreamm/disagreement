@@ -921,6 +921,33 @@ class Member(User):  # Member inherits from User
         return max(role_objects, key=lambda r: r.position)
 
     @property
+
+    def guild_permissions(self) -> "Permissions":
+        """Return the member's guild-level permissions."""
+
+        if not self.guild_id or not self._client:
+            return Permissions(0)
+
+        guild = self._client.get_guild(self.guild_id)
+        if guild is None:
+            return Permissions(0)
+
+        base = Permissions(0)
+
+        everyone = guild.get_role(guild.id)
+        if everyone is not None:
+            base |= Permissions(int(everyone.permissions))
+
+        for rid in self.roles:
+            role = guild.get_role(rid)
+            if role is not None:
+                base |= Permissions(int(role.permissions))
+
+        if base & Permissions.ADMINISTRATOR:
+            return Permissions(~0)
+
+        return base
+
     def voice(self) -> Optional["VoiceState"]:
         """Return the member's cached voice state as a :class:`VoiceState`."""
 
