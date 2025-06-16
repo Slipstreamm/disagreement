@@ -1368,6 +1368,10 @@
 <pre><code class="language-python">voice = await client.join_voice(guild_id, channel_id)
 await voice.play_file(&quot;welcome.mp3&quot;)
 await voice.play_file(&quot;another.mp3&quot;)  # switch sources while connected
+voice.pause()
+voice.resume()
+if voice.is_playing():
+    print(&quot;audio is playing&quot;)
 await voice.close()
 </code></pre>
 <p>Voice support is optional and may require additional system dependencies such as FFmpeg.</p>
