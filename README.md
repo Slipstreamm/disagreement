@@ -14,6 +14,7 @@ A Python library for interacting with the Discord API, with a focus on bot devel
 - `Message.jump_url` property for quick links to messages
 - Built-in caching layer
 - `Guild.me` property to access the bot's member object
+- Easy CDN asset handling via the `Asset` model
 - Experimental voice support
 - Helpful error handling utilities
 
@@ -125,6 +126,17 @@ client = disagreement.Client(
 
 This dictionary is used whenever ``send_message`` or helpers like ``Message.reply``
 are called without an explicit ``allowed_mentions`` argument.
+
+### Working With Assets
+
+Properties like ``User.avatar`` and ``Guild.icon`` return :class:`disagreement.Asset` objects.
+Use ``read`` to get the bytes or ``save`` to write them to disk.
+
+```python
+user = await client.fetch_user(123)
+data = await user.avatar.read()
+await user.avatar.save("avatar.png")
+```
 
 ### Defining Subcommands with `AppCommandGroup`
 

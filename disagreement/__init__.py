@@ -15,6 +15,7 @@ __copyright__ = "Copyright 2025 Slipstream"
 __version__ = "0.8.1"
 
 from .client import Client, AutoShardedClient
+from .asset import Asset
 from .models import (
     Message,
     User,
@@ -125,6 +126,7 @@ import logging
 __all__ = [
     "Client",
     "AutoShardedClient",
+    "Asset",
     "Message",
     "User",
     "Reaction",
