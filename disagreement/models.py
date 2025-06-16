@@ -1965,6 +1965,33 @@ class Webhook:
 
         return cls({"id": webhook_id, "token": token, "url": url})
 
+    @classmethod
+    def from_token(
+        cls,
+        webhook_id: str,
+        token: str,
+        session: Optional[aiohttp.ClientSession] = None,
+    ) -> "Webhook":
+        """Create a minimal :class:`Webhook` from an ID and token.
+
+        Parameters
+        ----------
+        webhook_id:
+            The ID of the webhook.
+        token:
+            The webhook token.
+        session:
+            Unused for now. Present for API compatibility.
+
+        Returns
+        -------
+        Webhook
+            A webhook instance containing only the ``id``, ``token`` and ``url``.
+        """
+
+        url = f"https://discord.com/api/webhooks/{webhook_id}/{token}"
+        return cls({"id": webhook_id, "token": token, "url": url})
+
     async def send(
         self,
         content: Optional[str] = None,

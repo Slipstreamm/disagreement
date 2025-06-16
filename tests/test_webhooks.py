@@ -146,6 +146,16 @@ def test_webhook_from_url_parses_id_and_token():
     assert webhook.url == url
 
 
+def test_webhook_from_token_builds_url_and_fields():
+    from disagreement.models import Webhook
+
+    webhook = Webhook.from_token("123", "token")
+
+    assert webhook.id == "123"
+    assert webhook.token == "token"
+    assert webhook.url == "https://discord.com/api/webhooks/123/token"
+
+
 @pytest.mark.asyncio
 async def test_execute_webhook_calls_request():
     http = HTTPClient(token="t")
