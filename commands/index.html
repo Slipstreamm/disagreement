@@ -1389,7 +1389,10 @@
 <pre><code>!help              # lists commands
 !help ping         # shows help for the &quot;ping&quot; command
 </code></pre>
-<p>The help command will show each command's brief description if provided.</p>
+<p>Commands are grouped by their Cog name and paginated so that long help
+lists are split into multiple messages using the <code>Paginator</code> utility.</p>
+<p>If you need custom formatting you can subclass
+<code>HelpCommand</code> and override <code>send_command_help</code> or <code>send_group_help</code>.</p>
 <h2 id="checks">Checks</h2>
 <p>Use <code>commands.check</code> to prevent a command from running unless a predicate
 returns <code>True</code>. Checks may be regular or async callables that accept a
