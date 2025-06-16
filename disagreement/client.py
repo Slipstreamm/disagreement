@@ -1510,6 +1510,23 @@ class Client:
 
         await self._http.delete_webhook(webhook_id)
 
+    async def fetch_webhook(self, webhook_id: Snowflake) -> Optional["Webhook"]:
+        """|coro| Fetch a webhook by ID."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        cached = self._webhooks.get(webhook_id)
+        if cached:
+            return cached
+
+        try:
+            data = await self._http.get_webhook(webhook_id)
+            return self.parse_webhook(data)
+        except DisagreementException as e:
+            print(f"Failed to fetch webhook {webhook_id}: {e}")
+            return None
+
     async def fetch_templates(self, guild_id: Snowflake) -> List["GuildTemplate"]:
         """|coro| Fetch all templates for a guild."""
 
