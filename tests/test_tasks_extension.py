@@ -82,3 +82,24 @@ async def test_before_after_loop_callbacks() -> None:
     await asyncio.sleep(0.01)
     assert events and events[0] == "before"
     assert "after" in events
+
+
+@pytest.mark.asyncio
+async def test_change_interval_and_current_loop() -> None:
+    count = 0
+
+    @tasks.loop(seconds=0.01)
+    async def ticker() -> None:
+        nonlocal count
+        count += 1
+
+    ticker.start()
+    await asyncio.sleep(0.03)
+    initial = ticker.current_loop
+    ticker.change_interval(seconds=0.02)
+    await asyncio.sleep(0.05)
+    ticker.stop()
+
+    assert initial >= 2
+    assert ticker.current_loop > initial
+    assert count == ticker.current_loop
