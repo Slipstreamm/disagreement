@@ -823,6 +823,7 @@ class Member(User):  # Member inherits from User
         self.communication_disabled_until: Optional[str] = data.get(
             "communication_disabled_until"
         )  # ISO8601 timestamp
+        self.voice_state = data.get("voice_state")
 
         # If 'user' object was present, ensure User attributes are from there
         if user_data:
@@ -902,6 +903,14 @@ class Member(User):  # Member inherits from User
             return None
 
         return max(role_objects, key=lambda r: r.position)
+
+    @property
+    def voice(self) -> Optional["VoiceState"]:
+        """Return the member's cached voice state as a :class:`VoiceState`."""
+
+        if self.voice_state is None:
+            return None
+        return VoiceState.from_dict(self.voice_state)
 
 
 class PartialEmoji:
@@ -2769,6 +2778,45 @@ class VoiceStateUpdate:
     def __repr__(self) -> str:
         return (
             f"<VoiceStateUpdate guild_id='{self.guild_id}' user_id='{self.user_id}' "
+            f"channel_id='{self.channel_id}'>"
+        )
+
+
+@dataclass
+class VoiceState:
+    """Represents a cached voice state for a member."""
+
+    guild_id: Optional[str]
+    channel_id: Optional[str]
+    user_id: Optional[str]
+    session_id: Optional[str]
+    deaf: bool = False
+    mute: bool = False
+    self_deaf: bool = False
+    self_mute: bool = False
+    self_stream: Optional[bool] = None
+    self_video: bool = False
+    suppress: bool = False
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "VoiceState":
+        return cls(
+            guild_id=data.get("guild_id"),
+            channel_id=data.get("channel_id"),
+            user_id=data.get("user_id"),
+            session_id=data.get("session_id"),
+            deaf=data.get("deaf", False),
+            mute=data.get("mute", False),
+            self_deaf=data.get("self_deaf", False),
+            self_mute=data.get("self_mute", False),
+            self_stream=data.get("self_stream"),
+            self_video=data.get("self_video", False),
+            suppress=data.get("suppress", False),
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"<VoiceState guild_id='{self.guild_id}' user_id='{self.user_id}' "
             f"channel_id='{self.channel_id}'>"
         )
 
