@@ -921,7 +921,6 @@ class Member(User):  # Member inherits from User
         return max(role_objects, key=lambda r: r.position)
 
     @property
-
     def guild_permissions(self) -> "Permissions":
         """Return the member's guild-level permissions."""
 
@@ -948,6 +947,7 @@ class Member(User):  # Member inherits from User
 
         return base
 
+    @property
     def voice(self) -> Optional["VoiceState"]:
         """Return the member's cached voice state as a :class:`VoiceState`."""
 

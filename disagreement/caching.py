@@ -74,6 +74,14 @@ class MemberCacheFlags:
         for name in self.VALID_FLAGS:
             yield name, getattr(self, name)
 
+    @property
+    def all_enabled(self) -> bool:
+        return self.value == self.ALL_FLAGS
+
+    @property
+    def no_flags(self) -> bool:
+        return self.value == 0
+
     def __int__(self) -> int:
         return self.value
 
