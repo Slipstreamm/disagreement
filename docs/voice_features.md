@@ -6,6 +6,10 @@ Disagreement includes experimental support for connecting to voice channels. You
 voice = await client.join_voice(guild_id, channel_id)
 await voice.play_file("welcome.mp3")
 await voice.play_file("another.mp3")  # switch sources while connected
+voice.pause()
+voice.resume()
+if voice.is_playing():
+    print("audio is playing")
 await voice.close()
 ```
 
