@@ -32,3 +32,11 @@ def test_missing_permissions():
         current, Permissions.SEND_MESSAGES, Permissions.MANAGE_MESSAGES
     )
     assert missing == [Permissions.MANAGE_MESSAGES]
+
+
+def test_permissions_all():
+    all_value = Permissions.all()
+    union = Permissions(0)
+    for perm in Permissions:
+        union |= perm
+    assert all_value == union

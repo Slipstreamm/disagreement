@@ -23,6 +23,7 @@ class Task:
     ) -> None:
         self._coro = coro
         self._task: Optional[asyncio.Task[None]] = None
+        self._current_loop = 0
         if time_of_day is not None and (
             seconds or minutes or hours or delta is not None
         ):
@@ -68,6 +69,7 @@ class Task:
                         await _maybe_call(self._on_error, exc)
                     else:
                         raise
+                self._current_loop += 1
 
                 first = False
         except asyncio.CancelledError:
@@ -78,6 +80,7 @@ class Task:
 
     def start(self, *args: Any, **kwargs: Any) -> asyncio.Task[None]:
         if self._task is None or self._task.done():
+            self._current_loop = 0
             self._task = asyncio.create_task(self._run(*args, **kwargs))
         return self._task
 
@@ -89,6 +92,34 @@ class Task:
     @property
     def running(self) -> bool:
         return self._task is not None and not self._task.done()
+
+    @property
+    def current_loop(self) -> int:
+        return self._current_loop
+
+    def change_interval(
+        self,
+        *,
+        seconds: float = 0.0,
+        minutes: float = 0.0,
+        hours: float = 0.0,
+        delta: Optional[datetime.timedelta] = None,
+        time_of_day: Optional[datetime.time] = None,
+    ) -> None:
+        if time_of_day is not None and (
+            seconds or minutes or hours or delta is not None
+        ):
+            raise ValueError("time_of_day cannot be used with an interval")
+
+        if delta is not None:
+            if not isinstance(delta, datetime.timedelta):
+                raise TypeError("delta must be a datetime.timedelta")
+            interval_seconds = delta.total_seconds()
+        else:
+            interval_seconds = seconds + minutes * 60.0 + hours * 3600.0
+
+        self._seconds = float(interval_seconds)
+        self._time_of_day = time_of_day
 
 
 async def _maybe_call(
@@ -181,9 +212,36 @@ class _Loop:
         if self._task is not None:
             self._task.stop()
 
+    def change_interval(
+        self,
+        *,
+        seconds: float = 0.0,
+        minutes: float = 0.0,
+        hours: float = 0.0,
+        delta: Optional[datetime.timedelta] = None,
+        time_of_day: Optional[datetime.time] = None,
+    ) -> None:
+        self.seconds = seconds
+        self.minutes = minutes
+        self.hours = hours
+        self.delta = delta
+        self.time_of_day = time_of_day
+        if self._task is not None:
+            self._task.change_interval(
+                seconds=seconds,
+                minutes=minutes,
+                hours=hours,
+                delta=delta,
+                time_of_day=time_of_day,
+            )
+
     @property
     def running(self) -> bool:
         return self._task.running if self._task else False
+
+    @property
+    def current_loop(self) -> int:
+        return self._task.current_loop if self._task else 0
 
 
 class _BoundLoop:
@@ -201,6 +259,27 @@ class _BoundLoop:
     @property
     def running(self) -> bool:
         return self._parent.running
+
+    def change_interval(
+        self,
+        *,
+        seconds: float = 0.0,
+        minutes: float = 0.0,
+        hours: float = 0.0,
+        delta: Optional[datetime.timedelta] = None,
+        time_of_day: Optional[datetime.time] = None,
+    ) -> None:
+        self._parent.change_interval(
+            seconds=seconds,
+            minutes=minutes,
+            hours=hours,
+            delta=delta,
+            time_of_day=time_of_day,
+        )
+
+    @property
+    def current_loop(self) -> int:
+        return self._parent.current_loop
 
 
 def loop(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, Optional, TYPE_CHECKING
+import re
 
 # Discord epoch in milliseconds (2015-01-01T00:00:00Z)
 DISCORD_EPOCH = 1420070400000
@@ -131,3 +132,39 @@ class Paginator:
         if self._current:
             pages.append(self._current)
         return pages
+
+
+def escape_markdown(text: str) -> str:
+    """Escape Discord markdown formatting in ``text``.
+
+    Parameters
+    ----------
+    text:
+        The text to escape.
+
+    Returns
+    -------
+    str
+        The escaped text with Discord formatting characters preceded by a
+        backslash.
+    """
+
+    return re.sub(r"([\\*_~`>|])", r"\\\1", text)
+
+
+def escape_mentions(text: str) -> str:
+    """Escape Discord mentions in ``text``.
+
+    Parameters
+    ----------
+    text:
+        The text in which to escape mentions.
+
+    Returns
+    -------
+    str
+        The text with ``@`` characters replaced by ``@\u200b`` to prevent
+        unintended mentions.
+    """
+
+    return text.replace("@", "@\u200b")
