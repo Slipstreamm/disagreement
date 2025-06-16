@@ -1349,6 +1349,60 @@ class Guild:
                 del self._client._gateway._member_chunk_requests[nonce]
             raise
 
+    async def create_text_channel(
+        self,
+        name: str,
+        *,
+        reason: Optional[str] = None,
+        **options: Any,
+    ) -> "TextChannel":
+        """|coro| Create a new text channel in this guild."""
+
+        payload: Dict[str, Any] = {"name": name, "type": ChannelType.GUILD_TEXT.value}
+        payload.update(options)
+        data = await self._client._http.create_guild_channel(
+            self.id, payload, reason=reason
+        )
+        return cast("TextChannel", self._client.parse_channel(data))
+
+    async def create_voice_channel(
+        self,
+        name: str,
+        *,
+        reason: Optional[str] = None,
+        **options: Any,
+    ) -> "VoiceChannel":
+        """|coro| Create a new voice channel in this guild."""
+
+        payload: Dict[str, Any] = {
+            "name": name,
+            "type": ChannelType.GUILD_VOICE.value,
+        }
+        payload.update(options)
+        data = await self._client._http.create_guild_channel(
+            self.id, payload, reason=reason
+        )
+        return cast("VoiceChannel", self._client.parse_channel(data))
+
+    async def create_category(
+        self,
+        name: str,
+        *,
+        reason: Optional[str] = None,
+        **options: Any,
+    ) -> "CategoryChannel":
+        """|coro| Create a new category channel in this guild."""
+
+        payload: Dict[str, Any] = {
+            "name": name,
+            "type": ChannelType.GUILD_CATEGORY.value,
+        }
+        payload.update(options)
+        data = await self._client._http.create_guild_channel(
+            self.id, payload, reason=reason
+        )
+        return cast("CategoryChannel", self._client.parse_channel(data))
+
 
 class Channel:
     """Base class for Discord channels."""

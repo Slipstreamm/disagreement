@@ -702,6 +702,22 @@ class HTTPClient:
         """Fetches a channel by ID."""
         return await self.request("GET", f"/channels/{channel_id}")
 
+    async def create_guild_channel(
+        self,
+        guild_id: "Snowflake",
+        payload: Dict[str, Any],
+        reason: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Creates a new channel in the specified guild."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        return await self.request(
+            "POST",
+            f"/guilds/{guild_id}/channels",
+            payload=payload,
+            custom_headers=headers,
+        )
+
     async def get_channel_invites(
         self, channel_id: "Snowflake"
     ) -> List[Dict[str, Any]]:
