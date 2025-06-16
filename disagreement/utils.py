@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, Optional, TYPE_CHECKING
 import re
 
+# Discord epoch in milliseconds (2015-01-01T00:00:00Z)
+DISCORD_EPOCH = 1420070400000
+
 if TYPE_CHECKING:  # pragma: no cover - for type hinting only
     from .models import Message, TextChannel
 
@@ -13,6 +16,24 @@ if TYPE_CHECKING:  # pragma: no cover - for type hinting only
 def utcnow() -> datetime:
     """Return the current timezone-aware UTC time."""
     return datetime.now(timezone.utc)
+
+
+def snowflake_time(snowflake: int) -> datetime:
+    """Return the creation time of a Discord snowflake.
+
+    Parameters
+    ----------
+    snowflake:
+        The snowflake ID to convert.
+
+    Returns
+    -------
+    datetime
+        The UTC timestamp embedded in the snowflake.
+    """
+
+    timestamp_ms = (snowflake >> 22) + DISCORD_EPOCH
+    return datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
 
 
 async def message_pager(

@@ -63,3 +63,4 @@ nav:
     - 'OAuth2': 'oauth2.md'
     - 'Presence': 'presence.md'
     - 'Voice Client': 'voice_client.md'
+    - 'Utility Helpers': 'utils.md'

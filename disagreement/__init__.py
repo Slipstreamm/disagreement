@@ -51,7 +51,7 @@ from .errors import (
     NotFound,
 )
 from .color import Color
-from .utils import escape_markdown, escape_mentions, message_pager, utcnow
+from .utils import escape_markdown, escape_mentions, message_pager, utcnow, snowflake_time
 from .enums import (
     GatewayIntent,
     GatewayOpcode,
@@ -153,6 +153,7 @@ __all__ = [
     "escape_markdown",
     "escape_mentions",
     "message_pager",
+    "snowflake_time",
     "GatewayIntent",
     "GatewayOpcode",
     "ButtonStyle",
