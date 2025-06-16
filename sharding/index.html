@@ -1305,15 +1305,10 @@ Use <code>Client</code> with the <code>shard_count</code> parameter when you wan
 manually.</p>
 <p><code>AutoShardedClient</code> asks Discord for the recommended number of shards at runtime
 and configures the <code>ShardManager</code> automatically.</p>
-<pre><code class="language-python">import asyncio
-import disagreement
+<pre><code class="language-python">import disagreement
 
 bot = disagreement.AutoShardedClient(token=&quot;YOUR_TOKEN&quot;)
-
-async def main():
-    await bot.run()
-
-asyncio.run(main())
+bot.run()
 </code></pre>
 
 

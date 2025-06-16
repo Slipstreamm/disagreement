@@ -1494,13 +1494,8 @@ if not token:
 
 intents = GatewayIntent.default() | GatewayIntent.MESSAGE_CONTENT
 client = Client(token=token, command_prefix=&quot;!&quot;, intents=intents, mention_replies=True)
-async def main() -&gt; None:
-    client.add_cog(Basics(client))
-    await client.run()
-
-
-if __name__ == &quot;__main__&quot;:
-    asyncio.run(main())
+client.add_cog(Basics(client))
+client.run()
 </code></pre>
 <h3 id="global-error-handling">Global Error Handling</h3>
 <p>To ensure unexpected errors don't crash your bot, you can enable the library's
