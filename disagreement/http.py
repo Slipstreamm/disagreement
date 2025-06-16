@@ -753,6 +753,21 @@ class HTTPClient:
 
         await self.request("DELETE", f"/webhooks/{webhook_id}")
 
+    async def get_webhook(
+        self, webhook_id: "Snowflake", token: Optional[str] = None
+    ) -> "Webhook":
+        """Fetches a webhook by ID, optionally using its token."""
+
+        endpoint = f"/webhooks/{webhook_id}"
+        use_auth = True
+        if token is not None:
+            endpoint += f"/{token}"
+            use_auth = False
+        data = await self.request("GET", endpoint, use_auth_header=use_auth)
+        from .models import Webhook
+
+        return Webhook(data)
+
     async def execute_webhook(
         self,
         webhook_id: "Snowflake",
