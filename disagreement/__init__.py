@@ -51,7 +51,15 @@ from .errors import (
     NotFound,
 )
 from .color import Color
-from .utils import escape_markdown, escape_mentions, message_pager, utcnow, snowflake_time
+from .utils import (
+    utcnow,
+    message_pager,
+    get,
+    find,
+    escape_markdown,
+    escape_mentions,
+    snowflake_time,
+)
 from .enums import (
     GatewayIntent,
     GatewayOpcode,
@@ -153,6 +161,8 @@ __all__ = [
     "escape_markdown",
     "escape_mentions",
     "message_pager",
+    "get",
+    "find",
     "snowflake_time",
     "GatewayIntent",
     "GatewayOpcode",
