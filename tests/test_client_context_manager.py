@@ -1,6 +1,9 @@
 import asyncio
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
+
+# pylint: disable=no-member
 
 from disagreement.client import Client
 

@@ -638,6 +638,78 @@ class CommandHandler:
 
         return args_list, kwargs_dict
 
+    async def get_context(self, message: "Message") -> Optional[CommandContext]:
+        """Parse a message and return a :class:`CommandContext` without executing the command.
+
+        Returns ``None`` if the message does not invoke a command."""
+
+        if not message.content:
+            return None
+
+        prefix_to_use = await self.get_prefix(message)
+        if not prefix_to_use:
+            return None
+
+        actual_prefix: Optional[str] = None
+        if isinstance(prefix_to_use, list):
+            for p in prefix_to_use:
+                if message.content.startswith(p):
+                    actual_prefix = p
+                    break
+            if not actual_prefix:
+                return None
+        elif isinstance(prefix_to_use, str):
+            if message.content.startswith(prefix_to_use):
+                actual_prefix = prefix_to_use
+            else:
+                return None
+        else:
+            return None
+
+        if actual_prefix is None:
+            return None
+
+        view = StringView(message.content[len(actual_prefix) :])
+
+        command_name = view.get_word()
+        if not command_name:
+            return None
+
+        command = self.get_command(command_name)
+        if not command:
+            return None
+
+        invoked_with = command_name
+
+        if isinstance(command, Group):
+            view.skip_whitespace()
+            potential_subcommand = view.get_word()
+            if potential_subcommand:
+                subcommand = command.get_command(potential_subcommand)
+                if subcommand:
+                    command = subcommand
+                    invoked_with += f" {potential_subcommand}"
+                elif command.invoke_without_command:
+                    view.index -= len(potential_subcommand) + view.previous
+                else:
+                    raise CommandNotFound(
+                        f"Subcommand '{potential_subcommand}' not found."
+                    )
+
+        ctx = CommandContext(
+            message=message,
+            bot=self.client,
+            prefix=actual_prefix,
+            command=command,
+            invoked_with=invoked_with,
+            cog=command.cog,
+        )
+
+        parsed_args, parsed_kwargs = await self._parse_arguments(command, ctx, view)
+        ctx.args = parsed_args
+        ctx.kwargs = parsed_kwargs
+        return ctx
+
     async def process_commands(self, message: "Message") -> None:
         if not message.content:
             return

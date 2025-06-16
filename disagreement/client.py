@@ -602,6 +602,11 @@ class Client:
             return
         await self.command_handler.process_commands(message)
 
+    async def get_context(self, message: "Message") -> Optional["CommandContext"]:
+        """Return a :class:`CommandContext` for ``message`` without executing the command."""
+
+        return await self.command_handler.get_context(message)
+
     # --- Command Framework Methods ---
 
     def add_cog(self, cog: Cog) -> None:
