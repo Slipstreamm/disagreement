@@ -1349,6 +1349,12 @@ member = guild.get_member_named(&quot;Slipstream&quot;)
 if member:
     print(member.display_name)
 </code></pre>
+<p>To access the bot's own member object, use the <code>Guild.me</code> property. It returns
+<code>None</code> if the bot is not in the guild or its user data hasn't been loaded:</p>
+<pre><code class="language-python">bot_member = guild.me
+if bot_member:
+    print(bot_member.joined_at)
+</code></pre>
 <p>The cache can be cleared manually if needed:</p>
 <pre><code class="language-python">client.cache.clear()
 </code></pre>
