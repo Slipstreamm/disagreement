@@ -180,6 +180,15 @@ class Message:
         await self._client._http.unpin_message(self.channel_id, self.id)
         self.pinned = False
 
+    async def crosspost(self) -> "Message":
+        """|coro|
+
+        Crossposts this message to all follower channels and return the resulting message.
+        """
+
+        data = await self._client._http.crosspost_message(self.channel_id, self.id)
+        return self._client.parse_message(data)
+
     async def reply(
         self,
         content: Optional[str] = None,
