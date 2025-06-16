@@ -902,6 +902,29 @@ class HTTPClient:
             custom_headers=headers,
         )
 
+    async def get_guild_prune_count(self, guild_id: "Snowflake", *, days: int) -> int:
+        """Returns the number of members that would be pruned."""
+
+        data = await self.request(
+            "GET",
+            f"/guilds/{guild_id}/prune",
+            params={"days": days},
+        )
+        return int(data.get("pruned", 0))
+
+    async def begin_guild_prune(
+        self, guild_id: "Snowflake", *, days: int, compute_count: bool = True
+    ) -> int:
+        """Begins a prune operation for the guild and returns the count."""
+
+        payload = {"days": days, "compute_prune_count": compute_count}
+        data = await self.request(
+            "POST",
+            f"/guilds/{guild_id}/prune",
+            payload=payload,
+        )
+        return int(data.get("pruned", 0))
+
     async def get_guild_roles(self, guild_id: "Snowflake") -> List[Dict[str, Any]]:
         """Returns a list of role objects for the guild."""
         return await self.request("GET", f"/guilds/{guild_id}/roles")

@@ -1349,6 +1349,26 @@ class Guild:
                 del self._client._gateway._member_chunk_requests[nonce]
             raise
 
+    async def prune_members(self, days: int, *, compute_count: bool = True) -> int:
+        """|coro| Remove inactive members from the guild.
+
+        Parameters
+        ----------
+        days: int
+            Number of days of inactivity required to be pruned.
+        compute_count: bool
+            Whether to return the number of members pruned.
+
+        Returns
+        -------
+        int
+            The number of members pruned.
+        """
+
+        return await self._client._http.begin_guild_prune(
+            self.id, days=days, compute_count=compute_count
+        )
+
 
 class Channel:
     """Base class for Discord channels."""
