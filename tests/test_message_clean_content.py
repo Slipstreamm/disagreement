@@ -21,3 +21,19 @@ def test_clean_content_removes_mentions():
 def test_clean_content_no_mentions():
     msg = make_message("Just text")
     assert msg.clean_content == "Just text"
+
+
+def test_created_at_parses_timestamp():
+    ts = "2024-05-04T12:34:56+00:00"
+    msg = make_message("hi")
+    msg.timestamp = ts
+    assert msg.created_at.isoformat() == ts
+
+
+def test_edited_at_parses_timestamp_or_none():
+    ts = "2024-05-04T12:35:56+00:00"
+    msg = make_message("hi")
+    msg.timestamp = ts
+    assert msg.edited_at is None
+    msg.edited_timestamp = ts
+    assert msg.edited_at.isoformat() == ts
