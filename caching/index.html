@@ -805,6 +805,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#partial-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Partial Objects
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       Next Steps
@@ -1381,6 +1390,11 @@ if bot_member:
 <p>The cache can be cleared manually if needed:</p>
 <pre><code class="language-python">client.cache.clear()
 </code></pre>
+<h2 id="partial-objects">Partial Objects</h2>
+<p>Some events only include minimal data for related resources. When only an <code>id</code>
+is available, Disagreement represents the resource using :class:<code>~disagreement.Object</code>.
+These objects can be compared and used in sets or dictionaries and can be passed
+to API methods to fetch the full data when needed.</p>
 <h2 id="next-steps">Next Steps</h2>
 <ul>
 <li><a href="../using_components/">Components</a></li>
