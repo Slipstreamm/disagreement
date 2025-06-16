@@ -1394,6 +1394,9 @@ is a power of two so multiple permissions can be combined using bitwise OR.</p>
 
 value = Permissions.SEND_MESSAGES | Permissions.MANAGE_MESSAGES
 </code></pre>
+<p>You can also get a bitmask containing <strong>every</strong> permission:</p>
+<pre><code class="language-python">all_perms = Permissions.all()
+</code></pre>
 <h2 id="helper-functions">Helper Functions</h2>
 <h3 id="permissions_value"><code>permissions_value</code></h3>
 <pre><code class="language-python">permissions_value(*perms) -&gt; int
