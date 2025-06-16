@@ -62,6 +62,7 @@ if not token:
 
 intents = disagreement.GatewayIntent.default() | disagreement.GatewayIntent.MESSAGE_CONTENT
 client = disagreement.Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
+
 client.add_cog(Basics(client))
 client.run()
 ```

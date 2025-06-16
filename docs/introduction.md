@@ -61,6 +61,7 @@ if not token:
 
 intents = GatewayIntent.default() | GatewayIntent.MESSAGE_CONTENT
 client = Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
+
 client.add_cog(Basics(client))
 client.run()
 ```
