@@ -57,6 +57,15 @@ class Permissions(IntFlag):
     USE_EXTERNAL_SOUNDS = 1 << 45
     SEND_VOICE_MESSAGES = 1 << 46
 
+    @classmethod
+    def all(cls) -> "Permissions":
+        """Return a ``Permissions`` object with every permission bit enabled."""
+
+        value = 0
+        for perm in cls:
+            value |= perm.value
+        return cls(value)
+
 
 def permissions_value(*perms: Permissions | int | Iterable[Permissions | int]) -> int:
     """Return a combined integer value for multiple permissions."""
