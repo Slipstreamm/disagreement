@@ -13,6 +13,7 @@ A Python library for interacting with the Discord API, with a focus on bot devel
 - Message component helpers
 - `Message.jump_url` property for quick links to messages
 - Built-in caching layer
+- `Guild.me` property to access the bot's member object
 - Experimental voice support
 - Helpful error handling utilities
 
@@ -61,15 +62,9 @@ if not token:
 
 intents = disagreement.GatewayIntent.default() | disagreement.GatewayIntent.MESSAGE_CONTENT
 client = disagreement.Client(token=token, command_prefix="!", intents=intents, mention_replies=True)
-async def main() -> None:
-    client.add_cog(Basics(client))
-    # Retrieve the cog later by name
-    basics = client.get_cog("Basics")
-    await client.run()
 
-
-if __name__ == "__main__":
-    asyncio.run(main())
+client.add_cog(Basics(client))
+client.run()
 ```
 
 ### Global Error Handling

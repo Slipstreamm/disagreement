@@ -62,9 +62,9 @@ async def on_ready():
     print("------")
 
 
-async def main():
-    await client.run()
+def main():
+    client.run()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

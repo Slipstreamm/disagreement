@@ -263,7 +263,7 @@ class ComponentCommandsCog(Cog):
         )
 
 
-async def main():
+def main():
     @client.event
     async def on_ready():
         if client.user:
@@ -283,8 +283,8 @@ async def main():
                 )
 
     client.add_cog(ComponentCommandsCog(client))
-    await client.run()
+    client.run()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

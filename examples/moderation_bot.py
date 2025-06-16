@@ -9,7 +9,15 @@ from typing import Set
 if os.path.join(os.getcwd(), "examples") == os.path.dirname(os.path.abspath(__file__)):
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from disagreement import Client, GatewayIntent, Member, Message, Cog, command, CommandContext
+from disagreement import (
+    Client,
+    GatewayIntent,
+    Member,
+    Message,
+    Cog,
+    command,
+    CommandContext,
+)
 
 try:
     from dotenv import load_dotenv
@@ -26,9 +34,7 @@ if not BOT_TOKEN:
     sys.exit(1)
 
 intents = (
-    GatewayIntent.GUILDS
-    | GatewayIntent.GUILD_MESSAGES
-    | GatewayIntent.MESSAGE_CONTENT
+    GatewayIntent.GUILDS | GatewayIntent.GUILD_MESSAGES | GatewayIntent.MESSAGE_CONTENT
 )
 client = Client(token=BOT_TOKEN, command_prefix="!", intents=intents)
 
@@ -78,10 +84,10 @@ async def on_message(message: Message) -> None:
         )
 
 
-async def main() -> None:
+def main() -> None:
     client.add_cog(ModerationCog(client))
-    await client.run()
+    client.run()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

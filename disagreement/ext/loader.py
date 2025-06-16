@@ -53,7 +53,19 @@ def unload_extension(name: str) -> None:
         raise ValueError(f"Extension '{name}' is not loaded")
 
     if hasattr(module, "teardown"):
-        module.teardown()
+        result = module.teardown()
+        if inspect.isawaitable(result):
+            coro = cast(Coroutine[Any, Any, Any], result)
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                asyncio.run(coro)
+            else:
+                if loop.is_running():
+                    future = asyncio.run_coroutine_threadsafe(coro, loop)
+                    future.result()
+                else:
+                    loop.run_until_complete(coro)
 
     sys.modules.pop(name, None)
 

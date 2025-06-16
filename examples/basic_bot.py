@@ -67,9 +67,7 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 # --- Intents Configuration ---
 # Define the intents your bot needs. For basic message reading and responding:
 intents = (
-    GatewayIntent.GUILDS
-    | GatewayIntent.GUILD_MESSAGES
-    | GatewayIntent.MESSAGE_CONTENT
+    GatewayIntent.GUILDS | GatewayIntent.GUILD_MESSAGES | GatewayIntent.MESSAGE_CONTENT
 )  # MESSAGE_CONTENT is privileged!
 
 # If you don't need message content and only react to commands/mentions,
@@ -210,14 +208,14 @@ async def on_guild_available(guild: Guild):
 
 
 # --- Main Execution ---
-async def main():
+def main():
     print("Starting Disagreement Bot...")
     try:
         # Add the Cog to the client
         client.add_cog(ExampleCog(client))  # Pass client instance to Cog constructor
         # client.add_cog is synchronous, but it schedules cog.cog_load() if it's async.
 
-        await client.run()
+        client.run()
     except AuthenticationError:
         print(
             "Authentication failed. Please check your bot token and ensure it's correct."
@@ -232,7 +230,7 @@ async def main():
     finally:
         if not client.is_closed():
             print("Ensuring client is closed...")
-            await client.close()
+            asyncio.run(client.close())
         print("Bot has been shut down.")
 
 
@@ -244,4 +242,4 @@ if __name__ == "__main__":
     # if os.name == 'nt':
     #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    asyncio.run(main())
+    main()
