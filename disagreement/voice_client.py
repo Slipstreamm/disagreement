@@ -79,6 +79,9 @@ class VoiceClient:
         self._server_port: Optional[int] = None
         self._current_source: Optional[AudioSource] = None
         self._play_task: Optional[asyncio.Task] = None
+        self._pause_event = asyncio.Event()
+        self._pause_event.set()
+        self._is_playing = False
         self._sink: Optional[AudioSink] = None
         self._ssrc_map: dict[int, int] = {}
         self._ssrc_lock = threading.Lock()
@@ -191,8 +194,10 @@ class VoiceClient:
 
     async def _play_loop(self) -> None:
         assert self._current_source is not None
+        self._is_playing = True
         try:
             while True:
+                await self._pause_event.wait()
                 data = await self._current_source.read()
                 if not data:
                     break
@@ -204,13 +209,17 @@ class VoiceClient:
             await self._current_source.close()
             self._current_source = None
             self._play_task = None
+            self._is_playing = False
+            self._pause_event.set()
 
     async def stop(self) -> None:
         if self._play_task:
             self._play_task.cancel()
+            self._pause_event.set()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._play_task
             self._play_task = None
+            self._is_playing = False
         if self._current_source:
             await self._current_source.close()
             self._current_source = None
@@ -228,6 +237,27 @@ class VoiceClient:
         """|coro| Stream an audio file or URL using FFmpeg."""
 
         await self.play(FFmpegAudioSource(filename), wait=wait)
+
+    def pause(self) -> None:
+        """Pause the current audio source."""
+
+        if self._play_task and not self._play_task.done():
+            self._pause_event.clear()
+
+    def resume(self) -> None:
+        """Resume playback of a paused source."""
+
+        if self._play_task and not self._play_task.done():
+            self._pause_event.set()
+
+    def is_paused(self) -> bool:
+        """Return ``True`` if playback is currently paused."""
+
+        return bool(self._play_task and not self._pause_event.is_set())
+
+    def is_playing(self) -> bool:
+        """Return ``True`` if audio is actively being played."""
+        return self._is_playing and self._pause_event.is_set()
 
     def listen(self, sink: AudioSink) -> None:
         """Start listening to voice and routing to a sink."""

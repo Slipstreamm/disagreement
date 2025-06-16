@@ -157,6 +157,22 @@ container = Container(
 A container can itself contain layout and content components, letting you build complex messages.
 
 
+## Persistent Views
+
+Views with ``timeout=None`` are persistent. Their ``custom_id`` components are saved to ``persistent_views.json`` so they survive bot restarts.
+
+```python
+class MyView(View):
+    @button(label="Press", custom_id="press")
+    async def handle(self, view, inter):
+        await inter.respond("Pressed!")
+
+client.add_persistent_view(MyView())
+```
+
+When the client starts, it loads this file and registers each view again. Remove
+the file to clear stored views.
+
 ## Next Steps
 
 - [Slash Commands](slash_commands.md)

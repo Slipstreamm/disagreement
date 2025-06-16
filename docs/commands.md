@@ -11,7 +11,11 @@ The command handler registers a `help` command automatically. Use it to list all
 !help ping         # shows help for the "ping" command
 ```
 
-The help command will show each command's brief description if provided.
+Commands are grouped by their Cog name and paginated so that long help
+lists are split into multiple messages using the `Paginator` utility.
+
+If you need custom formatting you can subclass
+`HelpCommand` and override `send_command_help` or `send_group_help`.
 
 ## Checks
 

@@ -789,7 +789,7 @@ class HTTPClient:
         return Webhook(data)
 
     async def get_webhook(self, webhook_id: "Snowflake") -> Dict[str, Any]:
-        """Fetches a webhook by ID."""
+        """Fetches a webhook by ID and returns the raw payload."""
 
         return await self.request("GET", f"/webhooks/{webhook_id}")
 
@@ -808,7 +808,7 @@ class HTTPClient:
 
         await self.request("DELETE", f"/webhooks/{webhook_id}")
 
-    async def get_webhook(
+    async def get_webhook_with_token(
         self, webhook_id: "Snowflake", token: Optional[str] = None
     ) -> "Webhook":
         """Fetches a webhook by ID, optionally using its token."""
@@ -818,7 +818,10 @@ class HTTPClient:
         if token is not None:
             endpoint += f"/{token}"
             use_auth = False
-        data = await self.request("GET", endpoint, use_auth_header=use_auth)
+        if use_auth:
+            data = await self.request("GET", endpoint)
+        else:
+            data = await self.request("GET", endpoint, use_auth_header=False)
         from .models import Webhook
 
         return Webhook(data)

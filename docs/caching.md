@@ -28,6 +28,13 @@ The cache can be cleared manually if needed:
 client.cache.clear()
 ```
 
+## Partial Objects
+
+Some events only include minimal data for related resources. When only an ``id``
+is available, Disagreement represents the resource using :class:`~disagreement.Object`.
+These objects can be compared and used in sets or dictionaries and can be passed
+to API methods to fetch the full data when needed.
+
 ## Next Steps
 
 - [Components](using_components.md)

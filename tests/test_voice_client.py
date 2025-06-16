@@ -59,6 +59,17 @@ class DummySource(AudioSource):
         return b""
 
 
+class SlowSource(AudioSource):
+    def __init__(self, chunks):
+        self.chunks = list(chunks)
+
+    async def read(self) -> bytes:
+        await asyncio.sleep(0)
+        if self.chunks:
+            return self.chunks.pop(0)
+        return b""
+
+
 @pytest.mark.asyncio
 async def test_voice_client_handshake():
     hello = {"d": {"heartbeat_interval": 50}}
@@ -205,3 +216,49 @@ async def test_voice_client_volume_scaling(monkeypatch):
     samples[1] = int(samples[1] * 0.5)
     expected = samples.tobytes()
     assert udp.sent == [expected]
+
+
+@pytest.mark.asyncio
+async def test_pause_resume_and_status():
+    ws = DummyWebSocket(
+        [
+            {"d": {"heartbeat_interval": 50}},
+            {"d": {"ssrc": 1, "ip": "127.0.0.1", "port": 4000}},
+            {"d": {"secret_key": []}},
+        ]
+    )
+    udp = DummyUDP()
+    vc = VoiceClient(
+        client=DummyVoiceClient(),
+        endpoint="ws://localhost",
+        session_id="sess",
+        token="tok",
+        guild_id=1,
+        user_id=2,
+        ws=ws,
+        udp=udp,
+    )
+    await vc.connect()
+    vc._heartbeat_task.cancel()
+
+    src = SlowSource([b"a", b"b", b"c"])
+    await vc.play(src, wait=False)
+
+    while not udp.sent:
+        await asyncio.sleep(0)
+
+    assert vc.is_playing()
+    vc.pause()
+    assert vc.is_paused()
+    await asyncio.sleep(0)
+    sent = len(udp.sent)
+    await asyncio.sleep(0.01)
+    assert len(udp.sent) == sent
+    assert not vc.is_playing()
+
+    vc.resume()
+    assert not vc.is_paused()
+
+    await vc._play_task
+    assert udp.sent == [b"a", b"b", b"c"]
+    assert not vc.is_playing()
