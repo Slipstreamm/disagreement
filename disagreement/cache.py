@@ -84,9 +84,9 @@ class MemberCache(Cache["Member"]):
 
     def _should_cache(self, member: Member) -> bool:
         """Determines if a member should be cached based on the flags."""
-        if self.flags.all:
+        if self.flags.all_enabled:
             return True
-        if self.flags.none:
+        if self.flags.no_flags:
             return False
 
         if self.flags.online and member.status != "offline":

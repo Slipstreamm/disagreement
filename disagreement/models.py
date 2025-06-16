@@ -1034,7 +1034,7 @@ class Member(User):  # Member inherits from User
             return Permissions(~0)
 
         return base
-
+      
     @property
     def voice(self) -> Optional["VoiceState"]:
         """Return the member's cached voice state as a :class:`VoiceState`."""

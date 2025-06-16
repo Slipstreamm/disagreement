@@ -1453,6 +1453,26 @@ class Client:
 
         return self._messages.get(message_id)
 
+    def get_all_channels(self) -> List["Channel"]:
+        """Return all channels cached in every guild."""
+
+        channels: List["Channel"] = []
+        for guild in self._guilds.values():
+            channels.extend(guild._channels.values())
+        return channels
+
+    def get_all_members(self) -> List["Member"]:
+        """Return all cached members across all guilds.
+
+        When member caching is disabled via :class:`MemberCacheFlags.none`, this
+        list will always be empty.
+        """
+
+        members: List["Member"] = []
+        for guild in self._guilds.values():
+            members.extend(guild._members.values())
+        return members
+
     async def fetch_guild(self, guild_id: Snowflake) -> Optional["Guild"]:
         """Fetches a guild by ID from Discord and caches it."""
 

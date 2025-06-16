@@ -1,6 +1,60 @@
 import time
 
 from disagreement.cache import Cache
+from disagreement.client import Client
+from disagreement.caching import MemberCacheFlags
+from disagreement.enums import (
+    ChannelType,
+    ExplicitContentFilterLevel,
+    GuildNSFWLevel,
+    MFALevel,
+    MessageNotificationLevel,
+    PremiumTier,
+    VerificationLevel,
+)
+
+
+def _guild_payload(gid: str, channel_count: int, member_count: int) -> dict:
+    base = {
+        "id": gid,
+        "name": f"g{gid}",
+        "owner_id": "1",
+        "afk_timeout": 60,
+        "verification_level": VerificationLevel.NONE.value,
+        "default_message_notifications": MessageNotificationLevel.ALL_MESSAGES.value,
+        "explicit_content_filter": ExplicitContentFilterLevel.DISABLED.value,
+        "roles": [],
+        "emojis": [],
+        "features": [],
+        "mfa_level": MFALevel.NONE.value,
+        "system_channel_flags": 0,
+        "premium_tier": PremiumTier.NONE.value,
+        "nsfw_level": GuildNSFWLevel.DEFAULT.value,
+        "channels": [],
+        "members": [],
+    }
+    for i in range(channel_count):
+        base["channels"].append(
+            {
+                "id": f"{gid}-c{i}",
+                "type": ChannelType.GUILD_TEXT.value,
+                "guild_id": gid,
+                "permission_overwrites": [],
+            }
+        )
+    for i in range(member_count):
+        base["members"].append(
+            {
+                "user": {
+                    "id": f"{gid}-m{i}",
+                    "username": f"u{i}",
+                    "discriminator": "0001",
+                },
+                "joined_at": "t",
+                "roles": [],
+            }
+        )
+    return base
 
 
 def test_cache_store_and_get():
@@ -65,3 +119,22 @@ def test_get_or_fetch_fetches_expired_item():
 
     assert cache.get_or_fetch("c", fetch) == 3
     assert called
+
+
+def test_client_get_all_channels_and_members():
+    client = Client(token="t")
+    client.parse_guild(_guild_payload("1", 2, 2))
+    client.parse_guild(_guild_payload("2", 1, 1))
+
+    channels = {c.id for c in client.get_all_channels()}
+    members = {m.id for m in client.get_all_members()}
+
+    assert channels == {"1-c0", "1-c1", "2-c0"}
+    assert members == {"1-m0", "1-m1", "2-m0"}
+
+
+def test_client_get_all_members_disabled_cache():
+    client = Client(token="t", member_cache_flags=MemberCacheFlags.none())
+    client.parse_guild(_guild_payload("1", 1, 2))
+
+    assert client.get_all_members() == []
