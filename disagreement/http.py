@@ -721,6 +721,26 @@ class HTTPClient:
 
         return Invite.from_dict(data)
 
+    async def create_channel_invite(
+        self,
+        channel_id: "Snowflake",
+        payload: Dict[str, Any],
+        *,
+        reason: Optional[str] = None,
+    ) -> "Invite":
+        """Creates an invite for a channel with an optional audit log reason."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        data = await self.request(
+            "POST",
+            f"/channels/{channel_id}/invites",
+            payload=payload,
+            custom_headers=headers,
+        )
+        from .models import Invite
+
+        return Invite.from_dict(data)
+
     async def delete_invite(self, code: str) -> None:
         """Deletes an invite by code."""
 

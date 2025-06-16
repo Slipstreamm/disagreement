@@ -1630,6 +1630,31 @@ class TextChannel(Channel, Messageable):
         data = await self._client._http.start_thread_without_message(self.id, payload)
         return cast("Thread", self._client.parse_channel(data))
 
+    async def create_invite(
+        self,
+        *,
+        max_age: Optional[int] = None,
+        max_uses: Optional[int] = None,
+        temporary: Optional[bool] = None,
+        unique: Optional[bool] = None,
+        reason: Optional[str] = None,
+    ) -> "Invite":
+        """|coro| Create an invite to this channel."""
+
+        payload: Dict[str, Any] = {}
+        if max_age is not None:
+            payload["max_age"] = max_age
+        if max_uses is not None:
+            payload["max_uses"] = max_uses
+        if temporary is not None:
+            payload["temporary"] = temporary
+        if unique is not None:
+            payload["unique"] = unique
+
+        return await self._client._http.create_channel_invite(
+            self.id, payload, reason=reason
+        )
+
 
 class VoiceChannel(Channel):
     """Represents a guild voice channel or stage voice channel."""
