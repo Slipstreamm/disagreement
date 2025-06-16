@@ -3,6 +3,7 @@ Data models for Discord objects.
 """
 
 import asyncio
+import datetime
 import io
 import json
 import os
@@ -123,6 +124,7 @@ class Message:
         self.author: User = User(data["author"], client_instance)
         self.content: str = data["content"]
         self.timestamp: str = data["timestamp"]
+        self.edited_timestamp: Optional[str] = data.get("edited_timestamp")
         if data.get("components"):
             self.components: Optional[List[ActionRow]] = [
                 ActionRow.from_dict(c, client_instance)
@@ -154,6 +156,20 @@ class Message:
         cleaned = pattern.sub("", self.content)
         return " ".join(cleaned.split())
 
+    @property
+    def created_at(self) -> datetime.datetime:
+        """Return message timestamp as a :class:`~datetime.datetime`."""
+
+        return datetime.datetime.fromisoformat(self.timestamp)
+
+    @property
+    def edited_at(self) -> Optional[datetime.datetime]:
+        """Return edited timestamp as :class:`~datetime.datetime` if present."""
+
+        if self.edited_timestamp is None:
+            return None
+        return datetime.datetime.fromisoformat(self.edited_timestamp)
+
     async def pin(self) -> None:
         """|coro|
 
@@ -179,6 +195,15 @@ class Message:
         """
         await self._client._http.unpin_message(self.channel_id, self.id)
         self.pinned = False
+
+    async def crosspost(self) -> "Message":
+        """|coro|
+
+        Crossposts this message to all follower channels and return the resulting message.
+        """
+
+        data = await self._client._http.crosspost_message(self.channel_id, self.id)
+        return self._client.parse_message(data)
 
     async def reply(
         self,
@@ -814,6 +839,7 @@ class Member(User):  # Member inherits from User
         self.communication_disabled_until: Optional[str] = data.get(
             "communication_disabled_until"
         )  # ISO8601 timestamp
+        self.voice_state = data.get("voice_state")
 
         # If 'user' object was present, ensure User attributes are from there
         if user_data:
@@ -895,6 +921,7 @@ class Member(User):  # Member inherits from User
         return max(role_objects, key=lambda r: r.position)
 
     @property
+
     def guild_permissions(self) -> "Permissions":
         """Return the member's guild-level permissions."""
 
@@ -920,6 +947,13 @@ class Member(User):  # Member inherits from User
             return Permissions(~0)
 
         return base
+
+    def voice(self) -> Optional["VoiceState"]:
+        """Return the member's cached voice state as a :class:`VoiceState`."""
+
+        if self.voice_state is None:
+            return None
+        return VoiceState.from_dict(self.voice_state)
 
 
 class PartialEmoji:
@@ -1376,6 +1410,80 @@ class Guild:
                 del self._client._gateway._member_chunk_requests[nonce]
             raise
 
+    async def prune_members(self, days: int, *, compute_count: bool = True) -> int:
+        """|coro| Remove inactive members from the guild.
+
+        Parameters
+        ----------
+        days: int
+            Number of days of inactivity required to be pruned.
+        compute_count: bool
+            Whether to return the number of members pruned.
+
+        Returns
+        -------
+        int
+            The number of members pruned.
+        """
+
+        return await self._client._http.begin_guild_prune(
+            self.id, days=days, compute_count=compute_count
+        )
+
+    async def create_text_channel(
+        self,
+        name: str,
+        *,
+        reason: Optional[str] = None,
+        **options: Any,
+    ) -> "TextChannel":
+        """|coro| Create a new text channel in this guild."""
+
+        payload: Dict[str, Any] = {"name": name, "type": ChannelType.GUILD_TEXT.value}
+        payload.update(options)
+        data = await self._client._http.create_guild_channel(
+            self.id, payload, reason=reason
+        )
+        return cast("TextChannel", self._client.parse_channel(data))
+
+    async def create_voice_channel(
+        self,
+        name: str,
+        *,
+        reason: Optional[str] = None,
+        **options: Any,
+    ) -> "VoiceChannel":
+        """|coro| Create a new voice channel in this guild."""
+
+        payload: Dict[str, Any] = {
+            "name": name,
+            "type": ChannelType.GUILD_VOICE.value,
+        }
+        payload.update(options)
+        data = await self._client._http.create_guild_channel(
+            self.id, payload, reason=reason
+        )
+        return cast("VoiceChannel", self._client.parse_channel(data))
+
+    async def create_category(
+        self,
+        name: str,
+        *,
+        reason: Optional[str] = None,
+        **options: Any,
+    ) -> "CategoryChannel":
+        """|coro| Create a new category channel in this guild."""
+
+        payload: Dict[str, Any] = {
+            "name": name,
+            "type": ChannelType.GUILD_CATEGORY.value,
+        }
+        payload.update(options)
+        data = await self._client._http.create_guild_channel(
+            self.id, payload, reason=reason
+        )
+        return cast("CategoryChannel", self._client.parse_channel(data))
+
 
 class Channel:
     """Base class for Discord channels."""
@@ -1656,6 +1764,31 @@ class TextChannel(Channel, Messageable):
 
         data = await self._client._http.start_thread_without_message(self.id, payload)
         return cast("Thread", self._client.parse_channel(data))
+
+    async def create_invite(
+        self,
+        *,
+        max_age: Optional[int] = None,
+        max_uses: Optional[int] = None,
+        temporary: Optional[bool] = None,
+        unique: Optional[bool] = None,
+        reason: Optional[str] = None,
+    ) -> "Invite":
+        """|coro| Create an invite to this channel."""
+
+        payload: Dict[str, Any] = {}
+        if max_age is not None:
+            payload["max_age"] = max_age
+        if max_uses is not None:
+            payload["max_uses"] = max_uses
+        if temporary is not None:
+            payload["temporary"] = temporary
+        if unique is not None:
+            payload["unique"] = unique
+
+        return await self._client._http.create_channel_invite(
+            self.id, payload, reason=reason
+        )
 
 
 class VoiceChannel(Channel):
@@ -1990,6 +2123,33 @@ class Webhook:
         token = parts[-1]
         webhook_id = parts[-2]
 
+        return cls({"id": webhook_id, "token": token, "url": url})
+
+    @classmethod
+    def from_token(
+        cls,
+        webhook_id: str,
+        token: str,
+        session: Optional[aiohttp.ClientSession] = None,
+    ) -> "Webhook":
+        """Create a minimal :class:`Webhook` from an ID and token.
+
+        Parameters
+        ----------
+        webhook_id:
+            The ID of the webhook.
+        token:
+            The webhook token.
+        session:
+            Unused for now. Present for API compatibility.
+
+        Returns
+        -------
+        Webhook
+            A webhook instance containing only the ``id``, ``token`` and ``url``.
+        """
+
+        url = f"https://discord.com/api/webhooks/{webhook_id}/{token}"
         return cls({"id": webhook_id, "token": token, "url": url})
 
     async def send(
@@ -2661,6 +2821,45 @@ class VoiceStateUpdate:
     def __repr__(self) -> str:
         return (
             f"<VoiceStateUpdate guild_id='{self.guild_id}' user_id='{self.user_id}' "
+            f"channel_id='{self.channel_id}'>"
+        )
+
+
+@dataclass
+class VoiceState:
+    """Represents a cached voice state for a member."""
+
+    guild_id: Optional[str]
+    channel_id: Optional[str]
+    user_id: Optional[str]
+    session_id: Optional[str]
+    deaf: bool = False
+    mute: bool = False
+    self_deaf: bool = False
+    self_mute: bool = False
+    self_stream: Optional[bool] = None
+    self_video: bool = False
+    suppress: bool = False
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "VoiceState":
+        return cls(
+            guild_id=data.get("guild_id"),
+            channel_id=data.get("channel_id"),
+            user_id=data.get("user_id"),
+            session_id=data.get("session_id"),
+            deaf=data.get("deaf", False),
+            mute=data.get("mute", False),
+            self_deaf=data.get("self_deaf", False),
+            self_mute=data.get("self_mute", False),
+            self_stream=data.get("self_stream"),
+            self_video=data.get("self_video", False),
+            suppress=data.get("suppress", False),
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"<VoiceState guild_id='{self.guild_id}' user_id='{self.user_id}' "
             f"channel_id='{self.channel_id}'>"
         )
 

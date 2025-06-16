@@ -1510,6 +1510,23 @@ class Client:
 
         await self._http.delete_webhook(webhook_id)
 
+    async def fetch_webhook(self, webhook_id: Snowflake) -> Optional["Webhook"]:
+        """|coro| Fetch a webhook by ID."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        cached = self._webhooks.get(webhook_id)
+        if cached:
+            return cached
+
+        try:
+            data = await self._http.get_webhook(webhook_id)
+            return self.parse_webhook(data)
+        except DisagreementException as e:
+            print(f"Failed to fetch webhook {webhook_id}: {e}")
+            return None
+
     async def fetch_templates(self, guild_id: Snowflake) -> List["GuildTemplate"]:
         """|coro| Fetch all templates for a guild."""
 
@@ -1642,6 +1659,19 @@ class Client:
             raise DisagreementException("Client is closed.")
 
         await self._http.delete_invite(code)
+
+    async def fetch_invite(self, code: Snowflake) -> Optional["Invite"]:
+        """|coro| Fetch a single invite by code."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        try:
+            data = await self._http.get_invite(code)
+            return self.parse_invite(data)
+        except DisagreementException as e:
+            print(f"Failed to fetch invite {code}: {e}")
+            return None
 
     async def fetch_invites(self, channel_id: Snowflake) -> List["Invite"]:
         """|coro| Fetch all invites for a channel."""

@@ -663,6 +663,15 @@ class HTTPClient:
 
         await self.request("DELETE", f"/channels/{channel_id}/pins/{message_id}")
 
+    async def crosspost_message(
+        self, channel_id: "Snowflake", message_id: "Snowflake"
+    ) -> Dict[str, Any]:
+        """Crossposts a message to any following channels."""
+
+        return await self.request(
+            "POST", f"/channels/{channel_id}/messages/{message_id}/crosspost"
+        )
+
     async def delete_channel(
         self, channel_id: str, reason: Optional[str] = None
     ) -> None:
@@ -702,6 +711,22 @@ class HTTPClient:
         """Fetches a channel by ID."""
         return await self.request("GET", f"/channels/{channel_id}")
 
+    async def create_guild_channel(
+        self,
+        guild_id: "Snowflake",
+        payload: Dict[str, Any],
+        reason: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Creates a new channel in the specified guild."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        return await self.request(
+            "POST",
+            f"/guilds/{guild_id}/channels",
+            payload=payload,
+            custom_headers=headers,
+        )
+
     async def get_channel_invites(
         self, channel_id: "Snowflake"
     ) -> List[Dict[str, Any]]:
@@ -721,10 +746,35 @@ class HTTPClient:
 
         return Invite.from_dict(data)
 
+    async def create_channel_invite(
+        self,
+        channel_id: "Snowflake",
+        payload: Dict[str, Any],
+        *,
+        reason: Optional[str] = None,
+    ) -> "Invite":
+        """Creates an invite for a channel with an optional audit log reason."""
+
+        headers = {"X-Audit-Log-Reason": reason} if reason else None
+        data = await self.request(
+            "POST",
+            f"/channels/{channel_id}/invites",
+            payload=payload,
+            custom_headers=headers,
+        )
+        from .models import Invite
+
+        return Invite.from_dict(data)
+
     async def delete_invite(self, code: str) -> None:
         """Deletes an invite by code."""
 
         await self.request("DELETE", f"/invites/{code}")
+
+    async def get_invite(self, code: "Snowflake") -> Dict[str, Any]:
+        """Fetches a single invite by its code."""
+
+        return await self.request("GET", f"/invites/{code}")
 
     async def create_webhook(
         self, channel_id: "Snowflake", payload: Dict[str, Any]
@@ -737,6 +787,11 @@ class HTTPClient:
         from .models import Webhook
 
         return Webhook(data)
+
+    async def get_webhook(self, webhook_id: "Snowflake") -> Dict[str, Any]:
+        """Fetches a webhook by ID."""
+
+        return await self.request("GET", f"/webhooks/{webhook_id}")
 
     async def edit_webhook(
         self, webhook_id: "Snowflake", payload: Dict[str, Any]
@@ -752,6 +807,21 @@ class HTTPClient:
         """Deletes a webhook."""
 
         await self.request("DELETE", f"/webhooks/{webhook_id}")
+
+    async def get_webhook(
+        self, webhook_id: "Snowflake", token: Optional[str] = None
+    ) -> "Webhook":
+        """Fetches a webhook by ID, optionally using its token."""
+
+        endpoint = f"/webhooks/{webhook_id}"
+        use_auth = True
+        if token is not None:
+            endpoint += f"/{token}"
+            use_auth = False
+        data = await self.request("GET", endpoint, use_auth_header=use_auth)
+        from .models import Webhook
+
+        return Webhook(data)
 
     async def execute_webhook(
         self,
@@ -901,6 +971,29 @@ class HTTPClient:
             payload=payload,
             custom_headers=headers,
         )
+
+    async def get_guild_prune_count(self, guild_id: "Snowflake", *, days: int) -> int:
+        """Returns the number of members that would be pruned."""
+
+        data = await self.request(
+            "GET",
+            f"/guilds/{guild_id}/prune",
+            params={"days": days},
+        )
+        return int(data.get("pruned", 0))
+
+    async def begin_guild_prune(
+        self, guild_id: "Snowflake", *, days: int, compute_count: bool = True
+    ) -> int:
+        """Begins a prune operation for the guild and returns the count."""
+
+        payload = {"days": days, "compute_prune_count": compute_count}
+        data = await self.request(
+            "POST",
+            f"/guilds/{guild_id}/prune",
+            payload=payload,
+        )
+        return int(data.get("pruned", 0))
 
     async def get_guild_roles(self, guild_id: "Snowflake") -> List[Dict[str, Any]]:
         """Returns a list of role objects for the guild."""

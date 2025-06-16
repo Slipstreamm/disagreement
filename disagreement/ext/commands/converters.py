@@ -6,7 +6,7 @@ import re
 import inspect
 
 from .errors import BadArgument
-from disagreement.models import Member, Guild, Role
+from disagreement.models import Member, Guild, Role, User
 
 if TYPE_CHECKING:
     from .core import CommandContext
@@ -143,6 +143,21 @@ class GuildConverter(Converter["Guild"]):
         raise BadArgument(f"Guild '{argument}' not found.")
 
 
+class UserConverter(Converter["User"]):
+    async def convert(self, ctx: "CommandContext", argument: str) -> "User":
+        match = re.match(r"<@!?(\d+)>$", argument)
+        user_id = match.group(1) if match else argument
+
+        user = ctx.bot._users.get(user_id)
+        if user:
+            return user
+
+        user = await ctx.bot.fetch_user(user_id)
+        if user:
+            return user
+        raise BadArgument(f"User '{argument}' not found.")
+
+
 # Default converters mapping
 DEFAULT_CONVERTERS: dict[type, Converter[Any]] = {
     int: IntConverter(),
@@ -152,7 +167,7 @@ DEFAULT_CONVERTERS: dict[type, Converter[Any]] = {
     Member: MemberConverter(),
     Guild: GuildConverter(),
     Role: RoleConverter(),
-    # User: UserConverter(), # Add when User model and converter are ready
+    User: UserConverter(),
 }
 
 
