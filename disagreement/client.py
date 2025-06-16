@@ -1660,6 +1660,19 @@ class Client:
 
         await self._http.delete_invite(code)
 
+    async def fetch_invite(self, code: Snowflake) -> Optional["Invite"]:
+        """|coro| Fetch a single invite by code."""
+
+        if self._closed:
+            raise DisagreementException("Client is closed.")
+
+        try:
+            data = await self._http.get_invite(code)
+            return self.parse_invite(data)
+        except DisagreementException as e:
+            print(f"Failed to fetch invite {code}: {e}")
+            return None
+
     async def fetch_invites(self, channel_id: Snowflake) -> List["Invite"]:
         """|coro| Fetch all invites for a channel."""
 
