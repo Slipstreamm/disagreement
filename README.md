@@ -112,6 +112,10 @@ These options are forwarded to ``HTTPClient`` when it creates the underlying
 ``aiohttp.ClientSession``. You can specify a custom ``connector`` or any other
 session parameter supported by ``aiohttp``.
 
+### Logging Out
+
+Call ``Client.logout`` to disconnect from the Gateway and clear the current bot token while keeping the HTTP session alive. Assign a new token and call ``connect`` or ``run`` to log back in.
+
 ### Default Allowed Mentions
 
 Specify default mention behaviour for all outgoing messages when constructing the client:

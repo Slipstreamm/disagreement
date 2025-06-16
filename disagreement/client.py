@@ -464,6 +464,14 @@ class Client:
             self._gateway = None
         self._ready_event.clear()  # No longer ready if gateway is closed
 
+    async def logout(self) -> None:
+        """Invalidate the bot token and disconnect from the Gateway."""
+        await self.close_gateway()
+        self.token = ""
+        self._http.token = ""
+        self.user = None
+        self.start_time = None
+
     def is_closed(self) -> bool:
         """Indicates if the client has been closed."""
         return self._closed
